@@ -22,7 +22,8 @@ main(int argc, char **argv)
   char const *filename = argv[1];
   yyin = fopen(filename, "r");
   assert(yyin);
-  int ret = yyparse();
+  /* int ret = yyparse(); */
+  int ret = yylex();
   printf("retv = %d\n", ret);
   exit(0);
 }
