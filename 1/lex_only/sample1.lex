@@ -17,8 +17,9 @@
 %}
 
 %%
-ur ("%s\n", getlogin());
-ux ("%s Blahs\n", getlogin());
+abc ("%s\n", getlogin());
+abd ("%s Blahs\n", getlogin());
+cbd ("%s zyx\n", getlogin());
 %%
 
 main()
