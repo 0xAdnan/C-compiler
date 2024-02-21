@@ -1,11 +1,8 @@
 %{
 #include <cstdio>
 #include <iostream>
-#ifndef __TYPES_HPP_INCLUDED__
-#define __TYPES_HPP_INCLUDED__
-#include "ast.hpp"
-#endif
 
+#include "ast.hpp"
 using namespace std;
 
 ASTNode* program_ast;
@@ -40,10 +37,7 @@ void todo(int);
 %start translation_unit
 
 %code requires {
-#ifndef __TYPES_HPP_INCLUDED__
-#define __TYPES_HPP_INCLUDED__
 #include "ast.hpp"
-#endif
 }
 
 %union value {
