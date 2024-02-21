@@ -118,8 +118,8 @@ protected:
   ASTStmt() : ASTNode() {}
 };
 
-class ASTExpr: public ASTStmt{
-  public:
+class ASTExpr : public ASTStmt {
+public:
   ASTExpr(ASTAssignmentExpr *n);
   ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
 };
@@ -131,7 +131,7 @@ public:
                     ASTAssignmentExpr *n3);
 };
 
-class ASTInitDeclList: public ASTNode {
+class ASTInitDeclList : public ASTNode {
 public:
   ASTInitDeclList(ASTInitDecl *n);
   ASTInitDeclList(ASTInitDeclList *n1, ASTInitDecl *n2);
@@ -154,8 +154,6 @@ public:
   ASTInitializer(ASTInitializerList *n);
   ASTInitializer(ASTAssignmentExpr *n);
 };
-
-
 
 class ASTType : public ASTNode {
 public:
@@ -402,7 +400,6 @@ public:
   }
 };
 
-
 ASTExpr::ASTExpr(ASTAssignmentExpr *n) : ASTStmt() { this->add_child(n); }
 ASTExpr::ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2) : ASTStmt() {
   this->add_child(n1);
@@ -633,15 +630,14 @@ public:
   }
 };
 
-
 ASTDeclSpec::ASTDeclSpec(ASTType *n) : ASTNode() { this->add_child(n); }
 ASTDeclSpec::ASTDeclSpec(ASTType *n1, ASTDeclSpec *n2) : ASTNode() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTDecl::ASTDecl(ASTDeclSpec* n) : ASTNode() {}
-ASTDecl::ASTDecl(ASTDeclSpec* n1, ASTInitDeclList* n2) : ASTNode() {}
+ASTDecl::ASTDecl(ASTDeclSpec *n) : ASTNode() {}
+ASTDecl::ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2) : ASTNode() {}
 
 class ASTDesignator : public ASTNode {
 public:
@@ -691,8 +687,11 @@ public:
   ASTInitDecl(ASTDirectDeclarator *n) : ASTNode() { this->add_child(n); }
 };
 
-ASTInitDeclList::ASTInitDeclList(ASTInitDecl *n) : ASTNode() { this->add_child(n); }
-ASTInitDeclList:: ASTInitDeclList(ASTInitDeclList *n1, ASTInitDecl *n2) : ASTNode() {
+ASTInitDeclList::ASTInitDeclList(ASTInitDecl *n) : ASTNode() {
+  this->add_child(n);
+}
+ASTInitDeclList::ASTInitDeclList(ASTInitDeclList *n1, ASTInitDecl *n2)
+    : ASTNode() {
   this->add_child(n1);
   this->add_child(n2);
 }
