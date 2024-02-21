@@ -1,7 +1,10 @@
 %{
 #include <cstdio>
 #include <iostream>
+#ifndef __TYPES_HPP_INCLUDED__
+#define __TYPES_HPP_INCLUDED__
 #include "ast.hpp"
+#endif
 
 using namespace std;
 
@@ -36,86 +39,138 @@ void todo(int);
 
 %start translation_unit
 
-%union value {
-  ASTNode* ast;
+%code requires {
+#ifndef __TYPES_HPP_INCLUDED__
+#define __TYPES_HPP_INCLUDED__
+#include "ast.hpp"
+#endif
 }
 
-%nterm <ast> primary_expression
-%nterm <ast> constant
-%nterm <ast> string
-%nterm <ast> postfix_expression
-%nterm <ast> argument_expression_list
-%nterm <ast> unary_expression
-%nterm <ast> unary_operator
-%nterm <ast> cast_expression
-%nterm <ast> multiplicative_expression
-%nterm <ast> additive_expression
-%nterm <ast> shift_expression
-%nterm <ast> relational_expression
-%nterm <ast> equality_expression
-%nterm <ast> and_expression
-%nterm <ast> exclusive_or_expression
-%nterm <ast> inclusive_or_expression
-%nterm <ast> logical_and_expression
-%nterm <ast> logical_or_expression
-%nterm <ast> conditional_expression
-%nterm <ast> assignment_expression
-%nterm <ast> assignment_operator
-%nterm <ast> expression
-%nterm <ast> constant_expression
-%nterm <ast> declaration
-%nterm <ast> declaration_specifiers
-%nterm <ast> init_declarator_list
-%nterm <ast> init_declarator
-%nterm <ast> type_specifier
+%union value {
+  ASTPrimaryExpr* p_expr;
+  ASTConst* constant;
+  ASTStrConst* str_const;
+  ASTPostExpr* postfix_expr;
+  ASTArgExpList* arg_expr_l;
+  ASTUnaryExpr* unary_expr;
+  ASTUnaryOp* unary_op;
+  ASTMulExpr* mul_expr;
+  ASTAddExpr* add_expr;
+  ASTShiftExpr* shift_expr;
+  ASTRelExpr* rel_expr;
+  ASTEqExpr* eq_expr;
+  ASTAndExpr* and_expr;
+  ASTExclusiveOrExpr* exor_expr;
+  ASTInclusiveOrExpr* inor_expr;
+  ASTLogicalAndExpr* l_and_expr;
+  ASTLogicalOrExpr* l_or_expr;
+  ASTCondExpr* cond_expr;
+  ASTAssignmentExpr* ass_expr;
+  ASTAssignmentOp* ass_op;
+  ASTExpr* expr;
+  ASTDecl* decl;
+  ASTDeclSpec* decl_spec;
+  ASTInitDeclList* init_decl_list;
+  ASTInitDecl* init_decl;
+  ASTType* type;
+  ASTDirectDeclarator* d_declarator;
+  ASTPtr* ptr;
+  ASTParamList* param_list;
+  ASTParamDecl* param_decl;
+  ASTIdList* id_list;
+  ASTInitializer* init;
+  ASTInitializerList* init_list;
+  ASTDesignator* design;
+  ASTDesignatorList* design_list;
+  ASTStmt* stmt;
+  ASTLabeledStmt* lab_stmt;
+  ASTSelectStmt* sel_stmt;
+  ASTIterStmt* iter_stmt;
+  ASTJmpStmt* jmp_stmt;
+  ASTBlockItemList* blk_ilist;
+  ASTBlockItem* blk_i;
+  ASTProgram* prog;
+  ASTExternDecl* ext_decl;
+  ASTFnDef* fn_def;
+  ASTDeclList* decl_list;
+}
+
+%nterm <p_expr> primary_expression
+%nterm <constant> constant
+%nterm <str_const> string
+%nterm <postfix_expr> postfix_expression
+%nterm <arg_expr_l> argument_expression_list
+%nterm <unary_expr> unary_expression
+%nterm <unary_op> unary_operator
+%nterm <unary_expr> cast_expression
+%nterm <mul_expr> multiplicative_expression
+%nterm <add_expr> additive_expression
+%nterm <shift_expr> shift_expression
+%nterm <rel_expr> relational_expression
+%nterm <eq_expr> equality_expression
+%nterm <and_expr> and_expression
+%nterm <exor_expr> exclusive_or_expression
+%nterm <inor_expr> inclusive_or_expression
+%nterm <l_and_expr> logical_and_expression
+%nterm <l_or_expr> logical_or_expression
+%nterm <cond_expr> conditional_expression
+%nterm <ass_expr> assignment_expression
+%nterm <ass_op> assignment_operator
+%nterm <expr> expression
+%nterm <cond_expr> constant_expression
+%nterm <decl> declaration
+%nterm <decl_spec> declaration_specifiers
+%nterm <init_decl_list> init_declarator_list
+%nterm <init_decl> init_declarator
+%nterm <type> type_specifier
 // %nterm <ast> specifier_qualifier_list
-%nterm <ast> declarator
-%nterm <ast> direct_declarator
-%nterm <ast> pointer
-%nterm <ast> parameter_type_list
-%nterm <ast> parameter_list
-%nterm <ast> parameter_declaration
-%nterm <ast> identifier_list
+%nterm <d_declarator> declarator
+%nterm <d_declarator> direct_declarator
+%nterm <ptr> pointer
+%nterm <param_list> parameter_type_list
+%nterm <param_list> parameter_list
+%nterm <param_decl> parameter_declaration
+%nterm <id_list> identifier_list
 // %nterm <ast> type_name
 // %nterm <ast> abstract_declarator
 // %nterm <ast> direct_abstract_declarator
-%nterm <ast> initializer
-%nterm <ast> initializer_list
-%nterm <ast> designation
-%nterm <ast> designator_list
-%nterm <ast> designator
-%nterm <ast> statement
-%nterm <ast> labeled_statement
-%nterm <ast> compound_statement
-%nterm <ast> block_item_list
-%nterm <ast> block_item
-%nterm <ast> expression_statement
-%nterm <ast> selection_statement
-%nterm <ast> iteration_statement
-%nterm <ast> jump_statement
-%nterm <ast> translation_unit
-%nterm <ast> external_declaration
-%nterm <ast> function_definition
-%nterm <ast> declaration_list
+%nterm <init> initializer
+%nterm <init_list> initializer_list
+%nterm <design_list> designation
+%nterm <design_list> designator_list
+%nterm <design> designator
+%nterm <stmt> statement
+%nterm <lab_stmt> labeled_statement
+%nterm <blk_ilist> compound_statement
+%nterm <blk_ilist> block_item_list
+%nterm <blk_i> block_item
+%nterm <expr> expression_statement
+%nterm <sel_stmt> selection_statement
+%nterm <iter_stmt> iteration_statement
+%nterm <jmp_stmt> jump_statement
+%nterm <prog> translation_unit
+%nterm <ext_decl> external_declaration
+%nterm <fn_def> function_definition
+%nterm <decl_list> declaration_list
 
 
 %%
 
 primary_expression
-	: IDENTIFIER                                                              { $$ = new ASTId(); }
-	| constant                                                                { $$ = $1; }
-	| string                                                                  { $$ = $1; }
-	| '(' expression ')'                                                      { $$ = $2; }
+	: IDENTIFIER                                                                { $$ = new ASTPrimaryExpr(new ASTId()); }
+	| constant                                                                  { $$ = new ASTPrimaryExpr($1); }
+	| string                                                                    { $$ = new ASTPrimaryExpr($1); }
+	| '(' expression ')'                                                        { $$ = new ASTPrimaryExpr($2); }
 	;
 
 constant
-	: I_CONSTANT		/* includes character_constant */                         { $$ = new ASTConst(i_const); }
-	| F_CONSTANT                                                              { $$ = new ASTConst(f_const); }
+	: I_CONSTANT		/* includes character_constant */                           { $$ = new ASTConst(i_const); }
+	| F_CONSTANT                                                                { $$ = new ASTConst(f_const); }
 	;
 
 string
-	: STRING_LITERAL                                                          { $$ = new ASTStrConst(); }
-	| FUNC_NAME                                                               { $$ = new ASTFuncName(); }
+	: STRING_LITERAL                                                            { $$ = new ASTStrLiteralConst(); }
+	| FUNC_NAME                                                                 { $$ = new ASTFuncNameConst(); }
 	;
 
 postfix_expression
@@ -123,23 +178,23 @@ postfix_expression
 	| postfix_expression '[' expression ']'                                     { $$ = new ASTPostExpr($1, $3); }
 	| postfix_expression '(' ')'                                                { $$ = new ASTPostExpr($1); }
 	| postfix_expression '(' argument_expression_list ')'                       { $$ = new ASTPostExpr($1, $3); }
-	| postfix_expression '.' IDENTIFIER                                         { $$ = new ASTPostExpr($1, ASTPtrOp(dot_op), ASTId()); }
-	| postfix_expression PTR_OP IDENTIFIER                                      { $$ = new ASTPostExpr($1, ASTPtrOp(ptr_op), ASTID()); }
-	| postfix_expression INC_OP                                                 { $$ = new ASTPostExpr($1, ASTIncOp(plus_plus)); }
-	| postfix_expression DEC_OP                                                 { $$ = new ASTPostExpr($1, ASTIncOp(minus_minus)); }
+	| postfix_expression '.' IDENTIFIER                                         { $$ = new ASTPostExpr($1, new ASTPtrOp(dot_op), new ASTId()); }
+	| postfix_expression PTR_OP IDENTIFIER                                      { $$ = new ASTPostExpr($1, new ASTPtrOp(ptr_op), new ASTId()); }
+	| postfix_expression INC_OP                                                 { $$ = new ASTPostExpr($1, new ASTIncOp(plus_plus)); }
+	| postfix_expression DEC_OP                                                 { $$ = new ASTPostExpr($1, new ASTIncOp(minus_minus)); }
 	| '(' type_name ')' '{' initializer_list '}'                                { todo(84); }
 	| '(' type_name ')' '{' initializer_list ',' '}'                            { todo(85); }
 	;
 
 argument_expression_list
-	: assignment_expression
-	| argument_expression_list ',' assignment_expression
+	: assignment_expression                                                     { $$ = new ASTArgExpList($1); }
+	| argument_expression_list ',' assignment_expression                        { $$ = new ASTArgExpList($1, $3); }
 	;
 
 unary_expression
-	: postfix_expression                                                        { $$ = new ASTUnaryExpr($1)}
-	| INC_OP unary_expression                                                   { $$ = new ASTUnaryExpr(plus_plus, $2); }
-	| DEC_OP unary_expression                                                   { $$ = new ASTUnaryExpr(minus_minus, $2); }
+	: postfix_expression                                                        { $$ = new ASTUnaryExpr($1); }
+	| INC_OP unary_expression                                                   { $$ = new ASTUnaryExpr(new ASTIncOp(plus_plus), $2); }
+	| DEC_OP unary_expression                                                   { $$ = new ASTUnaryExpr(new ASTIncOp(minus_minus), $2); }
 	| unary_operator cast_expression                                            { $$ = new ASTUnaryExpr($1, $2); }
 	| SIZEOF unary_expression                                                   { todo(98); }
 	| SIZEOF '(' type_name ')'                                                  { todo(99); }
@@ -161,7 +216,7 @@ cast_expression
 	;
 
 multiplicative_expression
-	: cast_expression                                                            { $$ = $1; }
+	: cast_expression                                                            { $$ = new ASTMulExpr($1); }
 	| multiplicative_expression '*' cast_expression                              { $$ = new ASTMulExpr($1, new ASTArithOp(mul_op), $3); }
 	| multiplicative_expression '/' cast_expression                              { $$ = new ASTMulExpr($1, new ASTArithOp(div_op), $3); } 
 	| multiplicative_expression '%' cast_expression                              { $$ = new ASTMulExpr($1, new ASTArithOp(remainder_op), $3); }
@@ -175,22 +230,22 @@ additive_expression
 
 shift_expression
 	: additive_expression                                                          { $$ = new ASTShiftExpr($1); }
-	| shift_expression LEFT_OP additive_expression                                 { $$ = new ASTShiftExpr($1, $3); }
-	| shift_expression RIGHT_OP additive_expression                                { $$ = new ASTShiftExpr($1, $3); }
+	| shift_expression LEFT_OP additive_expression                                 { $$ = new ASTShiftExpr($1, new ASTShiftOp(left_shift_op), $3); }
+	| shift_expression RIGHT_OP additive_expression                                { $$ = new ASTShiftExpr($1, new ASTShiftOp(right_shift_op), $3); }
 	;
 
 relational_expression
 	: shift_expression                                                             { $$ = new ASTRelExpr($1); }
-	| relational_expression '<' shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(less), $3); }
-	| relational_expression '>' shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(greater), $3); }
+	| relational_expression '<' shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(less_op), $3); }
+	| relational_expression '>' shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(greater_op), $3); }
 	| relational_expression LE_OP shift_expression                                 { $$ = new ASTRelExpr($1, new ASTRelOp(less_eq), $3); }
 	| relational_expression GE_OP shift_expression                                 { $$ = new ASTRelExpr($1, new ASTRelOp(greater_eq), $3); }
 	;
 
 equality_expression
 	: relational_expression                                                         { $$ = new ASTEqExpr($1); }
-	| equality_expression EQ_OP relational_expression                               { $$ = new ASTEqExpr($1, $3); }
-	| equality_expression NE_OP relational_expression                               { $$ = new ASTEqExpr($1, $3); }
+	| equality_expression EQ_OP relational_expression                               { $$ = new ASTEqExpr($1, new ASTEqOp(eq_op), $3); }
+	| equality_expression NE_OP relational_expression                               { $$ = new ASTEqExpr($1, new ASTEqOp(neq_op), $3); }
 	;
 
 and_expression
@@ -298,14 +353,14 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER                                                                      { $$ = new ASTIdDeclrator(ASTId()); }
+	: IDENTIFIER                                                                      { $$ = new ASTIdDeclarator(new ASTId()); }
 	| '(' declarator ')'                                                              { $$ = $2; }
 	| direct_declarator '[' ']'                                                       { todo(352); }
 	| direct_declarator '[' '*' ']'                                                   { todo(353); }
 	| direct_declarator '[' assignment_expression ']'                                 { todo(360); }
-	| direct_declarator '(' parameter_type_list ')'                                   { $$ = new ASTFnDeclrator($1, $3);}
-	| direct_declarator '(' ')'                                                       { $$ = new ASTFnDeclrator($1);}
-	| direct_declarator '(' identifier_list ')'                                       { $$ = new ASTFnCallDeclrator($1, $3);}
+	| direct_declarator '(' parameter_type_list ')'                                   { $$ = new ASTFnDeclarator($1, $3);}
+	| direct_declarator '(' ')'                                                       { $$ = new ASTFnDeclarator($1);}
+	| direct_declarator '(' identifier_list ')'                                       { $$ = new ASTFnCallDeclarator($1, $3);}
 	;
 
 pointer
@@ -361,9 +416,9 @@ direct_abstract_declarator
 	;
 
 initializer
-	: '{' initializer_list '}'                                    { $$ = $2; }
-	| '{' initializer_list ',' '}'                                { $$ = $2; }
-	| assignment_expression                                       { $$ = $1 }
+	: '{' initializer_list '}'                                    { $$ = new ASTInitializer($2); }
+	| '{' initializer_list ',' '}'                                { $$ = new ASTInitializer($2); }
+	| assignment_expression                                       { $$ = new ASTInitializer($1); }
 	;
 
 initializer_list
@@ -383,8 +438,8 @@ designator_list
 	;
 
 designator
-	: '[' constant_expression ']'                                 { $$ = $2; }
-	| '.' IDENTIFIER                                              { $$ = new ASTId(); }
+	: '[' constant_expression ']'                                 { $$ = new ASTDesignator($2); }
+	| '.' IDENTIFIER                                              { $$ = new ASTDesignator(new ASTId()); }
 	;
 
 statement
@@ -397,7 +452,7 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement                                    { $$ = new ASTGotoLabeledStmt(ASTId(), $3); }
+	: IDENTIFIER ':' statement                                    { $$ = new ASTGotoLabeledStmt(new ASTId(), $3); }
 	| CASE constant_expression ':' statement                      { $$ = new ASTCaseLabeledStmt($2, $4); }
 	| DEFAULT ':' statement                                       { $$ = new ASTDefLabeledStmt($3); } 
 	;
@@ -413,8 +468,8 @@ block_item_list
 	;
 
 block_item
-	: declaration                                                 { $$ = $1; }
-	| statement                                                   { $$ = $1; }
+	: declaration                                                 { $$ = new ASTBlockItem($1); }
+	| statement                                                   { $$ = new ASTBlockItem($1); }
 	;
 
 expression_statement
@@ -423,9 +478,9 @@ expression_statement
 	;
 
 selection_statement
-	: IF '(' expression ')' statement ELSE statement                                { $$ = new ASTSelectStmt($3, $5, $7); }
-	| IF '(' expression ')' statement                                               { $$ = new ASTSelectStmt($3, $5); }
-	| SWITCH '(' expression ')' statement                                           { $$ = new ASTSelectStmt($3, $5); }
+	: IF '(' expression ')' statement ELSE statement                                { $$ = new ASTIfElseSelectStmt($3, $5, $7); }
+	| IF '(' expression ')' statement                                               { $$ = new ASTIfSelectStmt($3, $5); }
+	| SWITCH '(' expression ')' statement                                           { $$ = new ASTSwitchStmt($3, $5); }
 	;
 
 iteration_statement
@@ -438,11 +493,11 @@ iteration_statement
 	;
 
 jump_statement
-	: GOTO IDENTIFIER ';'                                                           { new ASTGotoJmpStmt(new ASTId()); }
-	| CONTINUE ';'                                                                  { new ASTContJmpStmt(); }
-	| BREAK ';'                                                                     { new ASTBreakJmpStmt(); }
-	| RETURN ';'                                                                    { new ASTRetJmpStmt(); }
-	| RETURN expression ';'                                                         { new ASTRetmpStmt($2); }
+  : GOTO IDENTIFIER ';'                                                           { $$ = new ASTGotoJmpStmt(new ASTId()); }
+	| CONTINUE ';'                                                                  { $$ = new ASTContJmpStmt(); }
+  | BREAK ';'                                                                     { $$ = new ASTBreakJmpStmt(); }
+	| RETURN ';'                                                                    { $$ = new ASTRetJmpStmt(); }
+	| RETURN expression ';'                                                         { $$ = new ASTRetJmpStmt($2); }
 	;
 
 translation_unit
