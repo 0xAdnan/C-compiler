@@ -20,15 +20,21 @@ protected:
 
 public:
   void dump_ast(int indent) {
-    for (int i = 0; i < indent; i++)
+    auto myindent = indent;
+    for (int i = 0; i < myindent; i++)
       cout << "    ";
 
-    cout << this->to_str() << endl;
+    cout << this->to_str() << "[Children: " << children.size() << "]  {" << endl;
 
-    indent++;
+    auto child_indent = indent + 1;
     for (auto child : children) {
-      child->dump_ast(indent);
+      if(child!=NULL)
+        child->dump_ast(child_indent);
     }
+
+    for (int i = 0; i < myindent; i++)
+      cout << "    ";
+    cout << "}" << endl;
   }
 };
 
@@ -122,7 +128,7 @@ class ASTBlockItemList;
 class ASTInitDeclList;
 
 class ASTStmt : public ASTNode {
-protected:
+public:
   ASTStmt();
 };
 
@@ -131,21 +137,21 @@ public:
   ASTAssignmentExpr(ASTCondExpr *n);
   ASTAssignmentExpr(ASTUnaryExpr *n1, ASTAssignmentOp *n2,
                     ASTAssignmentExpr *n3);
-  string to_str() override;
+  string to_str() override {return "AssignmentExpression";}
 };
 
 class ASTExpr : public ASTStmt {
 public:
   ASTExpr(ASTAssignmentExpr *n);
   ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
-  string to_str() override;
+  string to_str() override { return "Expression";}
 };
 
 class ASTInitDecl : public ASTNode {
 public:
   ASTInitDecl(ASTDirectDeclarator *n1, ASTInitializer *n2);
   ASTInitDecl(ASTDirectDeclarator *n);
-  string to_str() override;
+  string to_str() override {return "InitDeclaration";}
 };
 
 class ASTInitDeclList : public ASTNode {
@@ -159,7 +165,7 @@ class ASTInitializer : public ASTNode {
 public:
   ASTInitializer(ASTInitializerList *n);
   ASTInitializer(ASTAssignmentExpr *n);
-  string to_str() override;
+  string to_str() override { return "Initializer";}
 };
 
 class ASTType : public ASTNode {
@@ -498,9 +504,22 @@ public:
 
 class ASTSelectStmt : public ASTStmt {};
 
+class ASTIfSelectStmt : public ASTSelectStmt {
+public:
+  ASTIfSelectStmt(ASTExpr *n1, ASTStmt *n2);
+  string to_str() override { return "IfStatement"; }
+};
+
+class ASTIfElseSelectStmt : public ASTSelectStmt {
+public:
+  ASTIfElseSelectStmt(ASTExpr *n1, ASTStmt *n2, ASTStmt *n3);
+  string to_str() override { return "IfElseStatement"; }
+};
+
 class ASTSwitchStmt : public ASTSelectStmt {
 public:
   ASTSwitchStmt(ASTExpr *n1, ASTStmt *n2);
+  string to_str() override { return "SwitchStatement";}
 };
 
 /*  LABELED Statements */
@@ -541,15 +560,19 @@ public:
 class ASTPtr : public ASTNode {
 public:
   ASTPtr();
-  ASTPtr(ASTPtr *n) : ASTNode() { this->add_child(n); }
+  ASTPtr(ASTPtr *n);
   string to_str() override { return "*Pointer"; }
 };
 
-class ASTDirectDeclarator : public ASTNode {};
+class ASTDirectDeclarator : public ASTNode {
+  public:
+  ASTDirectDeclarator() : ASTNode(){}
+};
 
 class ASTIdDeclarator : public ASTDirectDeclarator {
 public:
-  ASTIdDeclarator(ASTId *n) : ASTDirectDeclarator() { this->add_child(n); }
+  ASTIdDeclarator(ASTId *n);
+  string to_str() override {return "IdDeclarator";}
 };
 
 class ASTParamDecl : public ASTNode {
@@ -581,9 +604,8 @@ public:
 
 class ASTExternDecl : public ASTNode {
 public:
-  ASTExternDecl(ASTFnDef *n) : ASTNode() { this->add_child(n); }
-  ASTExternDecl(ASTDecl *n) : ASTNode() { this->add_child(n); }
-
+  ASTExternDecl(ASTFnDef *n);
+  ASTExternDecl(ASTDecl *n);
   string to_str() override { return "ASTExternDecl"; }
 };
 

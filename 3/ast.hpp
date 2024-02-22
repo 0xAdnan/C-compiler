@@ -1,4 +1,9 @@
+#ifndef AST_HPP_INCLUDED
+#define AST_HPP_INCLUDED
+
+#include "magic_enum.hpp"
 #include <iostream>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -14,13 +19,22 @@ protected:
   virtual string to_str() = 0;
 
 public:
-  string dump_ast(int indent) {
-    string x = this->to_str();
-    indent++;
+  void dump_ast(int indent) {
+    auto myindent = indent;
+    for (int i = 0; i < myindent; i++)
+      cout << "    ";
+
+    cout << this->to_str() << "[Children: " << children.size() << "]  {" << endl;
+
+    auto child_indent = indent + 1;
     for (auto child : children) {
-      x += child->dump_ast(indent);
+      if(child!=NULL)
+        child->dump_ast(child_indent);
     }
-    return x;
+
+    for (int i = 0; i < myindent; i++)
+      cout << "    ";
+    cout << "}" << endl;
   }
 };
 
@@ -103,25 +117,19 @@ enum arith_op {
   remainder_op,
 };
 
-class ASTInitDecl;
-class ASTType;
 class ASTDeclList;
-class ASTExpr;
-class ASTAssignmentExpr;
+class ASTDirectDeclarator;
+class ASTInitializer;
 class ASTInitializerList;
 class ASTCondExpr;
 class ASTUnaryExpr;
 class ASTAssignmentOp;
+class ASTBlockItemList;
+class ASTInitDeclList;
 
 class ASTStmt : public ASTNode {
-protected:
-  ASTStmt() : ASTNode() {}
-};
-
-class ASTExpr : public ASTStmt {
 public:
-  ASTExpr(ASTAssignmentExpr *n);
-  ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
+  ASTStmt();
 };
 
 class ASTAssignmentExpr : public ASTNode {
@@ -129,393 +137,389 @@ public:
   ASTAssignmentExpr(ASTCondExpr *n);
   ASTAssignmentExpr(ASTUnaryExpr *n1, ASTAssignmentOp *n2,
                     ASTAssignmentExpr *n3);
+  string to_str() override {return "AssignmentExpression";}
+};
+
+class ASTExpr : public ASTStmt {
+public:
+  ASTExpr(ASTAssignmentExpr *n);
+  ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
+  string to_str() override { return "Expression";}
+};
+
+class ASTInitDecl : public ASTNode {
+public:
+  ASTInitDecl(ASTDirectDeclarator *n1, ASTInitializer *n2);
+  ASTInitDecl(ASTDirectDeclarator *n);
+  string to_str() override {return "InitDeclaration";}
 };
 
 class ASTInitDeclList : public ASTNode {
 public:
   ASTInitDeclList(ASTInitDecl *n);
   ASTInitDeclList(ASTInitDeclList *n1, ASTInitDecl *n2);
-};
-
-class ASTDeclSpec : public ASTNode {
-public:
-  ASTDeclSpec(ASTType *n);
-  ASTDeclSpec(ASTType *n1, ASTDeclSpec *n2);
-};
-
-class ASTDecl : public ASTNode {
-public:
-  ASTDecl(ASTDeclSpec *n);
-  ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2);
+  string to_str() override { return "InitDeclaratorList"; }
 };
 
 class ASTInitializer : public ASTNode {
 public:
   ASTInitializer(ASTInitializerList *n);
   ASTInitializer(ASTAssignmentExpr *n);
+  string to_str() override { return "Initializer";}
 };
 
 class ASTType : public ASTNode {
+protected:
+  ttype t;
+
 public:
   ASTType(ttype t);
+  string to_str() override { return magic_enum::enum_name(t).data(); };
 };
 
-class ASTAssignmentOp : public ASTNode {
+class ASTDeclSpec : public ASTNode {
 public:
-  ASTAssignmentOp(assignment_op ap);
+  ASTDeclSpec(ASTType *n);
+  ASTDeclSpec(ASTType *n1, ASTDeclSpec *n2);
+  string to_str() override { return "DeclarationSpecifier"; }
 };
 
-class ASTIncOp : public ASTNode {
+class ASTFnDef : public ASTNode {
 public:
-  ASTIncOp(inc_op ip);
-};
-
-class ASTUnaryOp : public ASTNode {
-public:
-  ASTUnaryOp(unary_op up);
-};
-
-class ASTPtrOp : public ASTNode {
-public:
-  ASTPtrOp(access_op pp);
-};
-
-class ASTRelOp : public ASTNode {
-public:
-  ASTRelOp(rel_op rp);
-};
-
-class ASTEqOp : public ASTNode {
-public:
-  ASTEqOp(equal_op ep);
-};
-
-class ASTShiftOp : public ASTNode {
-public:
-  ASTShiftOp(shift_op sp);
-};
-
-class ASTArithOp : public ASTNode {
-public:
-  ASTArithOp(arith_op ap);
+  ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2, ASTDeclList *n3,
+           ASTBlockItemList *n4);
+  ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2, ASTBlockItemList *n3);
+  string to_str() override { return "ASTFnDef"; }
 };
 
 class ASTId : public ASTNode {
 public:
   ASTId();
+  string to_str() override { return "Identifier"; }
+};
+
+class ASTDesignator : public ASTNode {
+public:
+  ASTDesignator(ASTCondExpr *n);
+  ASTDesignator(ASTId *n);
+  string to_str() override { return "Designator"; }
+};
+
+class ASTDesignatorList : public ASTNode {
+public:
+  ASTDesignatorList(ASTDesignator *n);
+  ASTDesignatorList(ASTDesignatorList *n1, ASTDesignator *n2);
+  string to_str() override { return "DesignatorList"; }
+};
+
+class ASTInitializerList : public ASTNode {
+public:
+  ASTInitializerList(ASTDesignatorList *n1, ASTInitializer *n2);
+  ASTInitializerList(ASTInitializer *n);
+  ASTInitializerList(ASTInitializerList *n1, ASTDesignatorList *n2,
+                     ASTInitializer *n3);
+  ASTInitializerList(ASTInitializerList *n1, ASTInitializer *n2);
+  string to_str() override { return "InitializerList"; }
+};
+
+class ASTDecl : public ASTNode {
+public:
+  ASTDecl(ASTDeclSpec *n);
+  ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2);
+  string to_str() override { return "Declaration"; }
+};
+
+class ASTDeclList : public ASTNode {
+public:
+  ASTDeclList();
+  ASTDeclList(ASTDeclList *n1, ASTDecl *n2);
+
+  string to_str() override { return "ASTDeclList"; }
+};
+
+class ASTAssignmentOp : public ASTNode {
+protected:
+  assignment_op ap;
+
+public:
+  ASTAssignmentOp(assignment_op ap);
+  string to_str() override { return magic_enum::enum_name(ap).data(); }
+};
+
+class ASTIncOp : public ASTNode {
+protected:
+  inc_op ip;
+
+public:
+  ASTIncOp(inc_op ip);
+  string to_str() override { return magic_enum::enum_name(ip).data(); }
+};
+
+class ASTUnaryOp : public ASTNode {
+protected:
+  unary_op up;
+
+public:
+  ASTUnaryOp(unary_op up);
+  string to_str() override { return magic_enum::enum_name(up).data(); }
+};
+
+class ASTPtrOp : public ASTNode {
+protected:
+  access_op ap;
+
+public:
+  ASTPtrOp(access_op ap);
+  string to_str() override { return magic_enum::enum_name(ap).data(); }
+};
+
+class ASTRelOp : public ASTNode {
+protected:
+  rel_op rp;
+
+public:
+  ASTRelOp(rel_op rp);
+  string to_str() override { return magic_enum::enum_name(rp).data(); }
+};
+
+class ASTEqOp : public ASTNode {
+protected:
+  equal_op ep;
+
+public:
+  ASTEqOp(equal_op ep);
+  string to_str() override { return magic_enum::enum_name(ep).data(); }
+};
+
+class ASTShiftOp : public ASTNode {
+protected:
+  shift_op sp;
+
+public:
+  ASTShiftOp(shift_op sp);
+  string to_str() override { return magic_enum::enum_name(sp).data(); }
+};
+
+class ASTArithOp : public ASTNode {
+protected:
+  arith_op ap;
+
+public:
+  ASTArithOp(arith_op ap);
+  string to_str() override { return magic_enum::enum_name(ap).data(); }
+};
+
+class ASTConst : public ASTNode {
+protected:
+  const_type ct;
+
+public:
+  ASTConst(const_type t);
+  string to_str() override { return magic_enum::enum_name(ct).data(); }
 };
 
 class ASTIdList : public ASTNode {
 public:
-  ASTIdList(ASTId *n) : ASTNode() { this->add_child(n); }
+  ASTIdList(ASTId *n);
   ASTIdList(ASTIdList *n1, ASTId *n2);
-};
-
-class ASTConst : public ASTNode {
-public:
-  ASTConst(const_type t);
+  string to_str() override { return "IdentifierList"; }
 };
 
 class ASTStrConst : public ASTNode {};
 
 class ASTStrLiteralConst : public ASTStrConst {
-  virtual string to_str() = 0;
-
 public:
   ASTStrLiteralConst();
+  string to_str() override { return "StringLiteral"; }
 };
 
 class ASTFuncNameConst : public ASTStrConst {
 public:
   ASTFuncNameConst();
+  string to_str() override { return "FunctionName"; }
 };
 
 class ASTArgExpList : public ASTNode {
 public:
-  ASTArgExpList(ASTAssignmentExpr *n) : ASTNode() { this->add_child(n); }
-  ASTArgExpList(ASTArgExpList *n1, ASTAssignmentExpr *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTArgExpList(ASTAssignmentExpr *n);
+  ASTArgExpList(ASTArgExpList *n1, ASTAssignmentExpr *n2);
+  string to_str() override { return "ArgumentList"; }
 };
 
 class ASTPrimaryExpr : public ASTNode {
 public:
-  ASTPrimaryExpr(ASTId *n) : ASTNode() { this->add_child(n); }
-  ASTPrimaryExpr(ASTConst *n) : ASTNode() { this->add_child(n); }
-  ASTPrimaryExpr(ASTStrConst *n) : ASTNode() { this->add_child(n); }
-  ASTPrimaryExpr(ASTExpr *n) : ASTNode() { this->add_child(n); }
+  ASTPrimaryExpr(ASTId *n);
+  ASTPrimaryExpr(ASTConst *n);
+  ASTPrimaryExpr(ASTStrConst *n);
+  ASTPrimaryExpr(ASTExpr *n);
+  string to_str() override { return "PrimaryExpression"; }
 };
 
 class ASTPostExpr : public ASTNode {
 public:
-  ASTPostExpr(ASTPrimaryExpr *n) : ASTNode() { this->add_child(n); }
-  ASTPostExpr(ASTPostExpr *n1, ASTExpr *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-  ASTPostExpr(ASTPostExpr *n) : ASTNode() { this->add_child(n); }
-  ASTPostExpr(ASTPostExpr *n1, ASTArgExpList *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-  ASTPostExpr(ASTPostExpr *n1, ASTPtrOp *n2, ASTId *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
-  ASTPostExpr(ASTPostExpr *n1, ASTIncOp *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTPostExpr(ASTPrimaryExpr *n);
+  ASTPostExpr(ASTPostExpr *n1, ASTExpr *n2);
+  ASTPostExpr(ASTPostExpr *n);
+  ASTPostExpr(ASTPostExpr *n1, ASTArgExpList *n2);
+  ASTPostExpr(ASTPostExpr *n1, ASTPtrOp *n2, ASTId *n3);
+  ASTPostExpr(ASTPostExpr *n1, ASTIncOp *n2);
+  string to_str() override { return "PostFixExpression"; }
 };
 
 class ASTUnaryExpr : public ASTNode {
 public:
-  ASTUnaryExpr(ASTPostExpr *n) : ASTNode() { this->add_child(n); }
-  ASTUnaryExpr(ASTIncOp *n1, ASTUnaryExpr *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-  ASTUnaryExpr(ASTUnaryOp *n1, ASTUnaryExpr *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTUnaryExpr(ASTPostExpr *n);
+  ASTUnaryExpr(ASTIncOp *n1, ASTUnaryExpr *n2);
+  ASTUnaryExpr(ASTUnaryOp *n1, ASTUnaryExpr *n2);
+  string to_str() override { return "UnaryExpression"; }
 };
 
 class ASTMulExpr : public ASTNode {
 public:
-  ASTMulExpr(ASTUnaryExpr *n) : ASTNode() { this->add_child(n); }
-  ASTMulExpr(ASTMulExpr *n1, ASTArithOp *n2, ASTUnaryExpr *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
-  ASTMulExpr(ASTUnaryExpr *n1, ASTArithOp *n2, ASTUnaryExpr *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
+  ASTMulExpr(ASTUnaryExpr *n);
+  ASTMulExpr(ASTMulExpr *n1, ASTArithOp *n2, ASTUnaryExpr *n3);
+  string to_str() override { return "MultiplicationExpression"; }
 };
 
 class ASTAddExpr : public ASTNode {
 public:
-  ASTAddExpr(ASTMulExpr *n) : ASTNode() { this->add_child(n); }
-  ASTAddExpr(ASTUnaryExpr *n) : ASTNode() { this->add_child(n); }
-  ASTAddExpr(ASTAddExpr *n1, ASTArithOp *n2, ASTMulExpr *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
-  ASTAddExpr(ASTAddExpr *n1, ASTArithOp *n2, ASTUnaryExpr *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
+  ASTAddExpr(ASTMulExpr *n);
+  ASTAddExpr(ASTAddExpr *n1, ASTArithOp *n2, ASTMulExpr *n3);
+  string to_str() override { return "AddExpression"; }
 };
 
 class ASTShiftExpr : public ASTNode {
 public:
-  ASTShiftExpr(ASTAddExpr *n) : ASTNode() { this->add_child(n); }
-  ASTShiftExpr(ASTShiftExpr *n1, ASTShiftOp *n2, ASTAddExpr *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
+  ASTShiftExpr(ASTAddExpr *n);
+  ASTShiftExpr(ASTShiftExpr *n1, ASTShiftOp *n2, ASTAddExpr *n3);
+  string to_str() override { return "ShiftExpression"; }
 };
 
 class ASTRelExpr : public ASTNode {
 public:
-  ASTRelExpr(ASTShiftExpr *n) : ASTNode() { this->add_child(n); }
-  ASTRelExpr(ASTRelExpr *n1, ASTRelOp *n2, ASTShiftExpr *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
+  ASTRelExpr(ASTShiftExpr *n);
+  ASTRelExpr(ASTRelExpr *n1, ASTRelOp *n2, ASTShiftExpr *n3);
+  string to_str() override { return "RelationalExpression"; }
 };
 
 class ASTEqExpr : public ASTNode {
 public:
-  ASTEqExpr(ASTRelExpr *n) : ASTNode() { this->add_child(n); }
-  ASTEqExpr(ASTEqExpr *n1, ASTEqOp *n2, ASTRelExpr *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
+  ASTEqExpr(ASTRelExpr *n);
+  ASTEqExpr(ASTEqExpr *n1, ASTEqOp *n2, ASTRelExpr *n3);
+  string to_str() override { return "EqualExpression"; }
 };
 
 class ASTAndExpr : public ASTNode {
 public:
-  ASTAndExpr(ASTEqExpr *n) : ASTNode() { this->add_child(n); }
-  ASTAndExpr(ASTAndExpr *n1, ASTEqExpr *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTAndExpr(ASTEqExpr *n);
+  ASTAndExpr(ASTAndExpr *n1, ASTEqExpr *n2);
+  string to_str() override { return "AndExpression"; }
 };
 
 class ASTExclusiveOrExpr : public ASTNode {
 public:
-  ASTExclusiveOrExpr(ASTAndExpr *n) : ASTNode() { this->add_child(n); }
-  ASTExclusiveOrExpr(ASTExclusiveOrExpr *n1, ASTAndExpr *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTExclusiveOrExpr(ASTAndExpr *n);
+  ASTExclusiveOrExpr(ASTExclusiveOrExpr *n1, ASTAndExpr *n2);
+  string to_str() override { return "ExclusiveOrExpression"; }
 };
 
 class ASTInclusiveOrExpr : public ASTNode {
 public:
-  ASTInclusiveOrExpr(ASTExclusiveOrExpr *n) : ASTNode() { this->add_child(n); }
-  ASTInclusiveOrExpr(ASTInclusiveOrExpr *n1, ASTExclusiveOrExpr *n2)
-      : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTInclusiveOrExpr(ASTExclusiveOrExpr *n);
+  ASTInclusiveOrExpr(ASTInclusiveOrExpr *n1, ASTExclusiveOrExpr *n2);
+  string to_str() override { return "InclusiveOrExpression"; }
 };
 
 class ASTLogicalAndExpr : public ASTNode {
 public:
-  ASTLogicalAndExpr(ASTInclusiveOrExpr *n) : ASTNode() { this->add_child(n); }
-  ASTLogicalAndExpr(ASTLogicalAndExpr *n1, ASTInclusiveOrExpr *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTLogicalAndExpr(ASTInclusiveOrExpr *n);
+  ASTLogicalAndExpr(ASTLogicalAndExpr *n1, ASTInclusiveOrExpr *n2);
+  string to_str() override { return "LogicalAndExpression"; }
 };
 
 class ASTLogicalOrExpr : public ASTNode {
 public:
-  ASTLogicalOrExpr(ASTLogicalAndExpr *n) : ASTNode() { this->add_child(n); }
-  ASTLogicalOrExpr(ASTLogicalOrExpr *n1, ASTLogicalAndExpr *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTLogicalOrExpr(ASTLogicalAndExpr *n);
+  ASTLogicalOrExpr(ASTLogicalOrExpr *n1, ASTLogicalAndExpr *n2);
+  string to_str() override { return "LogicalOrExpression"; }
 };
 
 class ASTCondExpr : public ASTNode {
 public:
-  ASTCondExpr(ASTLogicalOrExpr *n) : ASTNode() { this->add_child(n); }
-  ASTCondExpr(ASTLogicalOrExpr *n1, ASTExpr *n2, ASTCondExpr *n3) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
+  ASTCondExpr(ASTLogicalOrExpr *n);
+  ASTCondExpr(ASTLogicalOrExpr *n1, ASTExpr *n2, ASTCondExpr *n3);
+  string to_str() override { return "ConditionalExpression"; }
 };
 
-ASTExpr::ASTExpr(ASTAssignmentExpr *n) : ASTStmt() { this->add_child(n); }
-ASTExpr::ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2) : ASTStmt() {
-  this->add_child(n1);
-  this->add_child(n2);
-}
-
-// ///////////////// STATEMENT /////////////////
-
-/*  ITER Statements */
 class ASTIterStmt : public ASTStmt {};
 
 class ASTWhileStmt : public ASTIterStmt {
 public:
-  ASTWhileStmt(ASTExpr *n1, ASTStmt *n2) : ASTIterStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTWhileStmt(ASTExpr *n1, ASTStmt *n2);
+  string to_str() override { return "WhileStatement"; }
 };
 
 class ASTDoWhileStmt : public ASTIterStmt {
 public:
-  ASTDoWhileStmt(ASTStmt *n1, ASTExpr *n2) : ASTIterStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTDoWhileStmt(ASTStmt *n1, ASTExpr *n2);
+  string to_str() override { return "DoWhileStatement"; }
 };
 
 class ASTForStmt : public ASTIterStmt {
 public:
-  ASTForStmt(ASTExpr *n1, ASTExpr *n2, ASTStmt *n3) : ASTIterStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
-  ASTForStmt(ASTExpr *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4)
-      : ASTIterStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-    this->add_child(n4);
-  }
-  ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTStmt *n3) : ASTIterStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
-  ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4)
-      : ASTIterStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-    this->add_child(n4);
-  }
+  ASTForStmt(ASTExpr *n1, ASTExpr *n2, ASTStmt *n3);
+  ASTForStmt(ASTExpr *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4);
+  ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTStmt *n3);
+  ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4);
+  string to_str() override { return "ForStatement"; }
 };
 
 /*  JUMP Statements */
-class ASTJmpStmt : public ASTStmt {
-protected:
-  ASTJmpStmt() : ASTStmt() {}
-};
+class ASTJmpStmt : public ASTStmt {};
 
 class ASTGotoJmpStmt : public ASTJmpStmt {
 public:
-  ASTGotoJmpStmt(ASTId *n) : ASTJmpStmt() { this->add_child(n); }
-
-  string to_str() override { return "ASTGotoJmpStmt"; }
+  ASTGotoJmpStmt(ASTId *n);
+  string to_str() override { return "GotoStatement"; }
 };
 
 class ASTContJmpStmt : public ASTJmpStmt {
 public:
-  ASTContJmpStmt() : ASTJmpStmt() {}
-
-  string to_str() override { return "ASTContJmpStmt"; }
+  ASTContJmpStmt();
+  string to_str() override { return "Continue"; }
 };
 
 class ASTBreakJmpStmt : public ASTJmpStmt {
 public:
-  ASTBreakJmpStmt() : ASTJmpStmt() {}
-
-  string to_str() override { return "ASTBreakJmpStmt"; }
+  ASTBreakJmpStmt();
+  string to_str() override { return "Break"; }
 };
 
 class ASTRetJmpStmt : public ASTJmpStmt {
 public:
-  ASTRetJmpStmt() : ASTJmpStmt() {}
-  ASTRetJmpStmt(ASTExpr *n) : ASTJmpStmt() { this->add_child(n); }
-
-  string to_str() override { return "ASTRetJmpStmt"; }
+  ASTRetJmpStmt();
+  ASTRetJmpStmt(ASTExpr *n);
+  string to_str() override { return "ReturnStatement"; }
 };
 
-/*  SELECT Statements */
 class ASTSelectStmt : public ASTStmt {};
-
-class ASTIfElseSelectStmt : public ASTSelectStmt {
-public:
-  ASTIfElseSelectStmt(ASTExpr *n1, ASTStmt *n2, ASTStmt *n3) : ASTSelectStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
-};
 
 class ASTIfSelectStmt : public ASTSelectStmt {
 public:
-  ASTIfSelectStmt(ASTExpr *n1, ASTStmt *n2) : ASTSelectStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTIfSelectStmt(ASTExpr *n1, ASTStmt *n2);
+  string to_str() override { return "IfStatement"; }
+};
+
+class ASTIfElseSelectStmt : public ASTSelectStmt {
+public:
+  ASTIfElseSelectStmt(ASTExpr *n1, ASTStmt *n2, ASTStmt *n3);
+  string to_str() override { return "IfElseStatement"; }
 };
 
 class ASTSwitchStmt : public ASTSelectStmt {
 public:
-  ASTSwitchStmt(ASTExpr *n1, ASTStmt *n2) : ASTSelectStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTSwitchStmt(ASTExpr *n1, ASTStmt *n2);
+  string to_str() override { return "SwitchStatement";}
 };
 
 /*  LABELED Statements */
@@ -523,206 +527,93 @@ class ASTLabeledStmt : public ASTStmt {};
 
 class ASTGotoLabeledStmt : public ASTLabeledStmt {
 public:
-  ASTGotoLabeledStmt(ASTId *n1, ASTStmt *n2) : ASTLabeledStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTGotoLabeledStmt(ASTId *n1, ASTStmt *n2);
+  string to_str() override { return "GotoLabel"; }
 };
 
 class ASTCaseLabeledStmt : public ASTLabeledStmt {
 public:
-  ASTCaseLabeledStmt(ASTCondExpr *n1, ASTStmt *n2) : ASTLabeledStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTCaseLabeledStmt(ASTCondExpr *n1, ASTStmt *n2);
+  string to_str() override { return "CaseLabel"; }
 };
 
 class ASTDefLabeledStmt : public ASTLabeledStmt {
 public:
-  ASTDefLabeledStmt(ASTStmt *n) : ASTLabeledStmt() { this->add_child(n); }
+  ASTDefLabeledStmt(ASTStmt *n);
+  string to_str() override { return "DefaultCaseLabel"; }
 };
-
-// /////////////////////////////////////////////////
 
 class ASTBlockItem : public ASTNode {
 public:
-  ASTBlockItem(ASTDecl *n) : ASTNode() { this->add_child(n); }
-  ASTBlockItem(ASTStmt *n) : ASTNode() { this->add_child(n); }
+  ASTBlockItem(ASTDecl *n);
+  ASTBlockItem(ASTStmt *n);
+  string to_str() override { return "Block"; }
 };
 
 class ASTBlockItemList : public ASTStmt {
 public:
-  ASTBlockItemList(ASTBlockItem *n) : ASTStmt() { this->add_child(n); }
-  ASTBlockItemList(ASTBlockItemList *n1, ASTBlockItem *n2) : ASTStmt() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTBlockItemList(ASTBlockItem *n);
+  ASTBlockItemList(ASTBlockItemList *n1, ASTBlockItem *n2);
+  string to_str() override { return "BlockList"; }
 };
 
 class ASTPtr : public ASTNode {
 public:
   ASTPtr();
-  ASTPtr(ASTPtr *n) : ASTNode() { this->add_child(n); }
+  ASTPtr(ASTPtr *n);
+  string to_str() override { return "*Pointer"; }
 };
 
-class ASTDirectDeclarator : public ASTNode {};
+class ASTDirectDeclarator : public ASTNode {
+  public:
+  ASTDirectDeclarator() : ASTNode(){}
+};
 
 class ASTIdDeclarator : public ASTDirectDeclarator {
 public:
-  ASTIdDeclarator(ASTId *n) : ASTDirectDeclarator() { this->add_child(n); }
+  ASTIdDeclarator(ASTId *n);
+  string to_str() override {return "IdDeclarator";}
 };
 
 class ASTParamDecl : public ASTNode {
 public:
-  ASTParamDecl(ASTDeclSpec *n1, ASTDirectDeclarator *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-  ASTParamDecl(ASTDeclSpec *n) : ASTNode() { this->add_child(n); }
+  ASTParamDecl(ASTDeclSpec *n1, ASTDirectDeclarator *n2);
+  ASTParamDecl(ASTDeclSpec *n);
+  string to_str() override { return "ParameterDeclaration"; }
 };
 
 class ASTParamList : public ASTNode {
 public:
-  ASTParamList(ASTParamDecl *n) : ASTNode() { this->add_child(n); }
-  ASTParamList(ASTParamList *n1, ASTParamDecl *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTParamList(ASTParamDecl *n);
+  ASTParamList(ASTParamList *n1, ASTParamDecl *n2);
+  string to_str() override { return "ParameterList"; }
 };
 
 class ASTFnDeclarator : public ASTDirectDeclarator {
 public:
-  ASTFnDeclarator(ASTDirectDeclarator *n1, ASTParamList *n2)
-      : ASTDirectDeclarator() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-  ASTFnDeclarator(ASTDirectDeclarator *n) : ASTDirectDeclarator() {
-    this->add_child(n);
-  }
+  ASTFnDeclarator(ASTDirectDeclarator *n1, ASTParamList *n2);
+  ASTFnDeclarator(ASTDirectDeclarator *n);
+  string to_str() override { return "FunctionDeclarator"; }
 };
 
 class ASTFnCallDeclarator : public ASTDirectDeclarator {
 public:
-  ASTFnCallDeclarator(ASTDirectDeclarator *n1, ASTIdList *n2)
-      : ASTDirectDeclarator() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
+  ASTFnCallDeclarator(ASTDirectDeclarator *n1, ASTIdList *n2);
+  string to_str() override { return "FunctionCallDeclarator"; }
 };
-
-class ASTDeclList : public ASTNode {
-public:
-  ASTDeclList() : ASTNode() {}
-  ASTDeclList(ASTDeclList *n1, ASTDecl *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-
-  string to_str() override { return "ASTDeclList"; }
-};
-
-class ASTFnDef : public ASTNode {
-public:
-  ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2, ASTDeclList *n3,
-           ASTBlockItemList *n4)
-      : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-    this->add_child(n4);
-  }
-  ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2, ASTBlockItemList *n3)
-      : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
-
-  string to_str() override { return "ASTFnDef"; }
-};
-
-ASTDeclSpec::ASTDeclSpec(ASTType *n) : ASTNode() { this->add_child(n); }
-ASTDeclSpec::ASTDeclSpec(ASTType *n1, ASTDeclSpec *n2) : ASTNode() {
-  this->add_child(n1);
-  this->add_child(n2);
-}
-
-ASTDecl::ASTDecl(ASTDeclSpec *n) : ASTNode() {}
-ASTDecl::ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2) : ASTNode() {}
-
-class ASTDesignator : public ASTNode {
-public:
-  ASTDesignator(ASTCondExpr *n) : ASTNode() { this->add_child(n); }
-  ASTDesignator(ASTId *n) : ASTNode() { this->add_child(n); }
-};
-
-class ASTDesignatorList : public ASTNode {
-public:
-  ASTDesignatorList(ASTDesignator *n) : ASTNode() { this->add_child(n); }
-  ASTDesignatorList(ASTDesignatorList *n1, ASTDesignator *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-};
-
-class ASTInitializerList : public ASTNode {
-public:
-  ASTInitializerList(ASTDesignatorList *n1, ASTInitializer *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-  ASTInitializerList(ASTInitializer *n) : ASTNode() { this->add_child(n); }
-  ASTInitializerList(ASTInitializerList *n1, ASTDesignatorList *n2,
-                     ASTInitializer *n3)
-      : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-    this->add_child(n3);
-  }
-  ASTInitializerList(ASTInitializerList *n1, ASTInitializer *n2);
-};
-
-ASTInitializer::ASTInitializer(ASTInitializerList *n) : ASTNode() {
-  this->add_child(n);
-}
-ASTInitializer::ASTInitializer(ASTAssignmentExpr *n) : ASTNode() {
-  this->add_child(n);
-}
-
-class ASTInitDecl : public ASTNode {
-public:
-  ASTInitDecl(ASTDirectDeclarator *n1, ASTInitializer *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-  ASTInitDecl(ASTDirectDeclarator *n) : ASTNode() { this->add_child(n); }
-};
-
-ASTInitDeclList::ASTInitDeclList(ASTInitDecl *n) : ASTNode() {
-  this->add_child(n);
-}
-ASTInitDeclList::ASTInitDeclList(ASTInitDeclList *n1, ASTInitDecl *n2)
-    : ASTNode() {
-  this->add_child(n1);
-  this->add_child(n2);
-}
 
 class ASTExternDecl : public ASTNode {
 public:
-  ASTExternDecl(ASTFnDef *n) : ASTNode() { this->add_child(n); }
-  ASTExternDecl(ASTDecl *n) : ASTNode() { this->add_child(n); }
-
+  ASTExternDecl(ASTFnDef *n);
+  ASTExternDecl(ASTDecl *n);
   string to_str() override { return "ASTExternDecl"; }
 };
 
 class ASTProgram : public ASTNode {
 public:
-  ASTProgram(ASTExternDecl *n1) : ASTNode() { this->add_child(n1); }
-  ASTProgram(ASTProgram *n1, ASTExternDecl *n2) : ASTNode() {
-    this->add_child(n1);
-    this->add_child(n2);
-  }
-
-  virtual string to_str() override { return "ASTProgram"; }
+  ASTProgram(ASTExternDecl *n1);
+  ASTProgram(ASTProgram *n1, ASTExternDecl *n2);
+  string to_str() { return "Program"; }
 };
+
+#endif /* AST_HPP_INCLUDED */

@@ -4,6 +4,7 @@
 #include "c.tab.hpp"
 
 extern "C" int yylex();
+extern ASTNode *program_ast;
 int yyparse();
 extern "C" FILE *yyin;
 
@@ -24,5 +25,6 @@ main(int argc, char **argv)
   assert(yyin);
   int ret = yyparse();
   printf("retv = %d\n", ret);
+  program_ast->dump_ast(0);
   exit(0);
 }

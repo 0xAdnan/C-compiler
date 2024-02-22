@@ -1,14 +1,11 @@
 %{
 #include <cstdio>
 #include <iostream>
-#ifndef __TYPES_HPP_INCLUDED__
-#define __TYPES_HPP_INCLUDED__
-#include "ast.hpp"
-#endif
 
+#include "ast1.hpp"
 using namespace std;
 
-ASTNode* program_ast;
+ASTNode* program_ast = NULL;
 
 // stuff from flex that bison needs to know about:
 extern "C" int yylex();
@@ -40,10 +37,7 @@ void todo(int);
 %start translation_unit
 
 %code requires {
-#ifndef __TYPES_HPP_INCLUDED__
-#define __TYPES_HPP_INCLUDED__
-#include "ast.hpp"
-#endif
+#include "ast1.hpp"
 }
 
 %union value {
@@ -157,125 +151,125 @@ void todo(int);
 %%
 
 primary_expression
-	: IDENTIFIER                                                                { $$ = new ASTPrimaryExpr(new ASTId()); }
-	| constant                                                                  { $$ = new ASTPrimaryExpr($1); }
-	| string                                                                    { $$ = new ASTPrimaryExpr($1); }
-	| '(' expression ')'                                                        { $$ = new ASTPrimaryExpr($2); }
+	: IDENTIFIER                                                                     { $$ = new ASTPrimaryExpr(new ASTId()); }
+	| constant                                                                       { $$ = new ASTPrimaryExpr($1); }
+	| string                                                                         { $$ = new ASTPrimaryExpr($1); }
+	| '(' expression ')'                                                             { $$ = new ASTPrimaryExpr($2); }
 	;
 
 constant
-	: I_CONSTANT		/* includes character_constant */                           { $$ = new ASTConst(i_const); }
-	| F_CONSTANT                                                                { $$ = new ASTConst(f_const); }
+	: I_CONSTANT		/* includes character_constant */                                { $$ = new ASTConst(i_const); }
+	| F_CONSTANT                                                                     { $$ = new ASTConst(f_const); }
 	;
 
 string
-	: STRING_LITERAL                                                            { $$ = new ASTStrLiteralConst(); }
-	| FUNC_NAME                                                                 { $$ = new ASTFuncNameConst(); }
+	: STRING_LITERAL                                                                 { $$ = new ASTStrLiteralConst(); }
+	| FUNC_NAME                                                                      { $$ = new ASTFuncNameConst(); }
 	;
 
 postfix_expression
-	: primary_expression                                                        { $$ = new ASTPostExpr($1); }
-	| postfix_expression '[' expression ']'                                     { $$ = new ASTPostExpr($1, $3); }
-	| postfix_expression '(' ')'                                                { $$ = new ASTPostExpr($1); }
-	| postfix_expression '(' argument_expression_list ')'                       { $$ = new ASTPostExpr($1, $3); }
-	| postfix_expression '.' IDENTIFIER                                         { $$ = new ASTPostExpr($1, new ASTPtrOp(dot_op), new ASTId()); }
-	| postfix_expression PTR_OP IDENTIFIER                                      { $$ = new ASTPostExpr($1, new ASTPtrOp(ptr_op), new ASTId()); }
-	| postfix_expression INC_OP                                                 { $$ = new ASTPostExpr($1, new ASTIncOp(plus_plus)); }
-	| postfix_expression DEC_OP                                                 { $$ = new ASTPostExpr($1, new ASTIncOp(minus_minus)); }
-	| '(' type_name ')' '{' initializer_list '}'                                { todo(84); }
-	| '(' type_name ')' '{' initializer_list ',' '}'                            { todo(85); }
+	: primary_expression                                                             { $$ = new ASTPostExpr($1); }
+	| postfix_expression '[' expression ']'                                          { $$ = new ASTPostExpr($1, $3); }
+	| postfix_expression '(' ')'                                                     { $$ = new ASTPostExpr($1); }
+	| postfix_expression '(' argument_expression_list ')'                            { $$ = new ASTPostExpr($1, $3); }
+	| postfix_expression '.' IDENTIFIER                                              { $$ = new ASTPostExpr($1, new ASTPtrOp(dot_op), new ASTId()); }
+	| postfix_expression PTR_OP IDENTIFIER                                           { $$ = new ASTPostExpr($1, new ASTPtrOp(ptr_op), new ASTId()); }
+	| postfix_expression INC_OP                                                      { $$ = new ASTPostExpr($1, new ASTIncOp(plus_plus)); }
+	| postfix_expression DEC_OP                                                      { $$ = new ASTPostExpr($1, new ASTIncOp(minus_minus)); }
+	| '(' type_name ')' '{' initializer_list '}'                                     { todo(84); }
+	| '(' type_name ')' '{' initializer_list ',' '}'                                 { todo(85); }
 	;
 
 argument_expression_list
-	: assignment_expression                                                     { $$ = new ASTArgExpList($1); }
-	| argument_expression_list ',' assignment_expression                        { $$ = new ASTArgExpList($1, $3); }
+	: assignment_expression                                                          { $$ = new ASTArgExpList($1); }
+	| argument_expression_list ',' assignment_expression                             { $$ = new ASTArgExpList($1, $3); }
 	;
 
 unary_expression
-	: postfix_expression                                                        { $$ = new ASTUnaryExpr($1); }
-	| INC_OP unary_expression                                                   { $$ = new ASTUnaryExpr(new ASTIncOp(plus_plus), $2); }
-	| DEC_OP unary_expression                                                   { $$ = new ASTUnaryExpr(new ASTIncOp(minus_minus), $2); }
-	| unary_operator cast_expression                                            { $$ = new ASTUnaryExpr($1, $2); }
-	| SIZEOF unary_expression                                                   { todo(98); }
-	| SIZEOF '(' type_name ')'                                                  { todo(99); }
-	| ALIGNOF '(' type_name ')'                                                 { todo(100); }
+	: postfix_expression                                                             { $$ = new ASTUnaryExpr($1); }
+	| INC_OP unary_expression                                                        { $$ = new ASTUnaryExpr(new ASTIncOp(plus_plus), $2); }
+	| DEC_OP unary_expression                                                        { $$ = new ASTUnaryExpr(new ASTIncOp(minus_minus), $2); }
+	| unary_operator cast_expression                                                 { $$ = new ASTUnaryExpr($1, $2); }
+	| SIZEOF unary_expression                                                        { todo(98); }
+	| SIZEOF '(' type_name ')'                                                       { todo(99); }
+	| ALIGNOF '(' type_name ')'                                                      { todo(100); }
 	;
 
 unary_operator
-	: '&'                                                                       { $$ = new ASTUnaryOp(u_op_and); }
-	| '*'                                                                       { $$ = new ASTUnaryOp(u_op_star); }
-	| '+'                                                                       { $$ = new ASTUnaryOp(u_op_plus); }
-	| '-'                                                                       { $$ = new ASTUnaryOp(u_op_minus); }
-	| '~'                                                                       { $$ = new ASTUnaryOp(u_op_tilde); }
-	| '!'                                                                       { $$ = new ASTUnaryOp(u_op_not); }
+	: '&'                                                                            { $$ = new ASTUnaryOp(u_op_and); }
+	| '*'                                                                            { $$ = new ASTUnaryOp(u_op_star); }
+	| '+'                                                                            { $$ = new ASTUnaryOp(u_op_plus); }
+	| '-'                                                                            { $$ = new ASTUnaryOp(u_op_minus); }
+	| '~'                                                                            { $$ = new ASTUnaryOp(u_op_tilde); }
+	| '!'                                                                            { $$ = new ASTUnaryOp(u_op_not); }
 	;
 
 cast_expression
-	: unary_expression                                                          { $$ = $1; }
-	| '(' type_name ')' cast_expression                                         { todo(160); }
+	: unary_expression                                                               { $$ = $1; }
+	| '(' type_name ')' cast_expression                                              { todo(160); }
 	;
 
 multiplicative_expression
-	: cast_expression                                                            { $$ = new ASTMulExpr($1); }
-	| multiplicative_expression '*' cast_expression                              { $$ = new ASTMulExpr($1, new ASTArithOp(mul_op), $3); }
-	| multiplicative_expression '/' cast_expression                              { $$ = new ASTMulExpr($1, new ASTArithOp(div_op), $3); } 
-	| multiplicative_expression '%' cast_expression                              { $$ = new ASTMulExpr($1, new ASTArithOp(remainder_op), $3); }
+	: cast_expression                                                                { $$ = new ASTMulExpr($1); }
+	| multiplicative_expression '*' cast_expression                                  { $$ = new ASTMulExpr($1, new ASTArithOp(mul_op), $3); }
+	| multiplicative_expression '/' cast_expression                                  { $$ = new ASTMulExpr($1, new ASTArithOp(div_op), $3); } 
+	| multiplicative_expression '%' cast_expression                                  { $$ = new ASTMulExpr($1, new ASTArithOp(remainder_op), $3); }
 	;
 
 additive_expression
-	: multiplicative_expression                                                   { $$ = new ASTAddExpr($1); }
-	| additive_expression '+' multiplicative_expression                           { $$ = new ASTAddExpr($1, new ASTArithOp(add_op), $3); }
-	| additive_expression '-' multiplicative_expression                           { $$ = new ASTAddExpr($1, new ASTArithOp(minus_op), $3); }
+	: multiplicative_expression                                                      { $$ = new ASTAddExpr($1); }
+	| additive_expression '+' multiplicative_expression                              { $$ = new ASTAddExpr($1, new ASTArithOp(add_op), $3); }
+	| additive_expression '-' multiplicative_expression                              { $$ = new ASTAddExpr($1, new ASTArithOp(minus_op), $3); }
 	;
 
 shift_expression
-	: additive_expression                                                          { $$ = new ASTShiftExpr($1); }
-	| shift_expression LEFT_OP additive_expression                                 { $$ = new ASTShiftExpr($1, new ASTShiftOp(left_shift_op), $3); }
-	| shift_expression RIGHT_OP additive_expression                                { $$ = new ASTShiftExpr($1, new ASTShiftOp(right_shift_op), $3); }
+	: additive_expression                                                            { $$ = new ASTShiftExpr($1); }
+	| shift_expression LEFT_OP additive_expression                                   { $$ = new ASTShiftExpr($1, new ASTShiftOp(left_shift_op), $3); }
+	| shift_expression RIGHT_OP additive_expression                                  { $$ = new ASTShiftExpr($1, new ASTShiftOp(right_shift_op), $3); }
 	;
 
 relational_expression
-	: shift_expression                                                             { $$ = new ASTRelExpr($1); }
-	| relational_expression '<' shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(less_op), $3); }
-	| relational_expression '>' shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(greater_op), $3); }
-	| relational_expression LE_OP shift_expression                                 { $$ = new ASTRelExpr($1, new ASTRelOp(less_eq), $3); }
-	| relational_expression GE_OP shift_expression                                 { $$ = new ASTRelExpr($1, new ASTRelOp(greater_eq), $3); }
+	: shift_expression                                                               { $$ = new ASTRelExpr($1); }
+	| relational_expression '<' shift_expression                                     { $$ = new ASTRelExpr($1, new ASTRelOp(less_op), $3); }
+	| relational_expression '>' shift_expression                                     { $$ = new ASTRelExpr($1, new ASTRelOp(greater_op), $3); }
+	| relational_expression LE_OP shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(less_eq), $3); }
+	| relational_expression GE_OP shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(greater_eq), $3); }
 	;
 
 equality_expression
-	: relational_expression                                                         { $$ = new ASTEqExpr($1); }
-	| equality_expression EQ_OP relational_expression                               { $$ = new ASTEqExpr($1, new ASTEqOp(eq_op), $3); }
-	| equality_expression NE_OP relational_expression                               { $$ = new ASTEqExpr($1, new ASTEqOp(neq_op), $3); }
+	: relational_expression                                                          { $$ = new ASTEqExpr($1); }
+	| equality_expression EQ_OP relational_expression                                { $$ = new ASTEqExpr($1, new ASTEqOp(eq_op), $3); }
+	| equality_expression NE_OP relational_expression                                { $$ = new ASTEqExpr($1, new ASTEqOp(neq_op), $3); }
 	;
 
 and_expression
-	: equality_expression                                                           { $$ = new ASTAndExpr($1); }
-	| and_expression '&' equality_expression                                        { $$ = new ASTAndExpr($1, $3); }
+	: equality_expression                                                            { $$ = new ASTAndExpr($1); }
+	| and_expression '&' equality_expression                                         { $$ = new ASTAndExpr($1, $3); }
 	;
 
 exclusive_or_expression
-	: and_expression                                                                { $$ = new ASTExclusiveOrExpr($1); }
-	| exclusive_or_expression '^' and_expression                                    { $$ = new ASTExclusiveOrExpr($1, $3); }
+	: and_expression                                                                 { $$ = new ASTExclusiveOrExpr($1); }
+	| exclusive_or_expression '^' and_expression                                     { $$ = new ASTExclusiveOrExpr($1, $3); }
 	;
 
 inclusive_or_expression
-	: exclusive_or_expression                                                       { $$ = new ASTInclusiveOrExpr($1); }
-	| inclusive_or_expression '|' exclusive_or_expression                           { $$ = new ASTInclusiveOrExpr($1, $3); }
+	: exclusive_or_expression                                                        { $$ = new ASTInclusiveOrExpr($1); }
+	| inclusive_or_expression '|' exclusive_or_expression                            { $$ = new ASTInclusiveOrExpr($1, $3); }
 	;
 
 logical_and_expression
-	: inclusive_or_expression                                                       { $$ = new ASTLogicalAndExpr($1); }
-	| logical_and_expression AND_OP inclusive_or_expression                         { $$ = new ASTLogicalAndExpr($1, $3); }
+	: inclusive_or_expression                                                        { $$ = new ASTLogicalAndExpr($1); }
+	| logical_and_expression AND_OP inclusive_or_expression                          { $$ = new ASTLogicalAndExpr($1, $3); }
 	;
 
 logical_or_expression
-	: logical_and_expression                                                        { $$ = new ASTLogicalOrExpr($1); }
-	| logical_or_expression OR_OP logical_and_expression                            { $$ = new ASTLogicalOrExpr($1, $3); }
+	: logical_and_expression                                                         { $$ = new ASTLogicalOrExpr($1); }
+	| logical_or_expression OR_OP logical_and_expression                             { $$ = new ASTLogicalOrExpr($1, $3); }
 	;
 
 conditional_expression
-	: logical_or_expression                                                         { $$ = new ASTCondExpr($1); }
-	| logical_or_expression '?' expression ':' conditional_expression               { $$ = new ASTCondExpr($1, $3, $5); }
+	: logical_or_expression                                                          { $$ = new ASTCondExpr($1); }
+	| logical_or_expression '?' expression ':' conditional_expression                { $$ = new ASTCondExpr($1, $3, $5); }
 	;
 
 assignment_expression
@@ -416,108 +410,116 @@ direct_abstract_declarator
 	;
 
 initializer
-	: '{' initializer_list '}'                                    { $$ = new ASTInitializer($2); }
-	| '{' initializer_list ',' '}'                                { $$ = new ASTInitializer($2); }
-	| assignment_expression                                       { $$ = new ASTInitializer($1); }
+	: '{' initializer_list '}'                                                          { $$ = new ASTInitializer($2); }
+	| '{' initializer_list ',' '}'                                                      { $$ = new ASTInitializer($2); }
+	| assignment_expression                                                             { $$ = new ASTInitializer($1); }
 	;
 
 initializer_list
-	: designation initializer                                     { $$ = new ASTInitializerList($1, $2); }
-	| initializer                                                 { $$ = new ASTInitializerList($1); }
-	| initializer_list ',' designation initializer                { $$ = new ASTInitializerList($1, $3, $4); }
-	| initializer_list ',' initializer                            { $$ = new ASTInitializerList($1, $3); }
+	: designation initializer                                                           { $$ = new ASTInitializerList($1, $2); }
+	| initializer                                                                       { $$ = new ASTInitializerList($1); }
+	| initializer_list ',' designation initializer                                      { $$ = new ASTInitializerList($1, $3, $4); }
+	| initializer_list ',' initializer                                                  { $$ = new ASTInitializerList($1, $3); }
 
 	;
 designation
-	: designator_list '='                                         { $$ = $1; }
+	: designator_list '='                                                               { $$ = $1; }
 	;
 
 designator_list
-	: designator                                                  { $$ = new ASTDesignatorList($1); }
-	| designator_list designator                                  { $$ = new ASTDesignatorList($1, $2); }
+	: designator                                                                        { $$ = new ASTDesignatorList($1); }
+	| designator_list designator                                                        { $$ = new ASTDesignatorList($1, $2); }
 	;
 
 designator
-	: '[' constant_expression ']'                                 { $$ = new ASTDesignator($2); }
-	| '.' IDENTIFIER                                              { $$ = new ASTDesignator(new ASTId()); }
+	: '[' constant_expression ']'                                                       { $$ = new ASTDesignator($2); }
+	| '.' IDENTIFIER                                                                    { $$ = new ASTDesignator(new ASTId()); }
 	;
 
 statement
-	: labeled_statement                                           { $$ = $1; }
-	| compound_statement                                          { $$ = $1; }
-	| expression_statement                                        { $$ = $1; }
-	| selection_statement                                         { $$ = $1; }
-	| iteration_statement                                         { $$ = $1; }
-	| jump_statement                                              { $$ = $1; }
+	: labeled_statement                                                                 { $$ = $1; }
+	| compound_statement                                                                { $$ = $1; }
+	| expression_statement                                                              { $$ = $1; }
+	| selection_statement                                                               { $$ = $1; }
+	| iteration_statement                                                               { $$ = $1; }
+	| jump_statement                                                                    { $$ = $1; }
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement                                    { $$ = new ASTGotoLabeledStmt(new ASTId(), $3); }
-	| CASE constant_expression ':' statement                      { $$ = new ASTCaseLabeledStmt($2, $4); }
-	| DEFAULT ':' statement                                       { $$ = new ASTDefLabeledStmt($3); } 
+	: IDENTIFIER ':' statement                                                          { $$ = new ASTGotoLabeledStmt(new ASTId(), $3); }
+	| CASE constant_expression ':' statement                                            { $$ = new ASTCaseLabeledStmt($2, $4); }
+	| DEFAULT ':' statement                                                             { $$ = new ASTDefLabeledStmt($3); } 
 	;
 
 compound_statement
-	: '{' '}'                                                     { $$ = NULL; }
-	| '{'  block_item_list '}'                                    { $$ = $2; }
+	: '{' '}'                                                                           { $$ = NULL; }
+	| '{'  block_item_list '}'                                                          { $$ = $2; }
 	;
 
 block_item_list
-	: block_item                                                  { $$ = new ASTBlockItemList($1); }
-	| block_item_list block_item                                  { $$ = new ASTBlockItemList($1, $2); }
+	: block_item                                                                        { $$ = new ASTBlockItemList($1); }
+	| block_item_list block_item                                                        { $$ = new ASTBlockItemList($1, $2); }
 	;
 
 block_item
-	: declaration                                                 { $$ = new ASTBlockItem($1); }
-	| statement                                                   { $$ = new ASTBlockItem($1); }
+	: declaration                                                                       { $$ = new ASTBlockItem($1); }
+	| statement                                                                         { $$ = new ASTBlockItem($1); }
 	;
 
 expression_statement
-	: ';'                                                         { $$ = NULL; }
-	| expression ';'                                              { $$ = $1; }
+	: ';'                                                                               { $$ = NULL; }
+	| expression ';'                                                                    { $$ = $1; }
 	;
 
 selection_statement
-	: IF '(' expression ')' statement ELSE statement                                { $$ = new ASTIfElseSelectStmt($3, $5, $7); }
-	| IF '(' expression ')' statement                                               { $$ = new ASTIfSelectStmt($3, $5); }
-	| SWITCH '(' expression ')' statement                                           { $$ = new ASTSwitchStmt($3, $5); }
+	: IF '(' expression ')' statement ELSE statement                                    { $$ = new ASTIfElseSelectStmt($3, $5, $7); }
+	| IF '(' expression ')' statement                                                   { $$ = new ASTIfSelectStmt($3, $5); }
+	| SWITCH '(' expression ')' statement                                               { $$ = new ASTSwitchStmt($3, $5); }
 	;
 
 iteration_statement
-	: WHILE '(' expression ')' statement                                            { $$ = new ASTWhileStmt($3, $5); }
-	| DO statement WHILE '(' expression ')' ';'                                     { $$ = new ASTDoWhileStmt($2, $5); }
-	| FOR '(' expression_statement expression_statement ')' statement               { $$ = new ASTForStmt($3, $4, $6); }
-	| FOR '(' expression_statement expression_statement expression ')' statement    { $$ = new ASTForStmt($3, $4, $5, $7); }
-	| FOR '(' declaration expression_statement ')' statement                        { $$ = new ASTForStmt($3, $4, $6); }
-	| FOR '(' declaration expression_statement expression ')' statement             { $$ = new ASTForStmt($3, $4, $5, $7); }
+	: WHILE '(' expression ')' statement                                                { $$ = new ASTWhileStmt($3, $5); }
+	| DO statement WHILE '(' expression ')' ';'                                         { $$ = new ASTDoWhileStmt($2, $5); }
+	| FOR '(' expression_statement expression_statement ')' statement                   { $$ = new ASTForStmt($3, $4, $6); }
+	| FOR '(' expression_statement expression_statement expression ')' statement        { $$ = new ASTForStmt($3, $4, $5, $7); }
+	| FOR '(' declaration expression_statement ')' statement                            { $$ = new ASTForStmt($3, $4, $6); }
+	| FOR '(' declaration expression_statement expression ')' statement                 { $$ = new ASTForStmt($3, $4, $5, $7); }
 	;
 
 jump_statement
-  : GOTO IDENTIFIER ';'                                                           { $$ = new ASTGotoJmpStmt(new ASTId()); }
-	| CONTINUE ';'                                                                  { $$ = new ASTContJmpStmt(); }
-  | BREAK ';'                                                                     { $$ = new ASTBreakJmpStmt(); }
-	| RETURN ';'                                                                    { $$ = new ASTRetJmpStmt(); }
-	| RETURN expression ';'                                                         { $$ = new ASTRetJmpStmt($2); }
+  : GOTO IDENTIFIER ';'                                                               { $$ = new ASTGotoJmpStmt(new ASTId()); }
+	| CONTINUE ';'                                                                      { $$ = new ASTContJmpStmt(); }
+  | BREAK ';'                                                                         { $$ = new ASTBreakJmpStmt(); }
+	| RETURN ';'                                                                        { $$ = new ASTRetJmpStmt(); }
+	| RETURN expression ';'                                                             { $$ = new ASTRetJmpStmt($2); }
 	;
 
 translation_unit
-	: external_declaration                                                          { $$ = new ASTProgram($1); program_ast = $$;}
-	| translation_unit external_declaration                                         { $$ = new ASTProgram($1, $2); program_ast = $$; }
+	: external_declaration
+	{
+		$$ = new ASTProgram($1);
+		program_ast = $$;
+	}
+	| translation_unit external_declaration
+	{
+		$$ = new ASTProgram($1, $2);
+		program_ast = $$;
+	}
 	;
 
 external_declaration
-	: function_definition                                                           { $$ = new ASTExternDecl($1); }
-	| declaration                                                                   { $$ = new ASTExternDecl($1); }
+	: function_definition                                                               { $$ = new ASTExternDecl($1); }
+	| declaration                                                                       { $$ = new ASTExternDecl($1); }
 	;
 
 function_definition
-	: declaration_specifiers declarator declaration_list compound_statement         { $$ = new ASTFnDef($1, $2, $3, $4); }
-	| declaration_specifiers declarator compound_statement                          { $$ = new ASTFnDef($1, $2, $3); }
+	: declaration_specifiers declarator declaration_list compound_statement             { $$ = new ASTFnDef($1, $2, $3, $4); }
+	| declaration_specifiers declarator compound_statement                              { $$ = new ASTFnDef($1, $2, $3); }
 	;
 
 declaration_list
-	: declaration                                                                   { $$ = new ASTDeclList(); }
-	| declaration_list declaration                                                  { $$ = new ASTDeclList($1, $2); }
+	: declaration                                                                       { $$ = new ASTDeclList(); }
+	| declaration_list declaration                                                      { $$ = new ASTDeclList($1, $2); }
 	;
 
 %%
