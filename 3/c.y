@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include "ast1.hpp"
+#include "ast.hpp"
 using namespace std;
 
 ASTNode* program_ast = NULL;
@@ -37,7 +37,7 @@ void todo(int);
 %start translation_unit
 
 %code requires {
-#include "ast1.hpp"
+#include "ast.hpp"
 }
 
 %union value {
