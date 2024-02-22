@@ -131,21 +131,21 @@ public:
   ASTAssignmentExpr(ASTCondExpr *n);
   ASTAssignmentExpr(ASTUnaryExpr *n1, ASTAssignmentOp *n2,
                     ASTAssignmentExpr *n3);
-  string to_str() override;
+  string to_str() override {return "AssignmentExpression";}
 };
 
 class ASTExpr : public ASTStmt {
 public:
   ASTExpr(ASTAssignmentExpr *n);
   ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
-  string to_str() override;
+  string to_str() override { return "Expression";}
 };
 
 class ASTInitDecl : public ASTNode {
 public:
   ASTInitDecl(ASTDirectDeclarator *n1, ASTInitializer *n2);
   ASTInitDecl(ASTDirectDeclarator *n);
-  string to_str() override;
+  string to_str() override {return "InitDeclaration";}
 };
 
 class ASTInitDeclList : public ASTNode {
@@ -159,7 +159,7 @@ class ASTInitializer : public ASTNode {
 public:
   ASTInitializer(ASTInitializerList *n);
   ASTInitializer(ASTAssignmentExpr *n);
-  string to_str() override;
+  string to_str() override { return "Initializer";}
 };
 
 class ASTType : public ASTNode {
@@ -554,7 +554,7 @@ public:
 class ASTPtr : public ASTNode {
 public:
   ASTPtr();
-  ASTPtr(ASTPtr *n) : ASTNode() { this->add_child(n); }
+  ASTPtr(ASTPtr *n);
   string to_str() override { return "*Pointer"; }
 };
 

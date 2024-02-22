@@ -431,11 +431,11 @@ ASTBlockItemList::ASTBlockItemList(ASTBlockItemList *n1, ASTBlockItem *n2) : AST
     this->add_child(n2);
 }
 
-// ASTPtr::ASTPtr() : ASTNode() {}
+ASTPtr::ASTPtr() : ASTNode() {}
 
-// ASTPtr::ASTPtr(ASTPtr *n) : ASTNode() {
-//     this->add_child(n);
-// }
+ASTPtr::ASTPtr(ASTPtr *n) : ASTNode() {
+    this->add_child(n);
+}
 
 // ASTDirectDeclarator::ASTDirectDeclarator() : ASTNode() {}
 
