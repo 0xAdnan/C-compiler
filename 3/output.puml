@@ -1,0 +1,821 @@
+@startuml
+
+
+
+
+
+/' Objects '/
+
+class ASTAddExpr {
+	+ASTAddExpr(ASTMulExpr* n)
+	+ASTAddExpr(ASTAddExpr* n1, ASTArithOp* n2, ASTMulExpr* n3)
+	+to_str() : string
+}
+
+
+class ASTAndExpr {
+	+ASTAndExpr(ASTEqExpr* n)
+	+ASTAndExpr(ASTAndExpr* n1, ASTEqExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTArgExpList {
+	+ASTArgExpList(ASTAssignmentExpr* n)
+	+ASTArgExpList(ASTArgExpList* n1, ASTAssignmentExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTArithOp {
+	+ASTArithOp(arith_op ap)
+	#ap : arith_op
+	+to_str() : string
+}
+
+
+class ASTAssignmentExpr {
+	+ASTAssignmentExpr(ASTCondExpr* n)
+	+ASTAssignmentExpr(ASTUnaryExpr* n1, ASTAssignmentOp* n2, ASTAssignmentExpr* n3)
+	+to_str() : string
+}
+
+
+class ASTAssignmentOp {
+	+ASTAssignmentOp(assignment_op ap)
+	#ap : assignment_op
+	+to_str() : string
+}
+
+
+class ASTBlockItem {
+	+ASTBlockItem(ASTDecl* n)
+	+ASTBlockItem(ASTStmt* n)
+	+to_str() : string
+}
+
+
+class ASTBlockItemList {
+	+ASTBlockItemList(ASTBlockItem* n)
+	+ASTBlockItemList(ASTBlockItemList* n1, ASTBlockItem* n2)
+	+to_str() : string
+}
+
+
+class ASTBreakJmpStmt {
+	+ASTBreakJmpStmt()
+	+to_str() : string
+}
+
+
+class ASTCaseLabeledStmt {
+	+ASTCaseLabeledStmt(ASTCondExpr* n1, ASTStmt* n2)
+	+to_str() : string
+}
+
+
+class ASTCondExpr {
+	+ASTCondExpr(ASTLogicalOrExpr* n)
+	+ASTCondExpr(ASTLogicalOrExpr* n1, ASTExpr* n2, ASTCondExpr* n3)
+	+to_str() : string
+}
+
+
+class ASTConst {
+	+ASTConst(const_type t)
+	#ct : const_type
+	+to_str() : string
+}
+
+
+class ASTContJmpStmt {
+	+ASTContJmpStmt()
+	+to_str() : string
+}
+
+
+class ASTDecl {
+	+ASTDecl(ASTDeclSpec* n)
+	+ASTDecl(ASTDeclSpec* n1, ASTInitDeclList* n2)
+	+to_str() : string
+}
+
+
+class ASTDeclList {
+	+ASTDeclList()
+	+ASTDeclList(ASTDeclList* n1, ASTDecl* n2)
+	+to_str() : string
+}
+
+
+class ASTDeclSpec {
+	+ASTDeclSpec(ASTType* n)
+	+ASTDeclSpec(ASTType* n1, ASTDeclSpec* n2)
+	+to_str() : string
+}
+
+
+class ASTDefLabeledStmt {
+	+ASTDefLabeledStmt(ASTStmt* n)
+	+to_str() : string
+}
+
+
+class ASTDesignator {
+	+ASTDesignator(ASTCondExpr* n)
+	+ASTDesignator(ASTId* n)
+	+to_str() : string
+}
+
+
+class ASTDesignatorList {
+	+ASTDesignatorList(ASTDesignator* n)
+	+ASTDesignatorList(ASTDesignatorList* n1, ASTDesignator* n2)
+	+to_str() : string
+}
+
+
+abstract class ASTDirectDeclarator {
+}
+
+
+class ASTDoWhileStmt {
+	+ASTDoWhileStmt(ASTStmt* n1, ASTExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTEqExpr {
+	+ASTEqExpr(ASTRelExpr* n)
+	+ASTEqExpr(ASTEqExpr* n1, ASTEqOp* n2, ASTRelExpr* n3)
+	+to_str() : string
+}
+
+
+class ASTEqOp {
+	+ASTEqOp(equal_op ep)
+	#ep : equal_op
+	+to_str() : string
+}
+
+
+class ASTExclusiveOrExpr {
+	+ASTExclusiveOrExpr(ASTAndExpr* n)
+	+ASTExclusiveOrExpr(ASTExclusiveOrExpr* n1, ASTAndExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTExpr {
+	+ASTExpr(ASTAssignmentExpr* n)
+	+ASTExpr(ASTExpr* n1, ASTAssignmentExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTExternDecl {
+	+ASTExternDecl(ASTFnDef* n)
+	+ASTExternDecl(ASTDecl* n)
+	+to_str() : string
+}
+
+
+class ASTFnCallDeclarator {
+	+ASTFnCallDeclarator(ASTDirectDeclarator* n1, ASTIdList* n2)
+	+to_str() : string
+}
+
+
+class ASTFnDeclarator {
+	+ASTFnDeclarator(ASTDirectDeclarator* n1, ASTParamList* n2)
+	+ASTFnDeclarator(ASTDirectDeclarator* n)
+	+to_str() : string
+}
+
+
+class ASTFnDef {
+	+ASTFnDef(ASTDeclSpec* n1, ASTDirectDeclarator* n2, ASTDeclList* n3, ASTBlockItemList* n4)
+	+ASTFnDef(ASTDeclSpec* n1, ASTDirectDeclarator* n2, ASTBlockItemList* n3)
+	+to_str() : string
+}
+
+
+class ASTForStmt {
+	+ASTForStmt(ASTExpr* n1, ASTExpr* n2, ASTStmt* n3)
+	+ASTForStmt(ASTExpr* n1, ASTExpr* n2, ASTExpr* n3, ASTStmt* n4)
+	+ASTForStmt(ASTDecl* n1, ASTExpr* n2, ASTStmt* n3)
+	+ASTForStmt(ASTDecl* n1, ASTExpr* n2, ASTExpr* n3, ASTStmt* n4)
+	+to_str() : string
+}
+
+
+class ASTFuncNameConst {
+	+ASTFuncNameConst()
+	+to_str() : string
+}
+
+
+class ASTGotoJmpStmt {
+	+ASTGotoJmpStmt(ASTId* n)
+	+to_str() : string
+}
+
+
+class ASTGotoLabeledStmt {
+	+ASTGotoLabeledStmt(ASTId* n1, ASTStmt* n2)
+	+to_str() : string
+}
+
+
+class ASTId {
+	+ASTId()
+	+to_str() : string
+}
+
+
+class ASTIdDeclarator {
+	+ASTIdDeclarator(ASTId* n)
+}
+
+
+class ASTIdList {
+	+ASTIdList(ASTId* n)
+	+ASTIdList(ASTIdList* n1, ASTId* n2)
+	+to_str() : string
+}
+
+
+class ASTIncOp {
+	+ASTIncOp(inc_op ip)
+	#ip : inc_op
+	+to_str() : string
+}
+
+
+class ASTInclusiveOrExpr {
+	+ASTInclusiveOrExpr(ASTExclusiveOrExpr* n)
+	+ASTInclusiveOrExpr(ASTInclusiveOrExpr* n1, ASTExclusiveOrExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTInitDecl {
+	+ASTInitDecl(ASTDirectDeclarator* n1, ASTInitializer* n2)
+	+ASTInitDecl(ASTDirectDeclarator* n)
+	+to_str() : string
+}
+
+
+class ASTInitDeclList {
+	+ASTInitDeclList(ASTInitDecl* n)
+	+ASTInitDeclList(ASTInitDeclList* n1, ASTInitDecl* n2)
+	+to_str() : string
+}
+
+
+class ASTInitializer {
+	+ASTInitializer(ASTInitializerList* n)
+	+ASTInitializer(ASTAssignmentExpr* n)
+	+to_str() : string
+}
+
+
+abstract class ASTInitializerList {
+	+ASTInitializerList(ASTDesignatorList* n1, ASTInitializer* n2)
+	+ASTInitializerList(ASTInitializer* n)
+	+ASTInitializerList(ASTInitializerList* n1, ASTDesignatorList* n2, ASTInitializer* n3)
+	+ASTInitializerList(ASTInitializerList* n1, ASTInitializer* n2)
+}
+
+
+class ASTIterStmt {
+}
+
+
+class ASTJmpStmt {
+}
+
+
+class ASTLabeledStmt {
+}
+
+
+class ASTLogicalAndExpr {
+	+ASTLogicalAndExpr(ASTInclusiveOrExpr* n)
+	+ASTLogicalAndExpr(ASTLogicalAndExpr* n1, ASTInclusiveOrExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTLogicalOrExpr {
+	+ASTLogicalOrExpr(ASTLogicalAndExpr* n)
+	+ASTLogicalOrExpr(ASTLogicalOrExpr* n1, ASTLogicalAndExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTMulExpr {
+	+ASTMulExpr(ASTUnaryExpr* n)
+	+ASTMulExpr(ASTMulExpr* n1, ASTArithOp* n2, ASTUnaryExpr* n3)
+	+to_str() : string
+}
+
+
+abstract class ASTNode {
+	#ASTNode()
+	#{abstract} to_str() : string
+	#children : vector<ASTNode*>
+	#add_child(ASTNode* child) : void
+	+dump_ast(int indent) : void
+}
+
+
+class ASTParamDecl {
+	+ASTParamDecl(ASTDeclSpec* n1, ASTDirectDeclarator* n2)
+	+ASTParamDecl(ASTDeclSpec* n)
+	+to_str() : string
+}
+
+
+class ASTParamList {
+	+ASTParamList(ASTParamDecl* n)
+	+ASTParamList(ASTParamList* n1, ASTParamDecl* n2)
+	+to_str() : string
+}
+
+
+class ASTPostExpr {
+	+ASTPostExpr(ASTPrimaryExpr* n)
+	+ASTPostExpr(ASTPostExpr* n1, ASTExpr* n2)
+	+ASTPostExpr(ASTPostExpr* n)
+	+ASTPostExpr(ASTPostExpr* n1, ASTArgExpList* n2)
+	+ASTPostExpr(ASTPostExpr* n1, ASTPtrOp* n2, ASTId* n3)
+	+ASTPostExpr(ASTPostExpr* n1, ASTIncOp* n2)
+	+to_str() : string
+}
+
+
+class ASTPrimaryExpr {
+	+ASTPrimaryExpr(ASTId* n)
+	+ASTPrimaryExpr(ASTConst* n)
+	+ASTPrimaryExpr(ASTStrConst* n)
+	+ASTPrimaryExpr(ASTExpr* n)
+	+to_str() : string
+}
+
+
+class ASTProgram {
+	+ASTProgram(ASTExternDecl* n1)
+	+ASTProgram(ASTProgram* n1, ASTExternDecl* n2)
+	+to_str() : string
+}
+
+
+class ASTPtr {
+	+ASTPtr()
+	+ASTPtr(ASTPtr* n)
+	+to_str() : string
+}
+
+
+class ASTPtrOp {
+	+ASTPtrOp(access_op ap)
+	#ap : access_op
+	+to_str() : string
+}
+
+
+class ASTRelExpr {
+	+ASTRelExpr(ASTShiftExpr* n)
+	+ASTRelExpr(ASTRelExpr* n1, ASTRelOp* n2, ASTShiftExpr* n3)
+	+to_str() : string
+}
+
+
+class ASTRelOp {
+	+ASTRelOp(rel_op rp)
+	#rp : rel_op
+	+to_str() : string
+}
+
+
+class ASTRetJmpStmt {
+	+ASTRetJmpStmt()
+	+ASTRetJmpStmt(ASTExpr* n)
+	+to_str() : string
+}
+
+
+class ASTSelectStmt {
+}
+
+
+class ASTShiftExpr {
+	+ASTShiftExpr(ASTAddExpr* n)
+	+ASTShiftExpr(ASTShiftExpr* n1, ASTShiftOp* n2, ASTAddExpr* n3)
+	+to_str() : string
+}
+
+
+class ASTShiftOp {
+	+ASTShiftOp(shift_op sp)
+	#sp : shift_op
+	+to_str() : string
+}
+
+
+abstract class ASTStmt {
+	#ASTStmt()
+}
+
+
+abstract class ASTStrConst {
+}
+
+
+class ASTStrLiteralConst {
+	+ASTStrLiteralConst()
+	+to_str() : string
+}
+
+
+class ASTSwitchStmt {
+	+ASTSwitchStmt(ASTExpr* n1, ASTStmt* n2)
+}
+
+
+class ASTType {
+	+ASTType(ttype t)
+	+to_str() : string
+	#t : ttype
+}
+
+
+class ASTUnaryExpr {
+	+ASTUnaryExpr(ASTPostExpr* n)
+	+ASTUnaryExpr(ASTIncOp* n1, ASTUnaryExpr* n2)
+	+ASTUnaryExpr(ASTUnaryOp* n1, ASTUnaryExpr* n2)
+	+to_str() : string
+}
+
+
+class ASTUnaryOp {
+	+ASTUnaryOp(unary_op up)
+	+to_str() : string
+	#up : unary_op
+}
+
+
+class ASTWhileStmt {
+	+ASTWhileStmt(ASTExpr* n1, ASTStmt* n2)
+	+to_str() : string
+}
+
+
+enum access_op {
+	dot_op
+	ptr_op
+}
+
+
+enum arith_op {
+	add_op
+	div_op
+	minus_op
+	mul_op
+	remainder_op
+}
+
+
+enum assignment_op {
+	add_assign
+	and_assign
+	assign
+	div_assign
+	left_assign
+	mod_assign
+	mul_assign
+	or_assign
+	right_assign
+	sub_assign
+	xor_assign
+}
+
+
+enum const_type {
+	f_const
+	i_const
+}
+
+
+enum equal_op {
+	eq_op
+	neq_op
+}
+
+
+enum inc_op {
+	minus_minus
+	plus_plus
+}
+
+
+enum rel_op {
+	greater_eq
+	greater_op
+	less_eq
+	less_op
+}
+
+
+enum shift_op {
+	left_shift_op
+	right_shift_op
+}
+
+
+enum ttype {
+	tbool
+	tchar
+	tcomplex
+	tdouble
+	tfloat
+	timaginary
+	tint
+	tlong
+	tshort
+	tsigned
+	tunsigned
+	tvoid
+}
+
+
+enum unary_op {
+	u_op_and
+	u_op_minus
+	u_op_not
+	u_op_plus
+	u_op_star
+	u_op_tilde
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+.ASTDirectDeclarator <|-- .ASTFnCallDeclarator
+
+
+.ASTDirectDeclarator <|-- .ASTFnDeclarator
+
+
+.ASTDirectDeclarator <|-- .ASTIdDeclarator
+
+
+.ASTIterStmt <|-- .ASTDoWhileStmt
+
+
+.ASTIterStmt <|-- .ASTForStmt
+
+
+.ASTIterStmt <|-- .ASTWhileStmt
+
+
+.ASTJmpStmt <|-- .ASTBreakJmpStmt
+
+
+.ASTJmpStmt <|-- .ASTContJmpStmt
+
+
+.ASTJmpStmt <|-- .ASTGotoJmpStmt
+
+
+.ASTJmpStmt <|-- .ASTRetJmpStmt
+
+
+.ASTLabeledStmt <|-- .ASTCaseLabeledStmt
+
+
+.ASTLabeledStmt <|-- .ASTDefLabeledStmt
+
+
+.ASTLabeledStmt <|-- .ASTGotoLabeledStmt
+
+
+.ASTNode <|-- .ASTAddExpr
+
+
+.ASTNode <|-- .ASTAndExpr
+
+
+.ASTNode <|-- .ASTArgExpList
+
+
+.ASTNode <|-- .ASTArithOp
+
+
+.ASTNode <|-- .ASTAssignmentExpr
+
+
+.ASTNode <|-- .ASTAssignmentOp
+
+
+.ASTNode <|-- .ASTBlockItem
+
+
+.ASTNode <|-- .ASTCondExpr
+
+
+.ASTNode <|-- .ASTConst
+
+
+.ASTNode <|-- .ASTDecl
+
+
+.ASTNode <|-- .ASTDeclList
+
+
+.ASTNode <|-- .ASTDeclSpec
+
+
+.ASTNode <|-- .ASTDesignator
+
+
+.ASTNode <|-- .ASTDesignatorList
+
+
+.ASTNode <|-- .ASTDirectDeclarator
+
+
+.ASTNode <|-- .ASTEqExpr
+
+
+.ASTNode <|-- .ASTEqOp
+
+
+.ASTNode <|-- .ASTExclusiveOrExpr
+
+
+.ASTNode <|-- .ASTExternDecl
+
+
+.ASTNode <|-- .ASTFnDef
+
+
+.ASTNode <|-- .ASTId
+
+
+.ASTNode <|-- .ASTIdList
+
+
+.ASTNode <|-- .ASTIncOp
+
+
+.ASTNode <|-- .ASTInclusiveOrExpr
+
+
+.ASTNode <|-- .ASTInitDecl
+
+
+.ASTNode <|-- .ASTInitDeclList
+
+
+.ASTNode <|-- .ASTInitializer
+
+
+.ASTNode <|-- .ASTInitializerList
+
+
+.ASTNode <|-- .ASTLogicalAndExpr
+
+
+.ASTNode <|-- .ASTLogicalOrExpr
+
+
+.ASTNode <|-- .ASTMulExpr
+
+
+.ASTNode <|-- .ASTParamDecl
+
+
+.ASTNode <|-- .ASTParamList
+
+
+.ASTNode <|-- .ASTPostExpr
+
+
+.ASTNode <|-- .ASTPrimaryExpr
+
+
+.ASTNode <|-- .ASTProgram
+
+
+.ASTNode <|-- .ASTPtr
+
+
+.ASTNode <|-- .ASTPtrOp
+
+
+.ASTNode <|-- .ASTRelExpr
+
+
+.ASTNode <|-- .ASTRelOp
+
+
+.ASTNode <|-- .ASTShiftExpr
+
+
+.ASTNode <|-- .ASTShiftOp
+
+
+.ASTNode <|-- .ASTStmt
+
+
+.ASTNode <|-- .ASTStrConst
+
+
+.ASTNode <|-- .ASTType
+
+
+.ASTNode <|-- .ASTUnaryExpr
+
+
+.ASTNode <|-- .ASTUnaryOp
+
+
+.ASTSelectStmt <|-- .ASTSwitchStmt
+
+
+.ASTStmt <|-- .ASTBlockItemList
+
+
+.ASTStmt <|-- .ASTExpr
+
+
+.ASTStmt <|-- .ASTIterStmt
+
+
+.ASTStmt <|-- .ASTJmpStmt
+
+
+.ASTStmt <|-- .ASTLabeledStmt
+
+
+.ASTStmt <|-- .ASTSelectStmt
+
+
+.ASTStrConst <|-- .ASTFuncNameConst
+
+
+.ASTStrConst <|-- .ASTStrLiteralConst
+
+
+
+
+
+/' Aggregation relationships '/
+
+.ASTArithOp *-- .arith_op
+
+
+.ASTAssignmentOp *-- .assignment_op
+
+
+.ASTConst *-- .const_type
+
+
+.ASTEqOp *-- .equal_op
+
+
+.ASTIncOp *-- .inc_op
+
+
+.ASTNode o-- .ASTNode
+
+
+.ASTPtrOp *-- .access_op
+
+
+.ASTRelOp *-- .rel_op
+
+
+.ASTShiftOp *-- .shift_op
+
+
+.ASTType *-- .ttype
+
+
+.ASTUnaryOp *-- .unary_op
+
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml
