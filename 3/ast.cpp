@@ -382,6 +382,16 @@ ASTRetJmpStmt::ASTRetJmpStmt() : ASTJmpStmt() {}
 ASTRetJmpStmt::ASTRetJmpStmt(ASTExpr *n) : ASTJmpStmt() {
     this->add_child(n);
 }
+ASTIfSelectStmt::ASTIfSelectStmt(ASTExpr *n1, ASTStmt *n2) : ASTSelectStmt() {
+    this->add_child(n1);
+    this->add_child(n2);
+}
+
+ASTIfElseSelectStmt::ASTIfElseSelectStmt(ASTExpr *n1, ASTStmt *n2, ASTStmt *n3) : ASTSelectStmt() {
+    this->add_child(n1);
+    this->add_child(n2);
+    this->add_child(n3);
+}
 
 ASTSwitchStmt::ASTSwitchStmt(ASTExpr *n1, ASTStmt *n2) : ASTSelectStmt() {
     this->add_child(n1);
@@ -429,9 +439,9 @@ ASTBlockItemList::ASTBlockItemList(ASTBlockItemList *n1, ASTBlockItem *n2) : AST
 
 // ASTDirectDeclarator::ASTDirectDeclarator() : ASTNode() {}
 
-// ASTIdDeclarator::ASTIdDeclarator(ASTId *n) : ASTDirectDeclarator() {
-//     this->add_child(n);
-// }
+ASTIdDeclarator::ASTIdDeclarator(ASTId *n) : ASTDirectDeclarator() {
+    this->add_child(n);
+}
 
 ASTParamDecl::ASTParamDecl(ASTDeclSpec *n1, ASTDirectDeclarator *n2) : ASTNode() {
     this->add_child(n1);
@@ -465,13 +475,13 @@ ASTFnCallDeclarator::ASTFnCallDeclarator(ASTDirectDeclarator *n1, ASTIdList *n2)
     this->add_child(n2);
 }
 
-// ASTExternDecl::ASTExternDecl(ASTFnDef *n) : ASTNode() {
-//     this->add_child(n);
-// }
+ASTExternDecl::ASTExternDecl(ASTFnDef *n) : ASTNode() {
+    this->add_child(n);
+}
 
-// ASTExternDecl::ASTExternDecl(ASTDecl *n) : ASTNode() {
-//     this->add_child(n);
-// }
+ASTExternDecl::ASTExternDecl(ASTDecl *n) : ASTNode() {
+    this->add_child(n);
+}
 
 ASTProgram::ASTProgram(ASTExternDecl *n) : ASTNode() {
     this->add_child(n);

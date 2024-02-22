@@ -498,9 +498,22 @@ public:
 
 class ASTSelectStmt : public ASTStmt {};
 
+class ASTIfSelectStmt : public ASTSelectStmt {
+public:
+  ASTIfSelectStmt(ASTExpr *n1, ASTStmt *n2);
+  string to_str() override { return "IfStatement"; }
+};
+
+class ASTIfElseSelectStmt : public ASTSelectStmt {
+public:
+  ASTIfElseSelectStmt(ASTExpr *n1, ASTStmt *n2, ASTStmt *n3);
+  string to_str() override { return "IfElseStatement"; }
+};
+
 class ASTSwitchStmt : public ASTSelectStmt {
 public:
   ASTSwitchStmt(ASTExpr *n1, ASTStmt *n2);
+  string to_str() override { return "SwitchStatement";}
 };
 
 /*  LABELED Statements */
@@ -549,7 +562,8 @@ class ASTDirectDeclarator : public ASTNode {};
 
 class ASTIdDeclarator : public ASTDirectDeclarator {
 public:
-  ASTIdDeclarator(ASTId *n) : ASTDirectDeclarator() { this->add_child(n); }
+  ASTIdDeclarator(ASTId *n);
+  string to_str() override {return "IdDeclarator";}
 };
 
 class ASTParamDecl : public ASTNode {
@@ -581,9 +595,8 @@ public:
 
 class ASTExternDecl : public ASTNode {
 public:
-  ASTExternDecl(ASTFnDef *n) : ASTNode() { this->add_child(n); }
-  ASTExternDecl(ASTDecl *n) : ASTNode() { this->add_child(n); }
-
+  ASTExternDecl(ASTFnDef *n);
+  ASTExternDecl(ASTDecl *n);
   string to_str() override { return "ASTExternDecl"; }
 };
 
