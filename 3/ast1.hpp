@@ -20,15 +20,21 @@ protected:
 
 public:
   void dump_ast(int indent) {
-    for (int i = 0; i < indent; i++)
+    auto myindent = indent;
+    for (int i = 0; i < myindent; i++)
       cout << "    ";
 
-    cout << this->to_str() << endl;
+    cout << this->to_str() << "[Children: " << children.size() << "]  {" << endl;
 
-    indent++;
+    auto child_indent = indent + 1;
     for (auto child : children) {
-      child->dump_ast(indent);
+      if(child!=NULL)
+        child->dump_ast(child_indent);
     }
+
+    for (int i = 0; i < myindent; i++)
+      cout << "    ";
+    cout << "}" << endl;
   }
 };
 
@@ -122,7 +128,7 @@ class ASTBlockItemList;
 class ASTInitDeclList;
 
 class ASTStmt : public ASTNode {
-protected:
+public:
   ASTStmt();
 };
 
@@ -558,7 +564,10 @@ public:
   string to_str() override { return "*Pointer"; }
 };
 
-class ASTDirectDeclarator : public ASTNode {};
+class ASTDirectDeclarator : public ASTNode {
+  public:
+  ASTDirectDeclarator() : ASTNode(){}
+};
 
 class ASTIdDeclarator : public ASTDirectDeclarator {
 public:

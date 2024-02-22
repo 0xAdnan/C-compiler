@@ -5,7 +5,7 @@
 #include "ast1.hpp"
 using namespace std;
 
-ASTNode* program_ast;
+ASTNode* program_ast = NULL;
 
 // stuff from flex that bison needs to know about:
 extern "C" int yylex();
@@ -495,8 +495,16 @@ jump_statement
 	;
 
 translation_unit
-	: external_declaration                                                              { $$ = new ASTProgram($1); program_ast = $$;}
-	| translation_unit external_declaration                                             { $$ = new ASTProgram($1, $2); program_ast = $$; }
+	: external_declaration
+	{
+		$$ = new ASTProgram($1);
+		program_ast = $$;
+	}
+	| translation_unit external_declaration
+	{
+		$$ = new ASTProgram($1, $2);
+		program_ast = $$;
+	}
 	;
 
 external_declaration
