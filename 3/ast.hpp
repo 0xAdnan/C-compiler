@@ -10,25 +10,33 @@ using namespace std;
 
 class ASTNode {
 protected:
-  vector<ASTNode *> children;
-
   ASTNode() { children = vector<ASTNode *>(); }
 
-  void add_child(ASTNode *child) { this->children.push_back(child); }
+  void add_child(ASTNode *child, bool allow_single = false) {
+    if (child == NULL)
+      return;
+    if (!allow_single && child->children.size() == 1)
+      this->children.push_back(child->children[0]);
+    else
+      this->children.push_back(child);
+  }
 
   virtual string to_str() = 0;
 
 public:
+  vector<ASTNode *> children;
+
   void dump_ast(int indent) {
     auto myindent = indent;
     for (int i = 0; i < myindent; i++)
       cout << "    ";
 
-    cout << this->to_str() << "[Children: " << children.size() << "]  {" << endl;
+    cout << this->to_str() << "[Children: " << children.size() << "]  {"
+         << endl;
 
     auto child_indent = indent + 1;
     for (auto child : children) {
-      if(child!=NULL)
+      if (child != NULL)
         child->dump_ast(child_indent);
     }
 
@@ -137,21 +145,21 @@ public:
   ASTAssignmentExpr(ASTCondExpr *n);
   ASTAssignmentExpr(ASTUnaryExpr *n1, ASTAssignmentOp *n2,
                     ASTAssignmentExpr *n3);
-  string to_str() override {return "AssignmentExpression";}
+  string to_str() override { return "AssignmentExpression"; }
 };
 
 class ASTExpr : public ASTStmt {
 public:
   ASTExpr(ASTAssignmentExpr *n);
   ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
-  string to_str() override { return "Expression";}
+  string to_str() override { return "Expression"; }
 };
 
 class ASTInitDecl : public ASTNode {
 public:
   ASTInitDecl(ASTDirectDeclarator *n1, ASTInitializer *n2);
   ASTInitDecl(ASTDirectDeclarator *n);
-  string to_str() override {return "InitDeclaration";}
+  string to_str() override { return "InitDeclaration"; }
 };
 
 class ASTInitDeclList : public ASTNode {
@@ -165,7 +173,7 @@ class ASTInitializer : public ASTNode {
 public:
   ASTInitializer(ASTInitializerList *n);
   ASTInitializer(ASTAssignmentExpr *n);
-  string to_str() override { return "Initializer";}
+  string to_str() override { return "Initializer"; }
 };
 
 class ASTType : public ASTNode {
@@ -519,7 +527,7 @@ public:
 class ASTSwitchStmt : public ASTSelectStmt {
 public:
   ASTSwitchStmt(ASTExpr *n1, ASTStmt *n2);
-  string to_str() override { return "SwitchStatement";}
+  string to_str() override { return "SwitchStatement"; }
 };
 
 /*  LABELED Statements */
@@ -565,14 +573,14 @@ public:
 };
 
 class ASTDirectDeclarator : public ASTNode {
-  public:
-  ASTDirectDeclarator() : ASTNode(){}
+public:
+  ASTDirectDeclarator() : ASTNode() {}
 };
 
 class ASTIdDeclarator : public ASTDirectDeclarator {
 public:
   ASTIdDeclarator(ASTId *n);
-  string to_str() override {return "IdDeclarator";}
+  string to_str() override { return "IdDeclarator"; }
 };
 
 class ASTParamDecl : public ASTNode {
