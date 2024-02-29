@@ -28,11 +28,16 @@ public:
 
   void dump_ast(int indent) {
     auto myindent = indent;
+    bool has_children = this->children.size() > 0;
+
     for (int i = 0; i < myindent; i++)
       cout << "    ";
 
-    cout << this->to_str() << "[Children: " << children.size() << "]  {"
-         << endl;
+    cout << this->to_str();
+
+    if (has_children) {
+      cout << "[Children: " << children.size() << "]  {" << endl;
+    }
 
     auto child_indent = indent + 1;
     for (auto child : children) {
@@ -40,25 +45,28 @@ public:
         child->dump_ast(child_indent);
     }
 
-    for (int i = 0; i < myindent; i++)
-      cout << "    ";
-    cout << "}" << endl;
+    if (has_children) {
+      for (int i = 0; i < myindent; i++)
+        cout << "    ";
+      cout << "}";
+    }
+    cout << endl;
   }
 };
 
 enum ttype {
-  tvoid,
-  tchar,
-  tshort,
-  tint,
-  tlong,
-  tfloat,
-  tdouble,
-  tsigned,
-  tunsigned,
-  tbool,
-  tcomplex,
-  timaginary
+  t_void,
+  t_char,
+  t_short,
+  t_int,
+  t_long,
+  t_float,
+  t_double,
+  t_signed,
+  t_unsigned,
+  t_bool,
+  t_complex,
+  t_imaginary
 };
 
 enum assignment_op {
@@ -201,9 +209,12 @@ public:
 };
 
 class ASTId : public ASTNode {
+protected:
+  string name;
+
 public:
-  ASTId();
-  string to_str() override { return "Identifier"; }
+  ASTId(string name);
+  string to_str() override { return "Identifier: " + name; }
 };
 
 class ASTDesignator : public ASTNode {
@@ -320,10 +331,17 @@ public:
 class ASTConst : public ASTNode {
 protected:
   const_type ct;
+  string value;
 
 public:
-  ASTConst(const_type t);
-  string to_str() override { return magic_enum::enum_name(ct).data(); }
+  ASTConst(const_type t, string value);
+  string to_str() override {
+    if (ct == const_type::i_const)
+      return "IntConst: " + value;
+    else if (ct == const_type::f_const)
+      return "FloatConst: " + value;
+    return "UnknownConst: " + value;
+  }
 };
 
 class ASTIdList : public ASTNode {

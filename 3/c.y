@@ -8,10 +8,12 @@ using namespace std;
 ASTNode* program_ast = NULL;
 
 // stuff from flex that bison needs to know about:
-extern "C" int yylex();
-int yyparse();
 extern "C" FILE *yyin;
+extern "C" char yytext[];
+
+extern "C" int yylex();
  
+int yyparse();
 void yyerror(const char *s);
 void todo(int);
 %}
@@ -151,15 +153,15 @@ void todo(int);
 %%
 
 primary_expression
-	: IDENTIFIER                                                                     { $$ = new ASTPrimaryExpr(new ASTId()); }
+	: IDENTIFIER                                                                     { $$ = new ASTPrimaryExpr(new ASTId(yytext)); }
 	| constant                                                                       { $$ = new ASTPrimaryExpr($1); }
 	| string                                                                         { $$ = new ASTPrimaryExpr($1); }
 	| '(' expression ')'                                                             { $$ = new ASTPrimaryExpr($2); }
 	;
 
 constant
-	: I_CONSTANT		/* includes character_constant */                                { $$ = new ASTConst(i_const); }
-	| F_CONSTANT                                                                     { $$ = new ASTConst(f_const); }
+	: I_CONSTANT		/* includes character_constant */                                { $$ = new ASTConst(i_const, yytext); }
+	| F_CONSTANT                                                                     { $$ = new ASTConst(f_const, yytext); }
 	;
 
 string
@@ -172,8 +174,8 @@ postfix_expression
 	| postfix_expression '[' expression ']'                                          { $$ = new ASTPostExpr($1, $3); }
 	| postfix_expression '(' ')'                                                     { $$ = new ASTPostExpr($1); }
 	| postfix_expression '(' argument_expression_list ')'                            { $$ = new ASTPostExpr($1, $3); }
-	| postfix_expression '.' IDENTIFIER                                              { $$ = new ASTPostExpr($1, new ASTPtrOp(dot_op), new ASTId()); }
-	| postfix_expression PTR_OP IDENTIFIER                                           { $$ = new ASTPostExpr($1, new ASTPtrOp(ptr_op), new ASTId()); }
+	| postfix_expression '.' IDENTIFIER                                              { $$ = new ASTPostExpr($1, new ASTPtrOp(dot_op), new ASTId(yytext)); }
+	| postfix_expression PTR_OP IDENTIFIER                                           { $$ = new ASTPostExpr($1, new ASTPtrOp(ptr_op), new ASTId(yytext)); }
 	| postfix_expression INC_OP                                                      { $$ = new ASTPostExpr($1, new ASTIncOp(plus_plus)); }
 	| postfix_expression DEC_OP                                                      { $$ = new ASTPostExpr($1, new ASTIncOp(minus_minus)); }
 	| '(' type_name ')' '{' initializer_list '}'                                     { todo(84); }
@@ -321,18 +323,18 @@ init_declarator
 	;
 
 type_specifier
-	: VOID                                                                           { $$ = new ASTType(tvoid); }
-	| CHAR                                                                           { $$ = new ASTType(tchar); }
-	| SHORT                                                                          { $$ = new ASTType(tshort); }
-	| INT                                                                            { $$ = new ASTType(tint); }
-	| FLOAT                                                                          { $$ = new ASTType(tfloat); }
-  | LONG                                                                           { $$ = new ASTType(tlong); }
-	| DOUBLE                                                                         { $$ = new ASTType(tdouble); }
-	| SIGNED                                                                         { $$ = new ASTType(tsigned); }
-	| UNSIGNED                                                                       { $$ = new ASTType(tunsigned); }
-	| BOOL                                                                           { $$ = new ASTType(tbool); }
-	| COMPLEX                                                                        { $$ = new ASTType(tcomplex); }
-	| IMAGINARY	  	/* non-mandated extension */                                     { $$ = new ASTType(timaginary); }
+	: VOID                                                                           { $$ = new ASTType(t_void); }
+	| CHAR                                                                           { $$ = new ASTType(t_char); }
+	| SHORT                                                                          { $$ = new ASTType(t_short); }
+	| INT                                                                            { $$ = new ASTType(t_int); }
+	| FLOAT                                                                          { $$ = new ASTType(t_float); }
+  | LONG                                                                           { $$ = new ASTType(t_long); }
+	| DOUBLE                                                                         { $$ = new ASTType(t_double); }
+	| SIGNED                                                                         { $$ = new ASTType(t_signed); }
+	| UNSIGNED                                                                       { $$ = new ASTType(t_unsigned); }
+	| BOOL                                                                           { $$ = new ASTType(t_bool); }
+	| COMPLEX                                                                        { $$ = new ASTType(t_complex); }
+	| IMAGINARY	  	/* non-mandated extension */                                     { $$ = new ASTType(t_imaginary); }
 	| TYPEDEF_NAME		                                                               { todo(262); }
 	;
 
@@ -347,7 +349,7 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER                                                                      { $$ = new ASTIdDeclarator(new ASTId()); }
+	: IDENTIFIER                                                                      { $$ = new ASTIdDeclarator(new ASTId(yytext)); }
 	| '(' declarator ')'                                                              { $$ = $2; }
 	| direct_declarator '[' ']'                                                       { todo(352); }
 	| direct_declarator '[' '*' ']'                                                   { todo(353); }
@@ -379,8 +381,8 @@ parameter_declaration
 	;
 
 identifier_list
-	: IDENTIFIER                                                                       { $$ = new ASTIdList(new ASTId()); }
-	| identifier_list ',' IDENTIFIER                                                   { $$ = new ASTIdList($1, new ASTId()); }
+	: IDENTIFIER                                                                       { $$ = new ASTIdList(new ASTId(yytext)); }
+	| identifier_list ',' IDENTIFIER                                                   { $$ = new ASTIdList($1, new ASTId(yytext)); }
 	;
 
 type_name
@@ -433,7 +435,7 @@ designator_list
 
 designator
 	: '[' constant_expression ']'                                                       { $$ = new ASTDesignator($2); }
-	| '.' IDENTIFIER                                                                    { $$ = new ASTDesignator(new ASTId()); }
+	| '.' IDENTIFIER                                                                    { $$ = new ASTDesignator(new ASTId(yytext)); }
 	;
 
 statement
@@ -446,7 +448,7 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement                                                          { $$ = new ASTGotoLabeledStmt(new ASTId(), $3); }
+	: IDENTIFIER ':' statement                                                          { $$ = new ASTGotoLabeledStmt(new ASTId(yytext), $3); }
 	| CASE constant_expression ':' statement                                            { $$ = new ASTCaseLabeledStmt($2, $4); }
 	| DEFAULT ':' statement                                                             { $$ = new ASTDefLabeledStmt($3); } 
 	;
@@ -487,7 +489,7 @@ iteration_statement
 	;
 
 jump_statement
-  : GOTO IDENTIFIER ';'                                                               { $$ = new ASTGotoJmpStmt(new ASTId()); }
+  : GOTO IDENTIFIER ';'                                                               { $$ = new ASTGotoJmpStmt(new ASTId(yytext)); }
 	| CONTINUE ';'                                                                      { $$ = new ASTContJmpStmt(); }
   | BREAK ';'                                                                         { $$ = new ASTBreakJmpStmt(); }
 	| RETURN ';'                                                                        { $$ = new ASTRetJmpStmt(); }
