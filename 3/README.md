@@ -1,6 +1,8 @@
 # cc
 C compiler
 
-The C language grammar (c.y and c.l files) have been taken from:
+To compile:
+`make`
 
-http://www.quut.com/c/ANSI-C-grammar-y-2011.html
+To generate the AST:
+`c examples/test1.c`
