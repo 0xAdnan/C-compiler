@@ -37,19 +37,19 @@ public:
 
     if (has_children) {
       cout << "[Children: " << children.size() << "]  {" << endl;
+      auto child_indent = indent + 1;
+      for (auto child : children) {
+        if (child != NULL)
+          child->dump_ast(child_indent);
+      }
+
+      if (has_children) {
+        for (int i = 0; i < myindent; i++)
+          cout << "    ";
+        cout << "}";
+      }
     }
 
-    auto child_indent = indent + 1;
-    for (auto child : children) {
-      if (child != NULL)
-        child->dump_ast(child_indent);
-    }
-
-    if (has_children) {
-      for (int i = 0; i < myindent; i++)
-        cout << "    ";
-      cout << "}";
-    }
     cout << endl;
   }
 };
@@ -190,7 +190,9 @@ protected:
 
 public:
   ASTType(ttype t);
-  string to_str() override { return magic_enum::enum_name(t).data(); };
+  string to_str() override {
+    return "Type: " + string(magic_enum::enum_name(t).data());
+  };
 };
 
 class ASTDeclSpec : public ASTNode {
@@ -578,9 +580,14 @@ public:
 
 class ASTBlockItemList : public ASTStmt {
 public:
+  ASTBlockItemList();
   ASTBlockItemList(ASTBlockItem *n);
   ASTBlockItemList(ASTBlockItemList *n1, ASTBlockItem *n2);
-  string to_str() override { return "BlockList"; }
+  string to_str() override {
+    if (children.size() == 0)
+      return "EmptyBlockList";
+    return "BlockList";
+  }
 };
 
 class ASTPtr : public ASTNode {

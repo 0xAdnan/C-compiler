@@ -71,17 +71,17 @@ ASTFnDef::ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2, ASTDeclList *n3,
                    ASTBlockItemList *n4)
     : ASTNode() {
   this->add_child(n1);
-  this->add_child(n2);
-  this->add_child(n3);
-  this->add_child(n4);
+  this->add_child(n2, true);
+  this->add_child(n3, true);
+  this->add_child(n4, true);
 }
 
 ASTFnDef::ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2,
                    ASTBlockItemList *n3)
     : ASTNode() {
   this->add_child(n1);
-  this->add_child(n2);
-  this->add_child(n3);
+  this->add_child(n2, true);
+  this->add_child(n3, true);
 }
 
 ASTId::ASTId(string name) : ASTNode(), name(name) {}
@@ -438,6 +438,8 @@ ASTDefLabeledStmt::ASTDefLabeledStmt(ASTStmt *n) : ASTLabeledStmt() {
 ASTBlockItem::ASTBlockItem(ASTDecl *n) : ASTNode() { this->add_child(n); }
 
 ASTBlockItem::ASTBlockItem(ASTStmt *n) : ASTNode() { this->add_child(n, true); }
+
+ASTBlockItemList::ASTBlockItemList() : ASTStmt() {}
 
 ASTBlockItemList::ASTBlockItemList(ASTBlockItem *n) : ASTStmt() {
   this->add_child(n);

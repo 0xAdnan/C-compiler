@@ -454,7 +454,7 @@ labeled_statement
 	;
 
 compound_statement
-	: '{' '}'                                                                           { $$ = NULL; }
+	: '{' '}'                                                                           { $$ = new ASTBlockItemList(); }
 	| '{'  block_item_list '}'                                                          { $$ = $2; }
 	;
 
