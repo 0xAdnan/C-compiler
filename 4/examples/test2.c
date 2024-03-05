@@ -11,7 +11,7 @@ int fibonacci(int a, int b, int n)
 		return a;
 
 	while (n > 0) {
-		int x;
+		int t;
 		t = b;
 		b = a+b;
 		a = t;

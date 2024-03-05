@@ -1,0 +1,144 @@
+retv = 0
+Program[Children: 3]  {
+    ASTFnDef[Children: 3]  {
+        Type: t_int
+        FunctionDeclarator[Children: 2]  {
+            Identifier: factorial
+            ParameterDeclaration[Children: 2]  {
+                Type: t_int
+                Identifier: n
+            }
+        }
+        BlockList[Children: 1]  {
+            IfElseStatement[Children: 3]  {
+                RelationalExpression[Children: 3]  {
+                    Identifier: n
+                    less_eq
+                    IntConst: 0
+                }
+                ReturnStatement[Children: 1]  {
+                    IntConst: 1
+                }
+                ReturnStatement[Children: 1]  {
+                    MultiplicationExpression[Children: 3]  {
+                        Identifier: n
+                        mul_op
+                        PostFixExpression[Children: 2]  {
+                            Identifier: factorial
+                            AddExpression[Children: 3]  {
+                                Identifier: n
+                                minus_op
+                                IntConst: 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ASTFnDef[Children: 3]  {
+        Type: t_int
+        FunctionDeclarator[Children: 2]  {
+            Identifier: fibonacci
+            ParameterList[Children: 3]  {
+                ParameterDeclaration[Children: 2]  {
+                    Type: t_int
+                    Identifier: a
+                }
+                ParameterDeclaration[Children: 2]  {
+                    Type: t_int
+                    Identifier: b
+                }
+                ParameterDeclaration[Children: 2]  {
+                    Type: t_int
+                    Identifier: n
+                }
+            }
+        }
+        BlockList[Children: 3]  {
+            IfStatement[Children: 2]  {
+                RelationalExpression[Children: 3]  {
+                    Identifier: n
+                    less_eq
+                    IntConst: 0
+                }
+                ReturnStatement[Children: 1]  {
+                    Identifier: a
+                }
+            }
+            WhileStatement[Children: 2]  {
+                RelationalExpression[Children: 3]  {
+                    Identifier: n
+                    greater_op
+                    IntConst: 0
+                }
+                BlockList[Children: 5]  {
+                    Declaration[Children: 2]  {
+                        Type: t_int
+                        Identifier: x
+                    }
+                    AssignmentExpression[Children: 3]  {
+                        Identifier: =
+                        assign
+                        Identifier: b
+                    }
+                    AssignmentExpression[Children: 3]  {
+                        Identifier: =
+                        assign
+                        AddExpression[Children: 3]  {
+                            Identifier: a
+                            add_op
+                            Identifier: b
+                        }
+                    }
+                    AssignmentExpression[Children: 3]  {
+                        Identifier: =
+                        assign
+                        Identifier: t
+                    }
+                    Expression[Children: 1]  {
+                        AssignmentExpression[Children: 3]  {
+                            Identifier: =
+                            assign
+                            AddExpression[Children: 3]  {
+                                Identifier: n
+                                minus_op
+                                IntConst: 1
+                            }
+                        }
+                    }
+                }
+            }
+            ReturnStatement[Children: 1]  {
+                Identifier: b
+            }
+        }
+    }
+    ASTFnDef[Children: 3]  {
+        Type: t_int
+        FunctionDeclarator[Children: 1]  {
+            Identifier: main
+        }
+        BlockList[Children: 1]  {
+            ReturnStatement[Children: 1]  {
+                PostFixExpression[Children: 2]  {
+                    Identifier: fibonacci
+                    ArgumentList[Children: 3]  {
+                        PostFixExpression[Children: 2]  {
+                            Identifier: factorial
+                            IntConst: 1
+                        }
+                        PostFixExpression[Children: 2]  {
+                            Identifier: factorial
+                            IntConst: 2
+                        }
+                        PostFixExpression[Children: 2]  {
+                            Identifier: factorial
+                            IntConst: 5
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
