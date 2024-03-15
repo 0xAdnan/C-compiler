@@ -1,12 +1,16 @@
 #ifndef AST_HPP_INCLUDED
 #define AST_HPP_INCLUDED
 
+
 #include "magic_enum.hpp"
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace std;
+
+class SemanticAnalyzer;
 
 class ASTNode {
 protected:
@@ -21,10 +25,9 @@ protected:
       this->children.push_back(child);
   }
 
-  virtual string to_str() = 0;
-
 public:
   vector<ASTNode *> children;
+  virtual string to_str() = 0;
 
   void dump_ast(int indent) {
     auto myindent = indent;
@@ -52,6 +55,10 @@ public:
 
     cout << endl;
   }
+
+  virtual bool semantic_action_start(SemanticAnalyzer *sa) const;
+
+  virtual bool semantic_action_end(SemanticAnalyzer *sa) const;
 };
 
 enum ttype {
@@ -185,7 +192,7 @@ public:
 };
 
 class ASTType : public ASTNode {
-protected:
+public:
   ttype t;
 
 public:
@@ -211,7 +218,7 @@ public:
 };
 
 class ASTId : public ASTNode {
-protected:
+public:
   string name;
 
 public:
@@ -248,6 +255,9 @@ public:
   ASTDecl(ASTDeclSpec *n);
   ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2);
   string to_str() override { return "Declaration"; }
+  unordered_map<string, string> get_variables() const;
+
+  bool semantic_action_start(SemanticAnalyzer *sa) const override;
 };
 
 class ASTDeclList : public ASTNode {
@@ -331,7 +341,7 @@ public:
 };
 
 class ASTConst : public ASTNode {
-protected:
+public:
   const_type ct;
   string value;
 
@@ -588,6 +598,8 @@ public:
       return "EmptyBlockList";
     return "BlockList";
   }
+  bool semantic_action_start(SemanticAnalyzer *sa) const override;
+  bool semantic_action_end(SemanticAnalyzer *sa) const override;
 };
 
 class ASTPtr : public ASTNode {
@@ -647,6 +659,22 @@ public:
   ASTProgram(ASTExternDecl *n1);
   ASTProgram(ASTProgram *n1, ASTExternDecl *n2);
   string to_str() { return "Program"; }
+};
+
+class SemanticAnalyzer {
+private:
+  vector<unordered_map<string, string>> symbol_table;
+
+public:
+  SemanticAnalyzer() { symbol_table = vector<unordered_map<string, string>>(); }
+  bool analyze(ASTProgram *p);
+  bool analyze_node(ASTNode *node);
+
+  bool find(string variable);
+  bool find_all(string variable);
+  void enter_scope();
+  void exit_scope();
+  bool add_variable(string variable, string type);
 };
 
 #endif /* AST_HPP_INCLUDED */

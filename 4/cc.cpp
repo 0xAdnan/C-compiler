@@ -5,7 +5,7 @@
 #include "semantic_analysis.hpp"
 
 extern "C" int yylex();
-extern ASTNode *program_ast;
+extern ASTProgram *program_ast;
 int yyparse();
 extern "C" FILE *yyin;
 
