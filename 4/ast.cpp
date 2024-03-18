@@ -1,4 +1,6 @@
 #include "ast.hpp"
+#include <unordered_map>
+#include <utility>
 
 ASTStmt::ASTStmt() : ASTNode() {}
 
@@ -592,7 +594,7 @@ ASTFnCallDeclarator::ASTFnCallDeclarator(ASTDirectDeclarator *n1, ASTIdList *n2)
 pair<bool, unordered_map<string, ttype>>
 ASTFnDeclarator::get_variables() const {
   if (this->children.size() == 1)
-    return {};
+    return make_pair(true, unordered_map<string, ttype>{});
 
   ASTParamList *pl = dynamic_cast<ASTParamList *>(this->children[1]);
   return pl->get_variables();
