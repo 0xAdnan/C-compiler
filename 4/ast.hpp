@@ -1,7 +1,6 @@
 #ifndef AST_HPP_INCLUDED
 #define AST_HPP_INCLUDED
 
-
 #include "magic_enum.hpp"
 #include <iostream>
 #include <string>
@@ -207,6 +206,15 @@ public:
   ASTDeclSpec(ASTType *n);
   ASTDeclSpec(ASTType *n1, ASTDeclSpec *n2);
   string to_str() override { return "DeclarationSpecifier"; }
+
+  ttype get_type() const {
+    if (children.size() > 1) {
+      cout << "Not supporting long long yet;" << endl;
+      exit(1);
+    }
+    ASTType *t = dynamic_cast<ASTType *>(children[0]);
+    return t->t;
+  }
 };
 
 class ASTFnDef : public ASTNode {
@@ -255,7 +263,7 @@ public:
   ASTDecl(ASTDeclSpec *n);
   ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2);
   string to_str() override { return "Declaration"; }
-  unordered_map<string, string> get_variables() const;
+  unordered_map<string, ttype> get_variables() const;
 
   bool semantic_action_start(SemanticAnalyzer *sa) const override;
 };
@@ -625,6 +633,9 @@ public:
   ASTParamDecl(ASTDeclSpec *n1, ASTDirectDeclarator *n2);
   ASTParamDecl(ASTDeclSpec *n);
   string to_str() override { return "ParameterDeclaration"; }
+
+  string get_var_name() const;
+  ttype get_type() const;
 };
 
 class ASTParamList : public ASTNode {
@@ -632,6 +643,8 @@ public:
   ASTParamList(ASTParamDecl *n);
   ASTParamList(ASTParamList *n1, ASTParamDecl *n2);
   string to_str() override { return "ParameterList"; }
+
+  pair<bool, unordered_map<string, ttype>> get_variables() const;
 };
 
 class ASTFnDeclarator : public ASTDirectDeclarator {
@@ -639,6 +652,11 @@ public:
   ASTFnDeclarator(ASTDirectDeclarator *n1, ASTParamList *n2);
   ASTFnDeclarator(ASTDirectDeclarator *n);
   string to_str() override { return "FunctionDeclarator"; }
+
+  bool semantic_action_start(SemanticAnalyzer *sa) const override;
+  bool semantic_action_end(SemanticAnalyzer *sa) const override;
+
+  pair<bool, unordered_map<string, ttype>> get_variables() const;
 };
 
 class ASTFnCallDeclarator : public ASTDirectDeclarator {
@@ -663,10 +681,10 @@ public:
 
 class SemanticAnalyzer {
 private:
-  vector<unordered_map<string, string>> symbol_table;
+  vector<unordered_map<string, ttype>> symbol_table;
 
 public:
-  SemanticAnalyzer() { symbol_table = vector<unordered_map<string, string>>(); }
+  SemanticAnalyzer() { symbol_table = vector<unordered_map<string, ttype>>(); }
   bool analyze(ASTProgram *p);
   bool analyze_node(ASTNode *node);
 
@@ -674,7 +692,7 @@ public:
   bool find_all(string variable);
   void enter_scope();
   void exit_scope();
-  bool add_variable(string variable, string type);
+  bool add_variable(string variable, ttype type);
 };
 
 #endif /* AST_HPP_INCLUDED */

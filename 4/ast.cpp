@@ -1,9 +1,5 @@
 #include "ast.hpp"
 
-bool ASTNode::semantic_action_start(SemanticAnalyzer *sa) const { return true; }
-
-bool ASTNode::semantic_action_end(SemanticAnalyzer *sa) const { return true; }
-
 ASTStmt::ASTStmt() : ASTNode() {}
 
 ASTAssignmentExpr::ASTAssignmentExpr(ASTCondExpr *n) : ASTNode() {
@@ -146,23 +142,19 @@ ASTDecl::ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2) : ASTNode() {
   this->add_child(n2);
 }
 
-unordered_map<string, string> ASTDecl::get_variables() const {
-  unordered_map<string, string> variables;
+unordered_map<string, ttype> ASTDecl::get_variables() const {
+  unordered_map<string, ttype> variables;
 
   ASTType *typeNode = dynamic_cast<ASTType *>(this->children[0]);
   if (!typeNode) {
-    return variables; 
+    return variables;
   }
 
-  // ASTId *idNode = dynamic_cast<ASTId *>(typeNode->children[0]);
-  //   if (idNode) {
-  //           string varName = idNode->name;}
-
-  
-  string variableType = string(magic_enum::enum_name(typeNode->t));
+  ttype variableType = typeNode->t;
 
   if (this->children.size() > 1) {
-    ASTInitDeclList *initDeclList = dynamic_cast<ASTInitDeclList *>(this->children[1]);
+    ASTInitDeclList *initDeclList =
+        dynamic_cast<ASTInitDeclList *>(this->children[1]);
     if (initDeclList) {
       for (auto &child : initDeclList->children) {
         ASTInitDecl *initDecl = dynamic_cast<ASTInitDecl *>(child);
@@ -171,9 +163,10 @@ unordered_map<string, string> ASTDecl::get_variables() const {
           if (idNode) {
             string varName = idNode->name;
             if (initDecl->children.size() > 1) {
-              ASTConst *constNode = dynamic_cast<ASTConst *>(initDecl->children[1]);
+              ASTConst *constNode =
+                  dynamic_cast<ASTConst *>(initDecl->children[1]);
               if (constNode) {
-                variables[varName] = variableType + " initialized with " + constNode->to_str();
+                variables[varName] = variableType;
               } else {
                 variables[varName] = variableType;
               }
@@ -184,7 +177,7 @@ unordered_map<string, string> ASTDecl::get_variables() const {
         } else {
           ASTId *idNode = dynamic_cast<ASTId *>(child);
           if (idNode) {
-            variables[idNode->name] = variableType; 
+            variables[idNode->name] = variableType;
           }
         }
       }
@@ -193,511 +186,430 @@ unordered_map<string, string> ASTDecl::get_variables() const {
   return variables;
 }
 
-    bool ASTDecl::semantic_action_start(SemanticAnalyzer * sa) const {
-      unordered_map<string, string> variables = this->get_variables();
-      for (const auto &var : variables) {
-        sa->add_variable(var.first, var.second);
-      }
-      return true;
-    }
-
-    ASTDeclList::ASTDeclList() : ASTNode() {}
-
-    ASTDeclList::ASTDeclList(ASTDeclList * n1, ASTDecl * n2) : ASTNode() {
-      for (auto child : n1->children) {
-        this->add_child(child);
-      }
-      this->add_child(n2);
-      delete n1;
-    }
-
-    ASTAssignmentOp::ASTAssignmentOp(assignment_op ap) : ASTNode(), ap(ap) {}
-
-    ASTIncOp::ASTIncOp(inc_op ip) : ASTNode(), ip(ip) {}
-
-    ASTUnaryOp::ASTUnaryOp(unary_op up) : ASTNode(), up(up) {}
-
-    ASTPtrOp::ASTPtrOp(access_op ap) : ASTNode(), ap(ap) {}
-
-    ASTRelOp::ASTRelOp(rel_op rp) : ASTNode(), rp(rp) {}
-
-    ASTEqOp::ASTEqOp(equal_op ep) : ASTNode(), ep(ep) {}
-
-    ASTShiftOp::ASTShiftOp(shift_op sp) : ASTNode(), sp(sp) {}
-
-    ASTArithOp::ASTArithOp(arith_op ap) : ASTNode(), ap(ap) {}
-
-    ASTConst::ASTConst(const_type t, string value)
-        : ASTNode(), ct(t), value(value) {}
-
-    ASTIdList::ASTIdList(ASTId * n) : ASTNode() { this->add_child(n); }
-
-    ASTIdList::ASTIdList(ASTIdList * n1, ASTId * n2) : ASTNode() {
-      for (auto child : n1->children) {
-        this->add_child(child);
-      }
-      this->add_child(n2);
-      delete n1;
-    }
-
-    // ASTStrConst::ASTStrConst() : ASTNode() {}
-
-    ASTStrLiteralConst::ASTStrLiteralConst() : ASTStrConst() {}
-
-    ASTFuncNameConst::ASTFuncNameConst() : ASTStrConst() {}
-
-    ASTArgExpList::ASTArgExpList(ASTAssignmentExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTArgExpList::ASTArgExpList(ASTArgExpList * n1, ASTAssignmentExpr * n2)
-        : ASTNode() {
-      for (auto child : n1->children) {
-        this->add_child(child);
-      }
-      this->add_child(n2);
-      delete n1;
-    }
-
-    ASTPrimaryExpr::ASTPrimaryExpr(ASTId * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTPrimaryExpr::ASTPrimaryExpr(ASTConst * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTPrimaryExpr::ASTPrimaryExpr(ASTStrConst * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTPrimaryExpr::ASTPrimaryExpr(ASTExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTPostExpr::ASTPostExpr(ASTPrimaryExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTPostExpr::ASTPostExpr(ASTPostExpr * n1, ASTExpr * n2) : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTPostExpr::ASTPostExpr(ASTPostExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTPostExpr::ASTPostExpr(ASTPostExpr * n1, ASTArgExpList * n2) : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTPostExpr::ASTPostExpr(ASTPostExpr * n1, ASTPtrOp * n2, ASTId * n3)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-    }
-
-    ASTPostExpr::ASTPostExpr(ASTPostExpr * n1, ASTIncOp * n2) : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTUnaryExpr::ASTUnaryExpr(ASTPostExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTUnaryExpr::ASTUnaryExpr(ASTIncOp * n1, ASTUnaryExpr * n2) : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTUnaryExpr::ASTUnaryExpr(ASTUnaryOp * n1, ASTUnaryExpr * n2) : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-    ASTMulExpr::ASTMulExpr(ASTUnaryExpr * n) : ASTNode() { this->add_child(n); }
-
-    ASTMulExpr::ASTMulExpr(ASTMulExpr * n1, ASTArithOp * n2, ASTUnaryExpr * n3)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-    }
-
-    ASTAddExpr::ASTAddExpr(ASTMulExpr * n) : ASTNode() { this->add_child(n); }
-
-    ASTAddExpr::ASTAddExpr(ASTAddExpr * n1, ASTArithOp * n2, ASTMulExpr * n3)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-    }
-
-    ASTShiftExpr::ASTShiftExpr(ASTAddExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTShiftExpr::ASTShiftExpr(ASTShiftExpr * n1, ASTShiftOp * n2,
-                               ASTAddExpr * n3)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-    }
-
-    ASTRelExpr::ASTRelExpr(ASTShiftExpr * n) : ASTNode() { this->add_child(n); }
-
-    ASTRelExpr::ASTRelExpr(ASTRelExpr * n1, ASTRelOp * n2, ASTShiftExpr * n3)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-    }
-
-    ASTEqExpr::ASTEqExpr(ASTRelExpr * n) : ASTNode() { this->add_child(n); }
-
-    ASTEqExpr::ASTEqExpr(ASTEqExpr * n1, ASTEqOp * n2, ASTRelExpr * n3)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-    }
-
-    ASTAndExpr::ASTAndExpr(ASTEqExpr * n) : ASTNode() { this->add_child(n); }
-
-    ASTAndExpr::ASTAndExpr(ASTAndExpr * n1, ASTEqExpr * n2) : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTExclusiveOrExpr::ASTExclusiveOrExpr(ASTAndExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTExclusiveOrExpr::ASTExclusiveOrExpr(ASTExclusiveOrExpr * n1,
-                                           ASTAndExpr * n2)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTInclusiveOrExpr::ASTInclusiveOrExpr(ASTExclusiveOrExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTInclusiveOrExpr::ASTInclusiveOrExpr(ASTInclusiveOrExpr * n1,
-                                           ASTExclusiveOrExpr * n2)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTLogicalAndExpr::ASTLogicalAndExpr(ASTInclusiveOrExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTLogicalAndExpr::ASTLogicalAndExpr(ASTLogicalAndExpr * n1,
-                                         ASTInclusiveOrExpr * n2)
-        : ASTNode() {
-
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTLogicalOrExpr::ASTLogicalOrExpr(ASTLogicalAndExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTLogicalOrExpr::ASTLogicalOrExpr(ASTLogicalOrExpr * n1,
-                                       ASTLogicalAndExpr * n2)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
-
-    ASTCondExpr::ASTCondExpr(ASTLogicalOrExpr * n) : ASTNode() {
-      this->add_child(n);
-    }
-
-    ASTCondExpr::ASTCondExpr(ASTLogicalOrExpr * n1, ASTExpr * n2,
-                             ASTCondExpr * n3)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-    }
-
-    // ASTIterStmt::ASTIterStmt() : ASTStmt() {}
-
-    ASTWhileStmt::ASTWhileStmt(ASTExpr * n1, ASTStmt * n2) : ASTIterStmt() {
-      this->add_child(n1);
-      this->add_child(n2, true);
-    }
-
-    ASTDoWhileStmt::ASTDoWhileStmt(ASTStmt * n1, ASTExpr * n2) : ASTIterStmt() {
-      this->add_child(n1, true);
-      this->add_child(n2);
-    }
-
-    ASTForStmt::ASTForStmt(ASTExpr * n1, ASTExpr * n2, ASTStmt * n3)
-        : ASTIterStmt() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3, true);
-    }
-
-    ASTForStmt::ASTForStmt(ASTExpr * n1, ASTExpr * n2, ASTExpr * n3,
-                           ASTStmt * n4)
-        : ASTIterStmt() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-      this->add_child(n4, true);
-    }
-
-    ASTForStmt::ASTForStmt(ASTDecl * n1, ASTExpr * n2, ASTStmt * n3)
-        : ASTIterStmt() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3, true);
-    }
-
-    ASTForStmt::ASTForStmt(ASTDecl * n1, ASTExpr * n2, ASTExpr * n3,
-                           ASTStmt * n4)
-        : ASTIterStmt() {
-      this->add_child(n1);
-      this->add_child(n2);
-      this->add_child(n3);
-      this->add_child(n4, true);
-    }
+ASTDeclList::ASTDeclList() : ASTNode() {}
 
-    ASTGotoJmpStmt::ASTGotoJmpStmt(ASTId * n) : ASTJmpStmt() {
-      this->add_child(n);
-    }
-
-    ASTContJmpStmt::ASTContJmpStmt() : ASTJmpStmt() {}
-
-    ASTBreakJmpStmt::ASTBreakJmpStmt() : ASTJmpStmt() {}
-
-    ASTRetJmpStmt::ASTRetJmpStmt() : ASTJmpStmt() {}
-
-    ASTRetJmpStmt::ASTRetJmpStmt(ASTExpr * n) : ASTJmpStmt() {
-      this->add_child(n);
-    }
-    ASTIfSelectStmt::ASTIfSelectStmt(ASTExpr * n1, ASTStmt * n2)
-        : ASTSelectStmt() {
-      this->add_child(n1);
-      this->add_child(n2, true);
-    }
-
-    ASTIfElseSelectStmt::ASTIfElseSelectStmt(ASTExpr * n1, ASTStmt * n2,
-                                             ASTStmt * n3)
-        : ASTSelectStmt() {
-      this->add_child(n1);
-      this->add_child(n2, true);
-      this->add_child(n3, true);
-    }
+ASTDeclList::ASTDeclList(ASTDeclList *n1, ASTDecl *n2) : ASTNode() {
+  for (auto child : n1->children) {
+    this->add_child(child);
+  }
+  this->add_child(n2);
+  delete n1;
+}
 
-    ASTSwitchStmt::ASTSwitchStmt(ASTExpr * n1, ASTStmt * n2) : ASTSelectStmt() {
-      this->add_child(n1);
-      this->add_child(n2, true);
-    }
+ASTAssignmentOp::ASTAssignmentOp(assignment_op ap) : ASTNode(), ap(ap) {}
 
-    // ASTLabeledStmt::ASTLabeledStmt() : ASTStmt() {}
+ASTIncOp::ASTIncOp(inc_op ip) : ASTNode(), ip(ip) {}
 
-    ASTGotoLabeledStmt::ASTGotoLabeledStmt(ASTId * n1, ASTStmt * n2)
-        : ASTLabeledStmt() {
-      this->add_child(n1);
-      this->add_child(n2, true);
-    }
+ASTUnaryOp::ASTUnaryOp(unary_op up) : ASTNode(), up(up) {}
 
-    ASTCaseLabeledStmt::ASTCaseLabeledStmt(ASTCondExpr * n1, ASTStmt * n2)
-        : ASTLabeledStmt() {
-      this->add_child(n1);
-      this->add_child(n2, true);
-    }
+ASTPtrOp::ASTPtrOp(access_op ap) : ASTNode(), ap(ap) {}
 
-    ASTDefLabeledStmt::ASTDefLabeledStmt(ASTStmt * n) : ASTLabeledStmt() {
-      this->add_child(n, true);
-    }
+ASTRelOp::ASTRelOp(rel_op rp) : ASTNode(), rp(rp) {}
 
-    ASTBlockItem::ASTBlockItem(ASTDecl * n) : ASTNode() { this->add_child(n); }
+ASTEqOp::ASTEqOp(equal_op ep) : ASTNode(), ep(ep) {}
 
-    ASTBlockItem::ASTBlockItem(ASTStmt * n) : ASTNode() {
-      this->add_child(n, true);
-    }
+ASTShiftOp::ASTShiftOp(shift_op sp) : ASTNode(), sp(sp) {}
 
-    ASTBlockItemList::ASTBlockItemList() : ASTStmt() {}
+ASTArithOp::ASTArithOp(arith_op ap) : ASTNode(), ap(ap) {}
 
-    ASTBlockItemList::ASTBlockItemList(ASTBlockItem * n) : ASTStmt() {
-      this->add_child(n);
-    }
+ASTConst::ASTConst(const_type t, string value)
+    : ASTNode(), ct(t), value(value) {}
 
-    ASTBlockItemList::ASTBlockItemList(ASTBlockItemList * n1, ASTBlockItem * n2)
-        : ASTStmt() {
-      for (auto child : n1->children) {
-        this->add_child(child);
-      }
-      this->add_child(n2);
-      delete n1;
-    }
+ASTIdList::ASTIdList(ASTId *n) : ASTNode() { this->add_child(n); }
 
-    bool ASTBlockItemList::semantic_action_start(SemanticAnalyzer * sa) const {
-      sa->enter_scope();
-      return true;
-    }
+ASTIdList::ASTIdList(ASTIdList *n1, ASTId *n2) : ASTNode() {
+  for (auto child : n1->children) {
+    this->add_child(child);
+  }
+  this->add_child(n2);
+  delete n1;
+}
 
-    bool ASTBlockItemList::semantic_action_end(SemanticAnalyzer * sa) const {
-      sa->exit_scope();
-      return true;
-    }
+// ASTStrConst::ASTStrConst() : ASTNode() {}
 
-    ASTPtr::ASTPtr() : ASTNode() {}
-    // // ASTPtr::ASTPtr(ASTPtr *n) : ASTNode()   {if (n->children.size() == 1)
-    // {
-    //     this->add_child(n->children[0]);
-    //   } else {
-    //     this->add_child(n);
-    //   }
-
-    ASTPtr::ASTPtr(ASTPtr * n) : ASTNode() {
-      for (auto child : n->children) {
-        this->add_child(child);
-      }
-      delete n;
-    }
+ASTStrLiteralConst::ASTStrLiteralConst() : ASTStrConst() {}
 
-    // ASTDirectDeclarator::ASTDirectDeclarator() : ASTNode() {}
+ASTFuncNameConst::ASTFuncNameConst() : ASTStrConst() {}
 
-    ASTIdDeclarator::ASTIdDeclarator(ASTId * n) : ASTDirectDeclarator() {
-      this->add_child(n);
-    }
+ASTArgExpList::ASTArgExpList(ASTAssignmentExpr *n) : ASTNode() {
+  this->add_child(n);
+}
 
-    ASTParamDecl::ASTParamDecl(ASTDeclSpec * n1, ASTDirectDeclarator * n2)
-        : ASTNode() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
+ASTArgExpList::ASTArgExpList(ASTArgExpList *n1, ASTAssignmentExpr *n2)
+    : ASTNode() {
+  for (auto child : n1->children) {
+    this->add_child(child);
+  }
+  this->add_child(n2);
+  delete n1;
+}
 
-    ASTParamDecl::ASTParamDecl(ASTDeclSpec * n) : ASTNode() {
-      this->add_child(n);
-    }
+ASTPrimaryExpr::ASTPrimaryExpr(ASTId *n) : ASTNode() { this->add_child(n); }
 
-    ASTParamList::ASTParamList(ASTParamDecl * n) : ASTNode() {
-      this->add_child(n);
-    }
+ASTPrimaryExpr::ASTPrimaryExpr(ASTConst *n) : ASTNode() { this->add_child(n); }
 
-    ASTParamList::ASTParamList(ASTParamList * n1, ASTParamDecl * n2)
-        : ASTNode() {
-      for (auto child : n1->children) {
-        this->add_child(child);
-      }
-      this->add_child(n2);
-      delete n1;
-    }
+ASTPrimaryExpr::ASTPrimaryExpr(ASTStrConst *n) : ASTNode() {
+  this->add_child(n);
+}
 
-    ASTFnDeclarator::ASTFnDeclarator(ASTDirectDeclarator * n1,
-                                     ASTParamList * n2)
-        : ASTDirectDeclarator() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
+ASTPrimaryExpr::ASTPrimaryExpr(ASTExpr *n) : ASTNode() { this->add_child(n); }
 
-    ASTFnDeclarator::ASTFnDeclarator(ASTDirectDeclarator * n)
-        : ASTDirectDeclarator() {
-      this->add_child(n);
-    }
+ASTPostExpr::ASTPostExpr(ASTPrimaryExpr *n) : ASTNode() { this->add_child(n); }
 
-    ASTFnCallDeclarator::ASTFnCallDeclarator(ASTDirectDeclarator * n1,
-                                             ASTIdList * n2)
-        : ASTDirectDeclarator() {
-      this->add_child(n1);
-      this->add_child(n2);
-    }
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTExpr *n2) : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
 
-    ASTExternDecl::ASTExternDecl(ASTFnDef * n) : ASTNode() {
-      this->add_child(n);
-    }
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n) : ASTNode() { this->add_child(n); }
 
-    ASTExternDecl::ASTExternDecl(ASTDecl * n) : ASTNode() {
-      this->add_child(n);
-    }
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTArgExpList *n2) : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
 
-    ASTProgram::ASTProgram(ASTExternDecl * n) : ASTNode() {
-      this->add_child(n);
-    }
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTPtrOp *n2, ASTId *n3) : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+}
 
-    ASTProgram::ASTProgram(ASTProgram * n1, ASTExternDecl * n2) : ASTNode() {
-      for (auto child : n1->children) {
-        this->add_child(child);
-      }
-      this->add_child(n2->children[0]);
-      delete n1;
-    }
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTIncOp *n2) : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
 
-    bool SemanticAnalyzer::analyze(ASTProgram * p) {
-      enter_scope();
-      return analyze_node(p);
-    }
+ASTUnaryExpr::ASTUnaryExpr(ASTPostExpr *n) : ASTNode() { this->add_child(n); }
 
-    bool SemanticAnalyzer::analyze_node(ASTNode * node) {
-      if (node == nullptr)
-        return true;
-
-      if (!node->semantic_action_start(this))
-        return false;
-
-      for (auto &child : node->children) {
-        if (!analyze_node(child))
-          return false;
-      }
-
-      if (!node->semantic_action_end(this))
-        return false;
-
-      return true;
-    };
-
-    bool SemanticAnalyzer::find(string variable) {
-      for (auto it = symbol_table.rbegin(); it != symbol_table.rend(); ++it) {
-        if (it->find(variable) != it->end()) {
-          return true;
-        }
-      }
-      return false;
-    };
-
-    bool SemanticAnalyzer::find_all(string variable) {
-      for (auto it = symbol_table.rbegin(); it != symbol_table.rend(); ++it) {
-        if (it->find(variable) != it->end()) {
-          return true;
-        }
-      }
-      return false;
-    };
-
-    void SemanticAnalyzer::enter_scope() { symbol_table.push_back({}); }
-
-    void SemanticAnalyzer::exit_scope() {
-      if (!symbol_table.empty()) {
-        cout << "Before exiting: " << endl;
-        for (const auto &symbol_map : symbol_table) {
-          for (const auto &entry : symbol_map) {
-            cout << entry.first << " : " << entry.second << endl;
-          }
-        }
-        symbol_table.pop_back();
-      }
-    }
+ASTUnaryExpr::ASTUnaryExpr(ASTIncOp *n1, ASTUnaryExpr *n2) : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
 
-    bool SemanticAnalyzer::add_variable(string variable, string type) {
-      if (!symbol_table.empty()) {
-        symbol_table.back()[variable] = type;
-        return true;
-      } else {
-        return false;
-      }
-    }
+ASTUnaryExpr::ASTUnaryExpr(ASTUnaryOp *n1, ASTUnaryExpr *n2) : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
+ASTMulExpr::ASTMulExpr(ASTUnaryExpr *n) : ASTNode() { this->add_child(n); }
+
+ASTMulExpr::ASTMulExpr(ASTMulExpr *n1, ASTArithOp *n2, ASTUnaryExpr *n3)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+}
+
+ASTAddExpr::ASTAddExpr(ASTMulExpr *n) : ASTNode() { this->add_child(n); }
+
+ASTAddExpr::ASTAddExpr(ASTAddExpr *n1, ASTArithOp *n2, ASTMulExpr *n3)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+}
+
+ASTShiftExpr::ASTShiftExpr(ASTAddExpr *n) : ASTNode() { this->add_child(n); }
+
+ASTShiftExpr::ASTShiftExpr(ASTShiftExpr *n1, ASTShiftOp *n2, ASTAddExpr *n3)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+}
+
+ASTRelExpr::ASTRelExpr(ASTShiftExpr *n) : ASTNode() { this->add_child(n); }
+
+ASTRelExpr::ASTRelExpr(ASTRelExpr *n1, ASTRelOp *n2, ASTShiftExpr *n3)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+}
+
+ASTEqExpr::ASTEqExpr(ASTRelExpr *n) : ASTNode() { this->add_child(n); }
+
+ASTEqExpr::ASTEqExpr(ASTEqExpr *n1, ASTEqOp *n2, ASTRelExpr *n3) : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+}
+
+ASTAndExpr::ASTAndExpr(ASTEqExpr *n) : ASTNode() { this->add_child(n); }
+
+ASTAndExpr::ASTAndExpr(ASTAndExpr *n1, ASTEqExpr *n2) : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
+
+ASTExclusiveOrExpr::ASTExclusiveOrExpr(ASTAndExpr *n) : ASTNode() {
+  this->add_child(n);
+}
+
+ASTExclusiveOrExpr::ASTExclusiveOrExpr(ASTExclusiveOrExpr *n1, ASTAndExpr *n2)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
+
+ASTInclusiveOrExpr::ASTInclusiveOrExpr(ASTExclusiveOrExpr *n) : ASTNode() {
+  this->add_child(n);
+}
+
+ASTInclusiveOrExpr::ASTInclusiveOrExpr(ASTInclusiveOrExpr *n1,
+                                       ASTExclusiveOrExpr *n2)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
+
+ASTLogicalAndExpr::ASTLogicalAndExpr(ASTInclusiveOrExpr *n) : ASTNode() {
+  this->add_child(n);
+}
+
+ASTLogicalAndExpr::ASTLogicalAndExpr(ASTLogicalAndExpr *n1,
+                                     ASTInclusiveOrExpr *n2)
+    : ASTNode() {
+
+  this->add_child(n1);
+  this->add_child(n2);
+}
+
+ASTLogicalOrExpr::ASTLogicalOrExpr(ASTLogicalAndExpr *n) : ASTNode() {
+  this->add_child(n);
+}
+
+ASTLogicalOrExpr::ASTLogicalOrExpr(ASTLogicalOrExpr *n1, ASTLogicalAndExpr *n2)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
+
+ASTCondExpr::ASTCondExpr(ASTLogicalOrExpr *n) : ASTNode() {
+  this->add_child(n);
+}
+
+ASTCondExpr::ASTCondExpr(ASTLogicalOrExpr *n1, ASTExpr *n2, ASTCondExpr *n3)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+}
+
+// ASTIterStmt::ASTIterStmt() : ASTStmt() {}
+
+ASTWhileStmt::ASTWhileStmt(ASTExpr *n1, ASTStmt *n2) : ASTIterStmt() {
+  this->add_child(n1);
+  this->add_child(n2, true);
+}
+
+ASTDoWhileStmt::ASTDoWhileStmt(ASTStmt *n1, ASTExpr *n2) : ASTIterStmt() {
+  this->add_child(n1, true);
+  this->add_child(n2);
+}
+
+ASTForStmt::ASTForStmt(ASTExpr *n1, ASTExpr *n2, ASTStmt *n3) : ASTIterStmt() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3, true);
+}
+
+ASTForStmt::ASTForStmt(ASTExpr *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4)
+    : ASTIterStmt() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+  this->add_child(n4, true);
+}
+
+ASTForStmt::ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTStmt *n3) : ASTIterStmt() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3, true);
+}
+
+ASTForStmt::ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4)
+    : ASTIterStmt() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
+  this->add_child(n4, true);
+}
+
+ASTGotoJmpStmt::ASTGotoJmpStmt(ASTId *n) : ASTJmpStmt() { this->add_child(n); }
+
+ASTContJmpStmt::ASTContJmpStmt() : ASTJmpStmt() {}
+
+ASTBreakJmpStmt::ASTBreakJmpStmt() : ASTJmpStmt() {}
+
+ASTRetJmpStmt::ASTRetJmpStmt() : ASTJmpStmt() {}
+
+ASTRetJmpStmt::ASTRetJmpStmt(ASTExpr *n) : ASTJmpStmt() { this->add_child(n); }
+ASTIfSelectStmt::ASTIfSelectStmt(ASTExpr *n1, ASTStmt *n2) : ASTSelectStmt() {
+  this->add_child(n1);
+  this->add_child(n2, true);
+}
+
+ASTIfElseSelectStmt::ASTIfElseSelectStmt(ASTExpr *n1, ASTStmt *n2, ASTStmt *n3)
+    : ASTSelectStmt() {
+  this->add_child(n1);
+  this->add_child(n2, true);
+  this->add_child(n3, true);
+}
+
+ASTSwitchStmt::ASTSwitchStmt(ASTExpr *n1, ASTStmt *n2) : ASTSelectStmt() {
+  this->add_child(n1);
+  this->add_child(n2, true);
+}
+
+// ASTLabeledStmt::ASTLabeledStmt() : ASTStmt() {}
+
+ASTGotoLabeledStmt::ASTGotoLabeledStmt(ASTId *n1, ASTStmt *n2)
+    : ASTLabeledStmt() {
+  this->add_child(n1);
+  this->add_child(n2, true);
+}
+
+ASTCaseLabeledStmt::ASTCaseLabeledStmt(ASTCondExpr *n1, ASTStmt *n2)
+    : ASTLabeledStmt() {
+  this->add_child(n1);
+  this->add_child(n2, true);
+}
+
+ASTDefLabeledStmt::ASTDefLabeledStmt(ASTStmt *n) : ASTLabeledStmt() {
+  this->add_child(n, true);
+}
+
+ASTBlockItem::ASTBlockItem(ASTDecl *n) : ASTNode() { this->add_child(n); }
+
+ASTBlockItem::ASTBlockItem(ASTStmt *n) : ASTNode() { this->add_child(n, true); }
+
+ASTBlockItemList::ASTBlockItemList() : ASTStmt() {}
+
+ASTBlockItemList::ASTBlockItemList(ASTBlockItem *n) : ASTStmt() {
+  this->add_child(n);
+}
+
+ASTBlockItemList::ASTBlockItemList(ASTBlockItemList *n1, ASTBlockItem *n2)
+    : ASTStmt() {
+  for (auto child : n1->children) {
+    this->add_child(child);
+  }
+  this->add_child(n2);
+  delete n1;
+}
+
+ASTPtr::ASTPtr() : ASTNode() {}
+// // ASTPtr::ASTPtr(ASTPtr *n) : ASTNode()   {if (n->children.size() == 1)
+// {
+//     this->add_child(n->children[0]);
+//   } else {
+//     this->add_child(n);
+//   }
+
+ASTPtr::ASTPtr(ASTPtr *n) : ASTNode() {
+  for (auto child : n->children) {
+    this->add_child(child);
+  }
+  delete n;
+}
+
+// ASTDirectDeclarator::ASTDirectDeclarator() : ASTNode() {}
+
+ASTIdDeclarator::ASTIdDeclarator(ASTId *n) : ASTDirectDeclarator() {
+  this->add_child(n);
+}
+
+ASTParamDecl::ASTParamDecl(ASTDeclSpec *n1, ASTDirectDeclarator *n2)
+    : ASTNode() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
+
+ASTParamDecl::ASTParamDecl(ASTDeclSpec *n) : ASTNode() { this->add_child(n); }
+
+string ASTParamDecl::get_var_name() const {
+  if (children.size() >= 1) {
+    ASTId *id = dynamic_cast<ASTId *>(children[1]);
+    return id->name;
+  }
+  return "";
+}
+
+ttype ASTParamDecl::get_type() const {
+  if (children.size() >= 1) {
+    ASTType *t = dynamic_cast<ASTType *>(children[0]);
+    if (t == NULL) {
+      cout << "Not supporting long long yet" << endl;
+      exit(1);
+    }
+    return t->t;
+  }
+  cout << "Error Happened" << endl;
+  exit(1);
+}
+
+ASTParamList::ASTParamList(ASTParamDecl *n) : ASTNode() { this->add_child(n); }
+
+ASTParamList::ASTParamList(ASTParamList *n1, ASTParamDecl *n2) : ASTNode() {
+  for (auto child : n1->children) {
+    this->add_child(child);
+  }
+  this->add_child(n2);
+  delete n1;
+}
+
+pair<bool, unordered_map<string, ttype>> ASTParamList::get_variables() const {
+  unordered_map<string, ttype> variables = {};
+
+  for (auto child : children) {
+    ASTParamDecl *pd = dynamic_cast<ASTParamDecl *>(child);
+    string var_name = pd->get_var_name();
+    ttype var_type = pd->get_type();
+    if (variables.find(var_name) == variables.end()) {
+      variables[var_name] = var_type;
+    } else
+      return make_pair(false, unordered_map<string, ttype>{});
+  }
+
+  return make_pair(true, variables);
+}
+
+ASTFnDeclarator::ASTFnDeclarator(ASTDirectDeclarator *n1, ASTParamList *n2)
+    : ASTDirectDeclarator() {
+  this->add_child(n1);
+  this->add_child(n2, true);
+}
+
+ASTFnDeclarator::ASTFnDeclarator(ASTDirectDeclarator *n)
+    : ASTDirectDeclarator() {
+  this->add_child(n);
+}
+
+ASTFnCallDeclarator::ASTFnCallDeclarator(ASTDirectDeclarator *n1, ASTIdList *n2)
+    : ASTDirectDeclarator() {
+  this->add_child(n1);
+  this->add_child(n2);
+}
+
+pair<bool, unordered_map<string, ttype>>
+ASTFnDeclarator::get_variables() const {
+  if (this->children.size() == 1)
+    return {};
+
+  ASTParamList *pl = dynamic_cast<ASTParamList *>(this->children[1]);
+  return pl->get_variables();
+}
+
+ASTExternDecl::ASTExternDecl(ASTFnDef *n) : ASTNode() { this->add_child(n); }
+
+ASTExternDecl::ASTExternDecl(ASTDecl *n) : ASTNode() { this->add_child(n); }
+
+ASTProgram::ASTProgram(ASTExternDecl *n) : ASTNode() { this->add_child(n); }
+
+ASTProgram::ASTProgram(ASTProgram *n1, ASTExternDecl *n2) : ASTNode() {
+  for (auto child : n1->children) {
+    this->add_child(child);
+  }
+  this->add_child(n2->children[0]);
+  delete n1;
+}

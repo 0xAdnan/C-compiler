@@ -1,22 +1,18 @@
+#include "ast.hpp"
+#include "c.tab.hpp"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include "c.tab.hpp"
-#include "semantic_analysis.hpp"
 
 extern "C" int yylex();
 extern ASTProgram *program_ast;
+extern int yydebug;
 int yyparse();
 extern "C" FILE *yyin;
 
-static void usage()
-{
-  printf("Usage: cc <prog.c>\n");
-}
+static void usage() { printf("Usage: cc <prog.c>\n"); }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   if (argc != 2) {
     usage();
     exit(1);
@@ -24,8 +20,15 @@ main(int argc, char **argv)
   char const *filename = argv[1];
   yyin = fopen(filename, "r");
   assert(yyin);
+
+#ifdef YYDEBUG
+  yydebug = 1;
+#endif // DEBUG
+
   int ret = yyparse();
   printf("retv = %d\n", ret);
+  if (ret != 0)
+    exit(ret);
   program_ast->dump_ast(0);
   SemanticAnalyzer sa = SemanticAnalyzer();
   if (!sa.analyze(program_ast))
