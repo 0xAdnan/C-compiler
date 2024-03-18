@@ -170,8 +170,6 @@ unordered_map<string, ttype> ASTDecl::get_variables() const {
               } else {
                 variables[varName] = variableType;
               }
-            } else {
-              variables[varName] = variableType;
             }
           }
         } else {
