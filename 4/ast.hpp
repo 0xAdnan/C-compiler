@@ -26,7 +26,7 @@ protected:
 
 public:
   vector<ASTNode *> children;
-  virtual string to_str() = 0;
+  virtual string to_str() const = 0;
 
   void dump_ast(int indent) {
     auto myindent = indent;
@@ -159,35 +159,35 @@ public:
   ASTAssignmentExpr(ASTCondExpr *n);
   ASTAssignmentExpr(ASTUnaryExpr *n1, ASTAssignmentOp *n2,
                     ASTAssignmentExpr *n3);
-  string to_str() override { return "AssignmentExpression"; }
+  string to_str() const override { return "AssignmentExpression"; }
 };
 
 class ASTExpr : public ASTStmt {
 public:
   ASTExpr(ASTAssignmentExpr *n);
   ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
-  string to_str() override { return "Expression"; }
+  string to_str() const override { return "Expression"; }
 };
 
 class ASTInitDecl : public ASTNode {
 public:
   ASTInitDecl(ASTDirectDeclarator *n1, ASTInitializer *n2);
   ASTInitDecl(ASTDirectDeclarator *n);
-  string to_str() override { return "InitDeclaration"; }
+  string to_str() const override { return "InitDeclaration"; }
 };
 
 class ASTInitDeclList : public ASTNode {
 public:
   ASTInitDeclList(ASTInitDecl *n);
   ASTInitDeclList(ASTInitDeclList *n1, ASTInitDecl *n2);
-  string to_str() override { return "InitDeclaratorList"; }
+  string to_str() const override { return "InitDeclaratorList"; }
 };
 
 class ASTInitializer : public ASTNode {
 public:
   ASTInitializer(ASTInitializerList *n);
   ASTInitializer(ASTAssignmentExpr *n);
-  string to_str() override { return "Initializer"; }
+  string to_str() const override { return "Initializer"; }
 };
 
 class ASTType : public ASTNode {
@@ -196,7 +196,7 @@ public:
 
 public:
   ASTType(ttype t);
-  string to_str() override {
+  string to_str() const override {
     return "Type: " + string(magic_enum::enum_name(t).data());
   };
 };
@@ -205,7 +205,7 @@ class ASTDeclSpec : public ASTNode {
 public:
   ASTDeclSpec(ASTType *n);
   ASTDeclSpec(ASTType *n1, ASTDeclSpec *n2);
-  string to_str() override { return "DeclarationSpecifier"; }
+  string to_str() const override { return "DeclarationSpecifier"; }
 
   ttype get_type() const {
     if (children.size() > 1) {
@@ -222,7 +222,7 @@ public:
   ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2, ASTDeclList *n3,
            ASTBlockItemList *n4);
   ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2, ASTBlockItemList *n3);
-  string to_str() override { return "ASTFnDef"; }
+  string to_str() const override { return "ASTFnDef"; }
 };
 
 class ASTId : public ASTNode {
@@ -231,21 +231,21 @@ public:
 
 public:
   ASTId(string name);
-  string to_str() override { return "Identifier: " + name; }
+  string to_str() const override { return "Identifier: " + name; }
 };
 
 class ASTDesignator : public ASTNode {
 public:
   ASTDesignator(ASTCondExpr *n);
   ASTDesignator(ASTId *n);
-  string to_str() override { return "Designator"; }
+  string to_str() const override { return "Designator"; }
 };
 
 class ASTDesignatorList : public ASTNode {
 public:
   ASTDesignatorList(ASTDesignator *n);
   ASTDesignatorList(ASTDesignatorList *n1, ASTDesignator *n2);
-  string to_str() override { return "DesignatorList"; }
+  string to_str() const override { return "DesignatorList"; }
 };
 
 class ASTInitializerList : public ASTNode {
@@ -255,14 +255,14 @@ public:
   ASTInitializerList(ASTInitializerList *n1, ASTDesignatorList *n2,
                      ASTInitializer *n3);
   ASTInitializerList(ASTInitializerList *n1, ASTInitializer *n2);
-  string to_str() override { return "InitializerList"; }
+  string to_str() const override { return "InitializerList"; }
 };
 
 class ASTDecl : public ASTNode {
 public:
   ASTDecl(ASTDeclSpec *n);
   ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2);
-  string to_str() override { return "Declaration"; }
+  string to_str() const override { return "Declaration"; }
   unordered_map<string, ttype> get_variables() const;
 
   bool semantic_action_start(SemanticAnalyzer *sa) const override;
@@ -273,7 +273,7 @@ public:
   ASTDeclList();
   ASTDeclList(ASTDeclList *n1, ASTDecl *n2);
 
-  string to_str() override { return "ASTDeclList"; }
+  string to_str() const override { return "ASTDeclList"; }
 };
 
 class ASTAssignmentOp : public ASTNode {
@@ -282,7 +282,7 @@ protected:
 
 public:
   ASTAssignmentOp(assignment_op ap);
-  string to_str() override { return magic_enum::enum_name(ap).data(); }
+  string to_str() const override { return magic_enum::enum_name(ap).data(); }
 };
 
 class ASTIncOp : public ASTNode {
@@ -291,7 +291,7 @@ protected:
 
 public:
   ASTIncOp(inc_op ip);
-  string to_str() override { return magic_enum::enum_name(ip).data(); }
+  string to_str() const override { return magic_enum::enum_name(ip).data(); }
 };
 
 class ASTUnaryOp : public ASTNode {
@@ -300,7 +300,7 @@ protected:
 
 public:
   ASTUnaryOp(unary_op up);
-  string to_str() override { return magic_enum::enum_name(up).data(); }
+  string to_str() const override { return magic_enum::enum_name(up).data(); }
 };
 
 class ASTPtrOp : public ASTNode {
@@ -309,7 +309,7 @@ protected:
 
 public:
   ASTPtrOp(access_op ap);
-  string to_str() override { return magic_enum::enum_name(ap).data(); }
+  string to_str() const override { return magic_enum::enum_name(ap).data(); }
 };
 
 class ASTRelOp : public ASTNode {
@@ -318,7 +318,7 @@ protected:
 
 public:
   ASTRelOp(rel_op rp);
-  string to_str() override { return magic_enum::enum_name(rp).data(); }
+  string to_str() const override { return magic_enum::enum_name(rp).data(); }
 };
 
 class ASTEqOp : public ASTNode {
@@ -327,7 +327,7 @@ protected:
 
 public:
   ASTEqOp(equal_op ep);
-  string to_str() override { return magic_enum::enum_name(ep).data(); }
+  string to_str() const override { return magic_enum::enum_name(ep).data(); }
 };
 
 class ASTShiftOp : public ASTNode {
@@ -336,7 +336,7 @@ protected:
 
 public:
   ASTShiftOp(shift_op sp);
-  string to_str() override { return magic_enum::enum_name(sp).data(); }
+  string to_str() const override { return magic_enum::enum_name(sp).data(); }
 };
 
 class ASTArithOp : public ASTNode {
@@ -345,7 +345,7 @@ protected:
 
 public:
   ASTArithOp(arith_op ap);
-  string to_str() override { return magic_enum::enum_name(ap).data(); }
+  string to_str() const override { return magic_enum::enum_name(ap).data(); }
 };
 
 class ASTConst : public ASTNode {
@@ -355,7 +355,7 @@ public:
 
 public:
   ASTConst(const_type t, string value);
-  string to_str() override {
+  string to_str() const override {
     if (ct == const_type::i_const)
       return "IntConst: " + value;
     else if (ct == const_type::f_const)
@@ -368,7 +368,7 @@ class ASTIdList : public ASTNode {
 public:
   ASTIdList(ASTId *n);
   ASTIdList(ASTIdList *n1, ASTId *n2);
-  string to_str() override { return "IdentifierList"; }
+  string to_str() const override { return "IdentifierList"; }
 };
 
 class ASTStrConst : public ASTNode {};
@@ -376,20 +376,20 @@ class ASTStrConst : public ASTNode {};
 class ASTStrLiteralConst : public ASTStrConst {
 public:
   ASTStrLiteralConst();
-  string to_str() override { return "StringLiteral"; }
+  string to_str() const override { return "StringLiteral"; }
 };
 
 class ASTFuncNameConst : public ASTStrConst {
 public:
   ASTFuncNameConst();
-  string to_str() override { return "FunctionName"; }
+  string to_str() const override { return "FunctionName"; }
 };
 
 class ASTArgExpList : public ASTNode {
 public:
   ASTArgExpList(ASTAssignmentExpr *n);
   ASTArgExpList(ASTArgExpList *n1, ASTAssignmentExpr *n2);
-  string to_str() override { return "ArgumentList"; }
+  string to_str() const override { return "ArgumentList"; }
 };
 
 class ASTPrimaryExpr : public ASTNode {
@@ -398,7 +398,7 @@ public:
   ASTPrimaryExpr(ASTConst *n);
   ASTPrimaryExpr(ASTStrConst *n);
   ASTPrimaryExpr(ASTExpr *n);
-  string to_str() override { return "PrimaryExpression"; }
+  string to_str() const override { return "PrimaryExpression"; }
 };
 
 class ASTPostExpr : public ASTNode {
@@ -409,7 +409,7 @@ public:
   ASTPostExpr(ASTPostExpr *n1, ASTArgExpList *n2);
   ASTPostExpr(ASTPostExpr *n1, ASTPtrOp *n2, ASTId *n3);
   ASTPostExpr(ASTPostExpr *n1, ASTIncOp *n2);
-  string to_str() override { return "PostFixExpression"; }
+  string to_str() const override { return "PostFixExpression"; }
 };
 
 class ASTUnaryExpr : public ASTNode {
@@ -417,84 +417,84 @@ public:
   ASTUnaryExpr(ASTPostExpr *n);
   ASTUnaryExpr(ASTIncOp *n1, ASTUnaryExpr *n2);
   ASTUnaryExpr(ASTUnaryOp *n1, ASTUnaryExpr *n2);
-  string to_str() override { return "UnaryExpression"; }
+  string to_str() const override { return "UnaryExpression"; }
 };
 
 class ASTMulExpr : public ASTNode {
 public:
   ASTMulExpr(ASTUnaryExpr *n);
   ASTMulExpr(ASTMulExpr *n1, ASTArithOp *n2, ASTUnaryExpr *n3);
-  string to_str() override { return "MultiplicationExpression"; }
+  string to_str() const override { return "MultiplicationExpression"; }
 };
 
 class ASTAddExpr : public ASTNode {
 public:
   ASTAddExpr(ASTMulExpr *n);
   ASTAddExpr(ASTAddExpr *n1, ASTArithOp *n2, ASTMulExpr *n3);
-  string to_str() override { return "AddExpression"; }
+  string to_str() const override { return "AddExpression"; }
 };
 
 class ASTShiftExpr : public ASTNode {
 public:
   ASTShiftExpr(ASTAddExpr *n);
   ASTShiftExpr(ASTShiftExpr *n1, ASTShiftOp *n2, ASTAddExpr *n3);
-  string to_str() override { return "ShiftExpression"; }
+  string to_str() const override { return "ShiftExpression"; }
 };
 
 class ASTRelExpr : public ASTNode {
 public:
   ASTRelExpr(ASTShiftExpr *n);
   ASTRelExpr(ASTRelExpr *n1, ASTRelOp *n2, ASTShiftExpr *n3);
-  string to_str() override { return "RelationalExpression"; }
+  string to_str() const override { return "RelationalExpression"; }
 };
 
 class ASTEqExpr : public ASTNode {
 public:
   ASTEqExpr(ASTRelExpr *n);
   ASTEqExpr(ASTEqExpr *n1, ASTEqOp *n2, ASTRelExpr *n3);
-  string to_str() override { return "EqualExpression"; }
+  string to_str() const override { return "EqualExpression"; }
 };
 
 class ASTAndExpr : public ASTNode {
 public:
   ASTAndExpr(ASTEqExpr *n);
   ASTAndExpr(ASTAndExpr *n1, ASTEqExpr *n2);
-  string to_str() override { return "AndExpression"; }
+  string to_str() const override { return "AndExpression"; }
 };
 
 class ASTExclusiveOrExpr : public ASTNode {
 public:
   ASTExclusiveOrExpr(ASTAndExpr *n);
   ASTExclusiveOrExpr(ASTExclusiveOrExpr *n1, ASTAndExpr *n2);
-  string to_str() override { return "ExclusiveOrExpression"; }
+  string to_str() const override { return "ExclusiveOrExpression"; }
 };
 
 class ASTInclusiveOrExpr : public ASTNode {
 public:
   ASTInclusiveOrExpr(ASTExclusiveOrExpr *n);
   ASTInclusiveOrExpr(ASTInclusiveOrExpr *n1, ASTExclusiveOrExpr *n2);
-  string to_str() override { return "InclusiveOrExpression"; }
+  string to_str() const override { return "InclusiveOrExpression"; }
 };
 
 class ASTLogicalAndExpr : public ASTNode {
 public:
   ASTLogicalAndExpr(ASTInclusiveOrExpr *n);
   ASTLogicalAndExpr(ASTLogicalAndExpr *n1, ASTInclusiveOrExpr *n2);
-  string to_str() override { return "LogicalAndExpression"; }
+  string to_str() const override { return "LogicalAndExpression"; }
 };
 
 class ASTLogicalOrExpr : public ASTNode {
 public:
   ASTLogicalOrExpr(ASTLogicalAndExpr *n);
   ASTLogicalOrExpr(ASTLogicalOrExpr *n1, ASTLogicalAndExpr *n2);
-  string to_str() override { return "LogicalOrExpression"; }
+  string to_str() const override { return "LogicalOrExpression"; }
 };
 
 class ASTCondExpr : public ASTNode {
 public:
   ASTCondExpr(ASTLogicalOrExpr *n);
   ASTCondExpr(ASTLogicalOrExpr *n1, ASTExpr *n2, ASTCondExpr *n3);
-  string to_str() override { return "ConditionalExpression"; }
+  string to_str() const override { return "ConditionalExpression"; }
 };
 
 class ASTIterStmt : public ASTStmt {};
@@ -502,13 +502,13 @@ class ASTIterStmt : public ASTStmt {};
 class ASTWhileStmt : public ASTIterStmt {
 public:
   ASTWhileStmt(ASTExpr *n1, ASTStmt *n2);
-  string to_str() override { return "WhileStatement"; }
+  string to_str() const override { return "WhileStatement"; }
 };
 
 class ASTDoWhileStmt : public ASTIterStmt {
 public:
   ASTDoWhileStmt(ASTStmt *n1, ASTExpr *n2);
-  string to_str() override { return "DoWhileStatement"; }
+  string to_str() const override { return "DoWhileStatement"; }
 };
 
 class ASTForStmt : public ASTIterStmt {
@@ -517,7 +517,7 @@ public:
   ASTForStmt(ASTExpr *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4);
   ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTStmt *n3);
   ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4);
-  string to_str() override { return "ForStatement"; }
+  string to_str() const override { return "ForStatement"; }
 };
 
 /*  JUMP Statements */
@@ -526,26 +526,26 @@ class ASTJmpStmt : public ASTStmt {};
 class ASTGotoJmpStmt : public ASTJmpStmt {
 public:
   ASTGotoJmpStmt(ASTId *n);
-  string to_str() override { return "GotoStatement"; }
+  string to_str() const override { return "GotoStatement"; }
 };
 
 class ASTContJmpStmt : public ASTJmpStmt {
 public:
   ASTContJmpStmt();
-  string to_str() override { return "Continue"; }
+  string to_str() const override { return "Continue"; }
 };
 
 class ASTBreakJmpStmt : public ASTJmpStmt {
 public:
   ASTBreakJmpStmt();
-  string to_str() override { return "Break"; }
+  string to_str() const override { return "Break"; }
 };
 
 class ASTRetJmpStmt : public ASTJmpStmt {
 public:
   ASTRetJmpStmt();
   ASTRetJmpStmt(ASTExpr *n);
-  string to_str() override { return "ReturnStatement"; }
+  string to_str() const override { return "ReturnStatement"; }
 };
 
 class ASTSelectStmt : public ASTStmt {};
@@ -553,19 +553,19 @@ class ASTSelectStmt : public ASTStmt {};
 class ASTIfSelectStmt : public ASTSelectStmt {
 public:
   ASTIfSelectStmt(ASTExpr *n1, ASTStmt *n2);
-  string to_str() override { return "IfStatement"; }
+  string to_str() const override { return "IfStatement"; }
 };
 
 class ASTIfElseSelectStmt : public ASTSelectStmt {
 public:
   ASTIfElseSelectStmt(ASTExpr *n1, ASTStmt *n2, ASTStmt *n3);
-  string to_str() override { return "IfElseStatement"; }
+  string to_str() const override { return "IfElseStatement"; }
 };
 
 class ASTSwitchStmt : public ASTSelectStmt {
 public:
   ASTSwitchStmt(ASTExpr *n1, ASTStmt *n2);
-  string to_str() override { return "SwitchStatement"; }
+  string to_str() const override { return "SwitchStatement"; }
 };
 
 /*  LABELED Statements */
@@ -574,26 +574,26 @@ class ASTLabeledStmt : public ASTStmt {};
 class ASTGotoLabeledStmt : public ASTLabeledStmt {
 public:
   ASTGotoLabeledStmt(ASTId *n1, ASTStmt *n2);
-  string to_str() override { return "GotoLabel"; }
+  string to_str() const override { return "GotoLabel"; }
 };
 
 class ASTCaseLabeledStmt : public ASTLabeledStmt {
 public:
   ASTCaseLabeledStmt(ASTCondExpr *n1, ASTStmt *n2);
-  string to_str() override { return "CaseLabel"; }
+  string to_str() const override { return "CaseLabel"; }
 };
 
 class ASTDefLabeledStmt : public ASTLabeledStmt {
 public:
   ASTDefLabeledStmt(ASTStmt *n);
-  string to_str() override { return "DefaultCaseLabel"; }
+  string to_str() const override { return "DefaultCaseLabel"; }
 };
 
 class ASTBlockItem : public ASTNode {
 public:
   ASTBlockItem(ASTDecl *n);
   ASTBlockItem(ASTStmt *n);
-  string to_str() override { return "Block"; }
+  string to_str() const override { return "Block"; }
 };
 
 class ASTBlockItemList : public ASTStmt {
@@ -601,7 +601,7 @@ public:
   ASTBlockItemList();
   ASTBlockItemList(ASTBlockItem *n);
   ASTBlockItemList(ASTBlockItemList *n1, ASTBlockItem *n2);
-  string to_str() override {
+  string to_str() const override {
     if (children.size() == 0)
       return "EmptyBlockList";
     return "BlockList";
@@ -614,7 +614,7 @@ class ASTPtr : public ASTNode {
 public:
   ASTPtr();
   ASTPtr(ASTPtr *n);
-  string to_str() override { return "*Pointer"; }
+  string to_str() const override { return "*Pointer"; }
 };
 
 class ASTDirectDeclarator : public ASTNode {
@@ -625,14 +625,14 @@ public:
 class ASTIdDeclarator : public ASTDirectDeclarator {
 public:
   ASTIdDeclarator(ASTId *n);
-  string to_str() override { return "IdDeclarator"; }
+  string to_str() const override { return "IdDeclarator"; }
 };
 
 class ASTParamDecl : public ASTNode {
 public:
   ASTParamDecl(ASTDeclSpec *n1, ASTDirectDeclarator *n2);
   ASTParamDecl(ASTDeclSpec *n);
-  string to_str() override { return "ParameterDeclaration"; }
+  string to_str() const override { return "ParameterDeclaration"; }
 
   string get_var_name() const;
   ttype get_type() const;
@@ -642,7 +642,7 @@ class ASTParamList : public ASTNode {
 public:
   ASTParamList(ASTParamDecl *n);
   ASTParamList(ASTParamList *n1, ASTParamDecl *n2);
-  string to_str() override { return "ParameterList"; }
+  string to_str() const override { return "ParameterList"; }
 
   pair<bool, unordered_map<string, ttype>> get_variables() const;
 };
@@ -651,10 +651,9 @@ class ASTFnDeclarator : public ASTDirectDeclarator {
 public:
   ASTFnDeclarator(ASTDirectDeclarator *n1, ASTParamList *n2);
   ASTFnDeclarator(ASTDirectDeclarator *n);
-  string to_str() override { return "FunctionDeclarator"; }
+  string to_str() const override { return "FunctionDeclarator"; }
 
   bool semantic_action_start(SemanticAnalyzer *sa) const override;
-  bool semantic_action_end(SemanticAnalyzer *sa) const override;
 
   pair<bool, unordered_map<string, ttype>> get_variables() const;
 };
@@ -662,37 +661,44 @@ public:
 class ASTFnCallDeclarator : public ASTDirectDeclarator {
 public:
   ASTFnCallDeclarator(ASTDirectDeclarator *n1, ASTIdList *n2);
-  string to_str() override { return "FunctionCallDeclarator"; }
+  string to_str() const override { return "FunctionCallDeclarator"; }
 };
 
 class ASTExternDecl : public ASTNode {
 public:
   ASTExternDecl(ASTFnDef *n);
   ASTExternDecl(ASTDecl *n);
-  string to_str() override { return "ASTExternDecl"; }
+  string to_str() const override { return "ASTExternDecl"; }
 };
 
 class ASTProgram : public ASTNode {
 public:
   ASTProgram(ASTExternDecl *n1);
   ASTProgram(ASTProgram *n1, ASTExternDecl *n2);
-  string to_str() { return "Program"; }
+  string to_str() const override { return "Program"; }
+};
+
+struct SymbolTable {
+  string context;
+  unordered_map<string, ttype> table;
 };
 
 class SemanticAnalyzer {
 private:
-  vector<unordered_map<string, ttype>> symbol_table;
+  vector<SymbolTable> symbol_table;
 
 public:
-  SemanticAnalyzer() { symbol_table = vector<unordered_map<string, ttype>>(); }
+  SemanticAnalyzer() { symbol_table = vector<SymbolTable>(); }
   bool analyze(ASTProgram *p);
   bool analyze_node(ASTNode *node);
 
   bool find(string variable);
   bool find_all(string variable);
-  void enter_scope();
+  void enter_scope(string context);
   void exit_scope();
   bool add_variable(string variable, ttype type);
+
+  SymbolTable *peek();
 };
 
 #endif /* AST_HPP_INCLUDED */

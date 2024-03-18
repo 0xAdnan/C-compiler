@@ -31,7 +31,9 @@ int main(int argc, char **argv) {
     exit(ret);
   program_ast->dump_ast(0);
   SemanticAnalyzer sa = SemanticAnalyzer();
-  if (!sa.analyze(program_ast))
+  if (!sa.analyze(program_ast)) {
+    cout << "Semantic Analysis Failed" << endl;
     exit(1);
+  }
   exit(0);
 }
