@@ -148,13 +148,25 @@ class ASTUnaryExpr;
 class ASTAssignmentOp;
 class ASTBlockItemList;
 class ASTInitDeclList;
+class ASTAssignmentExpr;
 
 class ASTStmt : public ASTNode {
 public:
   ASTStmt();
 };
 
-class ASTAssignmentExpr : public ASTNode {
+
+class ASTExpr : public ASTStmt {
+public:
+  ASTExpr();
+  ASTExpr(ASTAssignmentExpr *n);
+  ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
+  string to_str() const override { return "Expression"; }
+  bool semantic_action_start(SemanticAnalyzer* sa) const override; 
+  vector<string> get_referred_vars() const;
+};
+
+class ASTAssignmentExpr : public ASTExpr {
 public:
   ASTAssignmentExpr(ASTCondExpr *n);
   ASTAssignmentExpr(ASTUnaryExpr *n1, ASTAssignmentOp *n2,
@@ -162,12 +174,6 @@ public:
   string to_str() const override { return "AssignmentExpression"; }
 };
 
-class ASTExpr : public ASTStmt {
-public:
-  ASTExpr(ASTAssignmentExpr *n);
-  ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
-  string to_str() const override { return "Expression"; }
-};
 
 class ASTInitDecl : public ASTNode {
 public:
@@ -234,7 +240,7 @@ public:
   string to_str() const override { return "Identifier: " + name; }
 };
 
-class ASTDesignator : public ASTNode {
+class ASTDesignator : public ASTExpr {
 public:
   ASTDesignator(ASTCondExpr *n);
   ASTDesignator(ASTId *n);
@@ -392,7 +398,8 @@ public:
   string to_str() const override { return "ArgumentList"; }
 };
 
-class ASTPrimaryExpr : public ASTNode {
+class ASTPrimaryExpr : public ASTExpr
+ {
 public:
   ASTPrimaryExpr(ASTId *n);
   ASTPrimaryExpr(ASTConst *n);
@@ -401,7 +408,7 @@ public:
   string to_str() const override { return "PrimaryExpression"; }
 };
 
-class ASTPostExpr : public ASTNode {
+class ASTPostExpr : public ASTExpr {
 public:
   ASTPostExpr(ASTPrimaryExpr *n);
   ASTPostExpr(ASTPostExpr *n1, ASTExpr *n2);
@@ -412,7 +419,7 @@ public:
   string to_str() const override { return "PostFixExpression"; }
 };
 
-class ASTUnaryExpr : public ASTNode {
+class ASTUnaryExpr : public ASTExpr {
 public:
   ASTUnaryExpr(ASTPostExpr *n);
   ASTUnaryExpr(ASTIncOp *n1, ASTUnaryExpr *n2);
@@ -420,77 +427,77 @@ public:
   string to_str() const override { return "UnaryExpression"; }
 };
 
-class ASTMulExpr : public ASTNode {
+class ASTMulExpr : public ASTExpr {
 public:
   ASTMulExpr(ASTUnaryExpr *n);
   ASTMulExpr(ASTMulExpr *n1, ASTArithOp *n2, ASTUnaryExpr *n3);
   string to_str() const override { return "MultiplicationExpression"; }
 };
 
-class ASTAddExpr : public ASTNode {
+class ASTAddExpr : public ASTExpr {
 public:
   ASTAddExpr(ASTMulExpr *n);
   ASTAddExpr(ASTAddExpr *n1, ASTArithOp *n2, ASTMulExpr *n3);
   string to_str() const override { return "AddExpression"; }
 };
 
-class ASTShiftExpr : public ASTNode {
+class ASTShiftExpr : public ASTExpr {
 public:
   ASTShiftExpr(ASTAddExpr *n);
   ASTShiftExpr(ASTShiftExpr *n1, ASTShiftOp *n2, ASTAddExpr *n3);
   string to_str() const override { return "ShiftExpression"; }
 };
 
-class ASTRelExpr : public ASTNode {
+class ASTRelExpr : public ASTExpr {
 public:
   ASTRelExpr(ASTShiftExpr *n);
   ASTRelExpr(ASTRelExpr *n1, ASTRelOp *n2, ASTShiftExpr *n3);
   string to_str() const override { return "RelationalExpression"; }
 };
 
-class ASTEqExpr : public ASTNode {
+class ASTEqExpr : public ASTExpr {
 public:
   ASTEqExpr(ASTRelExpr *n);
   ASTEqExpr(ASTEqExpr *n1, ASTEqOp *n2, ASTRelExpr *n3);
   string to_str() const override { return "EqualExpression"; }
 };
 
-class ASTAndExpr : public ASTNode {
+class ASTAndExpr : public ASTExpr {
 public:
   ASTAndExpr(ASTEqExpr *n);
   ASTAndExpr(ASTAndExpr *n1, ASTEqExpr *n2);
   string to_str() const override { return "AndExpression"; }
 };
 
-class ASTExclusiveOrExpr : public ASTNode {
+class ASTExclusiveOrExpr : public ASTExpr {
 public:
   ASTExclusiveOrExpr(ASTAndExpr *n);
   ASTExclusiveOrExpr(ASTExclusiveOrExpr *n1, ASTAndExpr *n2);
   string to_str() const override { return "ExclusiveOrExpression"; }
 };
 
-class ASTInclusiveOrExpr : public ASTNode {
+class ASTInclusiveOrExpr : public ASTExpr {
 public:
   ASTInclusiveOrExpr(ASTExclusiveOrExpr *n);
   ASTInclusiveOrExpr(ASTInclusiveOrExpr *n1, ASTExclusiveOrExpr *n2);
   string to_str() const override { return "InclusiveOrExpression"; }
 };
 
-class ASTLogicalAndExpr : public ASTNode {
+class ASTLogicalAndExpr : public ASTExpr {
 public:
   ASTLogicalAndExpr(ASTInclusiveOrExpr *n);
   ASTLogicalAndExpr(ASTLogicalAndExpr *n1, ASTInclusiveOrExpr *n2);
   string to_str() const override { return "LogicalAndExpression"; }
 };
 
-class ASTLogicalOrExpr : public ASTNode {
+class ASTLogicalOrExpr : public ASTExpr {
 public:
   ASTLogicalOrExpr(ASTLogicalAndExpr *n);
   ASTLogicalOrExpr(ASTLogicalOrExpr *n1, ASTLogicalAndExpr *n2);
   string to_str() const override { return "LogicalOrExpression"; }
 };
 
-class ASTCondExpr : public ASTNode {
+class ASTCondExpr : public ASTExpr {
 public:
   ASTCondExpr(ASTLogicalOrExpr *n);
   ASTCondExpr(ASTLogicalOrExpr *n1, ASTExpr *n2, ASTCondExpr *n3);

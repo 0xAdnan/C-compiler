@@ -21,9 +21,7 @@ int main(int argc, char **argv) {
   yyin = fopen(filename, "r");
   assert(yyin);
 
-#ifdef YYDEBUG
   yydebug = 1;
-#endif // DEBUG
 
   int ret = yyparse();
   printf("retv = %d\n", ret);

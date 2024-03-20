@@ -4,16 +4,7 @@
 
 ASTStmt::ASTStmt() : ASTNode() {}
 
-ASTAssignmentExpr::ASTAssignmentExpr(ASTCondExpr *n) : ASTNode() {
-  this->add_child(n);
-}
-ASTAssignmentExpr::ASTAssignmentExpr(ASTUnaryExpr *n1, ASTAssignmentOp *n2,
-                                     ASTAssignmentExpr *n3)
-    : ASTNode() {
-  this->add_child(n1);
-  this->add_child(n2);
-  this->add_child(n3);
-}
+ASTExpr::ASTExpr() : ASTStmt() {}
 
 ASTExpr::ASTExpr(ASTAssignmentExpr *n) : ASTStmt() {
   if (this->children.size() == 1)
@@ -25,6 +16,17 @@ ASTExpr::ASTExpr(ASTAssignmentExpr *n) : ASTStmt() {
 ASTExpr::ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2) : ASTStmt() {
   this->add_child(n1);
   this->add_child(n2);
+}
+
+ASTAssignmentExpr::ASTAssignmentExpr(ASTCondExpr *n) : ASTExpr() {
+  this->add_child(n);
+}
+ASTAssignmentExpr::ASTAssignmentExpr(ASTUnaryExpr *n1, ASTAssignmentOp *n2,
+                                     ASTAssignmentExpr *n3)
+    : ASTExpr() {
+  this->add_child(n1);
+  this->add_child(n2);
+  this->add_child(n3);
 }
 
 ASTInitDecl::ASTInitDecl(ASTDirectDeclarator *n1, ASTInitializer *n2)
@@ -86,11 +88,12 @@ ASTFnDef::ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2,
   this->add_child(n3, true);
 }
 
-ASTId::ASTId(string name) : ASTNode(), name(name) {}
+ASTId::ASTId(string name) : ASTNode(), name(name) {
+}
 
-ASTDesignator::ASTDesignator(ASTCondExpr *n) : ASTNode() { this->add_child(n); }
+ASTDesignator::ASTDesignator(ASTCondExpr *n) : ASTExpr() { this->add_child(n); }
 
-ASTDesignator::ASTDesignator(ASTId *n) : ASTNode() { this->add_child(n); }
+ASTDesignator::ASTDesignator(ASTId *n) : ASTExpr() { this->add_child(n); }
 ASTDesignatorList::ASTDesignatorList(ASTDesignator *n) : ASTNode() {
   this->add_child(n);
 }
@@ -146,41 +149,47 @@ ASTDecl::ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2) : ASTNode() {
 
 unordered_map<string, ttype> ASTDecl::get_variables() const {
   unordered_map<string, ttype> variables;
+  ttype variableType;
 
-  ASTType *typeNode = dynamic_cast<ASTType *>(this->children[0]);
-  if (!typeNode) {
-    return variables;
+  for (auto *child : this->children) {
+    if (auto *typeNode = dynamic_cast<ASTType *>(child)) {
+      variableType = (typeNode->t);
+    } else if (auto *idNode = dynamic_cast<ASTId *>(child)) {
+      variables[idNode->name] = variableType;
+    }
   }
 
-  ttype variableType = typeNode->t;
-
   if (this->children.size() > 1) {
-    ASTInitDeclList *initDeclList =
-        dynamic_cast<ASTInitDeclList *>(this->children[1]);
+    auto *initDeclList = dynamic_cast<ASTInitDeclList *>(children[1]);
+    auto *initDecl = dynamic_cast<ASTInitDecl *>(children[1]);
     if (initDeclList) {
-      for (auto &child : initDeclList->children) {
-        ASTInitDecl *initDecl = dynamic_cast<ASTInitDecl *>(child);
-        if (initDecl && initDecl->children.size() > 0) {
-          ASTId *idNode = dynamic_cast<ASTId *>(initDecl->children[0]);
-          if (idNode) {
-            string varName = idNode->name;
-            if (initDecl->children.size() > 1) {
-              ASTConst *constNode =
-                  dynamic_cast<ASTConst *>(initDecl->children[1]);
-              if (constNode) {
-                variables[varName] = variableType;
+      for (auto *child : initDeclList->children) {
+        if (auto *idNode = dynamic_cast<ASTId *>(child)) {
+          variables[idNode->name] = variableType;
+        } else if (auto *initDecl = dynamic_cast<ASTInitDecl *>(child)) {
+          if (!initDecl->children.empty()) {
+            if (auto *idNode = dynamic_cast<ASTId *>(initDecl->children[0])) {
+              string varName = idNode->name;
+              if (initDecl->children.size() > 1) {
+                if (auto *constNode =
+                        dynamic_cast<ASTConst *>(initDecl->children[1])) {
+                  variables[varName] = variableType;
+                } else {
+                  variables[varName] = variableType;
+                }
               } else {
                 variables[varName] = variableType;
               }
             }
           }
-        } else {
-          ASTId *idNode = dynamic_cast<ASTId *>(child);
-          if (idNode) {
-            variables[idNode->name] = variableType;
-          }
         }
       }
+    } else if (initDecl) {
+      auto idNode = dynamic_cast<ASTId *>(initDecl->children[0]);
+      string varName = idNode->name;
+      variables[varName] = variableType;
+      auto *constNode = dynamic_cast<ASTConst *>(initDecl->children[1]);
+
     }
   }
   return variables;
@@ -244,152 +253,152 @@ ASTArgExpList::ASTArgExpList(ASTArgExpList *n1, ASTAssignmentExpr *n2)
   delete n1;
 }
 
-ASTPrimaryExpr::ASTPrimaryExpr(ASTId *n) : ASTNode() { this->add_child(n); }
+ASTPrimaryExpr::ASTPrimaryExpr(ASTId *n) : ASTExpr() { this->add_child(n); }
 
-ASTPrimaryExpr::ASTPrimaryExpr(ASTConst *n) : ASTNode() { this->add_child(n); }
+ASTPrimaryExpr::ASTPrimaryExpr(ASTConst *n) : ASTExpr() { this->add_child(n); }
 
-ASTPrimaryExpr::ASTPrimaryExpr(ASTStrConst *n) : ASTNode() {
+ASTPrimaryExpr::ASTPrimaryExpr(ASTStrConst *n) : ASTExpr() {
   this->add_child(n);
 }
 
-ASTPrimaryExpr::ASTPrimaryExpr(ASTExpr *n) : ASTNode() { this->add_child(n); }
+ASTPrimaryExpr::ASTPrimaryExpr(ASTExpr *n) : ASTExpr() { this->add_child(n); }
 
-ASTPostExpr::ASTPostExpr(ASTPrimaryExpr *n) : ASTNode() { this->add_child(n); }
+ASTPostExpr::ASTPostExpr(ASTPrimaryExpr *n) : ASTExpr() { this->add_child(n); }
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTExpr *n2) : ASTNode() {
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTExpr *n2) : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n) : ASTNode() { this->add_child(n); }
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n) : ASTExpr() { this->add_child(n); }
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTArgExpList *n2) : ASTNode() {
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTArgExpList *n2) : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTPtrOp *n2, ASTId *n3) : ASTNode() {
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTPtrOp *n2, ASTId *n3) : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
   this->add_child(n3);
 }
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTIncOp *n2) : ASTNode() {
+ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTIncOp *n2) : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTUnaryExpr::ASTUnaryExpr(ASTPostExpr *n) : ASTNode() { this->add_child(n); }
+ASTUnaryExpr::ASTUnaryExpr(ASTPostExpr *n) : ASTExpr() { this->add_child(n); }
 
-ASTUnaryExpr::ASTUnaryExpr(ASTIncOp *n1, ASTUnaryExpr *n2) : ASTNode() {
+ASTUnaryExpr::ASTUnaryExpr(ASTIncOp *n1, ASTUnaryExpr *n2) : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTUnaryExpr::ASTUnaryExpr(ASTUnaryOp *n1, ASTUnaryExpr *n2) : ASTNode() {
+ASTUnaryExpr::ASTUnaryExpr(ASTUnaryOp *n1, ASTUnaryExpr *n2) : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
-ASTMulExpr::ASTMulExpr(ASTUnaryExpr *n) : ASTNode() { this->add_child(n); }
+ASTMulExpr::ASTMulExpr(ASTUnaryExpr *n) : ASTExpr() { this->add_child(n); }
 
 ASTMulExpr::ASTMulExpr(ASTMulExpr *n1, ASTArithOp *n2, ASTUnaryExpr *n3)
-    : ASTNode() {
+    : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
   this->add_child(n3);
 }
 
-ASTAddExpr::ASTAddExpr(ASTMulExpr *n) : ASTNode() { this->add_child(n); }
+ASTAddExpr::ASTAddExpr(ASTMulExpr *n) : ASTExpr() { this->add_child(n); }
 
 ASTAddExpr::ASTAddExpr(ASTAddExpr *n1, ASTArithOp *n2, ASTMulExpr *n3)
-    : ASTNode() {
+    : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
   this->add_child(n3);
 }
 
-ASTShiftExpr::ASTShiftExpr(ASTAddExpr *n) : ASTNode() { this->add_child(n); }
+ASTShiftExpr::ASTShiftExpr(ASTAddExpr *n) : ASTExpr() { this->add_child(n); }
 
 ASTShiftExpr::ASTShiftExpr(ASTShiftExpr *n1, ASTShiftOp *n2, ASTAddExpr *n3)
-    : ASTNode() {
+    : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
   this->add_child(n3);
 }
 
-ASTRelExpr::ASTRelExpr(ASTShiftExpr *n) : ASTNode() { this->add_child(n); }
+ASTRelExpr::ASTRelExpr(ASTShiftExpr *n) : ASTExpr() { this->add_child(n); }
 
 ASTRelExpr::ASTRelExpr(ASTRelExpr *n1, ASTRelOp *n2, ASTShiftExpr *n3)
-    : ASTNode() {
+    : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
   this->add_child(n3);
 }
 
-ASTEqExpr::ASTEqExpr(ASTRelExpr *n) : ASTNode() { this->add_child(n); }
+ASTEqExpr::ASTEqExpr(ASTRelExpr *n) : ASTExpr() { this->add_child(n); }
 
-ASTEqExpr::ASTEqExpr(ASTEqExpr *n1, ASTEqOp *n2, ASTRelExpr *n3) : ASTNode() {
+ASTEqExpr::ASTEqExpr(ASTEqExpr *n1, ASTEqOp *n2, ASTRelExpr *n3) : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
   this->add_child(n3);
 }
 
-ASTAndExpr::ASTAndExpr(ASTEqExpr *n) : ASTNode() { this->add_child(n); }
+ASTAndExpr::ASTAndExpr(ASTEqExpr *n) : ASTExpr() { this->add_child(n); }
 
-ASTAndExpr::ASTAndExpr(ASTAndExpr *n1, ASTEqExpr *n2) : ASTNode() {
+ASTAndExpr::ASTAndExpr(ASTAndExpr *n1, ASTEqExpr *n2) : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTExclusiveOrExpr::ASTExclusiveOrExpr(ASTAndExpr *n) : ASTNode() {
+ASTExclusiveOrExpr::ASTExclusiveOrExpr(ASTAndExpr *n) : ASTExpr() {
   this->add_child(n);
 }
 
 ASTExclusiveOrExpr::ASTExclusiveOrExpr(ASTExclusiveOrExpr *n1, ASTAndExpr *n2)
-    : ASTNode() {
+    : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTInclusiveOrExpr::ASTInclusiveOrExpr(ASTExclusiveOrExpr *n) : ASTNode() {
+ASTInclusiveOrExpr::ASTInclusiveOrExpr(ASTExclusiveOrExpr *n) : ASTExpr() {
   this->add_child(n);
 }
 
 ASTInclusiveOrExpr::ASTInclusiveOrExpr(ASTInclusiveOrExpr *n1,
                                        ASTExclusiveOrExpr *n2)
-    : ASTNode() {
+    : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTLogicalAndExpr::ASTLogicalAndExpr(ASTInclusiveOrExpr *n) : ASTNode() {
+ASTLogicalAndExpr::ASTLogicalAndExpr(ASTInclusiveOrExpr *n) : ASTExpr() {
   this->add_child(n);
 }
 
 ASTLogicalAndExpr::ASTLogicalAndExpr(ASTLogicalAndExpr *n1,
                                      ASTInclusiveOrExpr *n2)
-    : ASTNode() {
+    : ASTExpr() {
 
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTLogicalOrExpr::ASTLogicalOrExpr(ASTLogicalAndExpr *n) : ASTNode() {
+ASTLogicalOrExpr::ASTLogicalOrExpr(ASTLogicalAndExpr *n) : ASTExpr() {
   this->add_child(n);
 }
 
 ASTLogicalOrExpr::ASTLogicalOrExpr(ASTLogicalOrExpr *n1, ASTLogicalAndExpr *n2)
-    : ASTNode() {
+    : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTCondExpr::ASTCondExpr(ASTLogicalOrExpr *n) : ASTNode() {
+ASTCondExpr::ASTCondExpr(ASTLogicalOrExpr *n) : ASTExpr() {
   this->add_child(n);
 }
 
 ASTCondExpr::ASTCondExpr(ASTLogicalOrExpr *n1, ASTExpr *n2, ASTCondExpr *n3)
-    : ASTNode() {
+    : ASTExpr() {
   this->add_child(n1);
   this->add_child(n2);
   this->add_child(n3);

@@ -15,6 +15,32 @@ bool ASTDecl::semantic_action_start(SemanticAnalyzer *sa) const {
   return true;
 }
 
+vector<string> ASTExpr::get_referred_vars() const {
+  vector<string> referredVars;
+
+  for (const auto *child : this->children) {
+    if (const auto *idNode = dynamic_cast<const ASTId *>(child)) {
+      referredVars.push_back(idNode->name);
+    } else if (const auto *exprNode = dynamic_cast<const ASTExpr *>(child)) {
+      vector<string> childReferredVars = exprNode->get_referred_vars();
+      referredVars.insert(referredVars.end(), childReferredVars.begin(),
+                          childReferredVars.end());
+    }
+  }
+
+  return referredVars;
+}
+
+
+bool ASTExpr::semantic_action_start(SemanticAnalyzer *sa) const {
+  vector<string> referred_vars = get_referred_vars();
+for (auto var : referred_vars) {
+    if (!sa->find_all(var))
+      return false;
+  }
+  return true;
+}
+
 bool ASTFnDeclarator::semantic_action_start(SemanticAnalyzer *sa) const {
   sa->enter_scope(this->to_str());
   pair<bool, unordered_map<string, ttype>> variables = this->get_variables();
@@ -94,13 +120,14 @@ void SemanticAnalyzer::enter_scope(string context) {
 
 void SemanticAnalyzer::exit_scope() {
   if (!symbol_table.empty()) {
-    cout << "Before exiting: " << endl;
-    for (const auto &symbol_map : symbol_table) {
-      for (const auto &entry : symbol_map.table) {
-        string t_str = string(magic_enum::enum_name(entry.second).data());
-        cout << entry.first << " : " << t_str << endl;
-      }
+    cout << "Symbol Table before exiting: " << symbol_table.back().context
+         << endl;
+    // for (const auto &symbol_map : symbol_table) {
+    for (const auto &entry : symbol_table.back().table) {
+      string t_str = string(magic_enum::enum_name(entry.second).data());
+      cout << entry.first << " : " << t_str << endl;
     }
+    // }
     symbol_table.pop_back();
   }
 }
