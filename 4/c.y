@@ -313,6 +313,8 @@ declaration
 declaration_specifiers
 	: type_specifier declaration_specifiers                                          { $$ = new ASTDeclSpec($1, $2); }
 	| type_specifier                                                                 { $$ = new ASTDeclSpec($1); }
+	| CONST declaration_specifiers                                                   { todo(316); }
+	| CONST                                                                          { todo(317); }
 	;
 
 init_declarator_list
@@ -344,10 +346,12 @@ type_specifier
 specifier_qualifier_list
 	: type_specifier specifier_qualifier_list
 	| type_specifier
+	| CONST specifier_qualifier_list
+	| CONST
 	;
 
 declarator
-	: pointer direct_declarator                                                       { todo(345);}
+	: pointer direct_declarator                                                       { $$ = $2; $2->add_ptr($1); }
 	| direct_declarator                                                               { $$ = $1;}
 	;
 
@@ -356,6 +360,9 @@ direct_declarator
 	| '(' declarator ')'                                                              { $$ = $2; }
 	| direct_declarator '[' ']'                                                       { todo(352); }
 	| direct_declarator '[' '*' ']'                                                   { todo(353); }
+	| direct_declarator '[' CONST '*' ']'                                             { todo(363); }
+	| direct_declarator '[' CONST assignment_expression ']'                           { todo(364); }
+	| direct_declarator '[' CONST ']'                                                 { todo(364); }
 	| direct_declarator '[' assignment_expression ']'                                 { todo(360); }
 	| direct_declarator '(' parameter_type_list ')'                                   { $$ = new ASTFnDeclarator($1, $3);}
 	| direct_declarator '(' ')'                                                       { $$ = new ASTFnDeclarator($1);}
@@ -363,7 +370,9 @@ direct_declarator
 	;
 
 pointer
-	: '*' pointer                                                                     { $$ = new ASTPtr($2); }
+	: '*' CONST pointer                                                               { todo(373); }
+	| '*' CONST                                                                       { todo(374); }
+	| '*' pointer                                                                     { $$ = new ASTPtr($2); }
 	| '*'                                                                             { $$ = new ASTPtr(); }
 	;
 

@@ -155,14 +155,13 @@ public:
   ASTStmt();
 };
 
-
 class ASTExpr : public ASTStmt {
 public:
   ASTExpr();
   ASTExpr(ASTAssignmentExpr *n);
   ASTExpr(ASTExpr *n1, ASTAssignmentExpr *n2);
   string to_str() const override { return "Expression"; }
-  bool semantic_action_start(SemanticAnalyzer* sa) const override; 
+  bool semantic_action_start(SemanticAnalyzer *sa) const override;
   vector<string> get_referred_vars() const;
 };
 
@@ -173,7 +172,6 @@ public:
                     ASTAssignmentExpr *n3);
   string to_str() const override { return "AssignmentExpression"; }
 };
-
 
 class ASTInitDecl : public ASTNode {
 public:
@@ -398,8 +396,7 @@ public:
   string to_str() const override { return "ArgumentList"; }
 };
 
-class ASTPrimaryExpr : public ASTExpr
- {
+class ASTPrimaryExpr : public ASTExpr {
 public:
   ASTPrimaryExpr(ASTId *n);
   ASTPrimaryExpr(ASTConst *n);
@@ -627,6 +624,7 @@ public:
 class ASTDirectDeclarator : public ASTNode {
 public:
   ASTDirectDeclarator() : ASTNode() {}
+  void add_ptr(ASTPtr *ptr) { children.insert(children.begin(), ptr); }
 };
 
 class ASTIdDeclarator : public ASTDirectDeclarator {
