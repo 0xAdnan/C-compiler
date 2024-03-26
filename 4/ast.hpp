@@ -685,7 +685,7 @@ public:
 
 struct SymbolTable {
   string context;
-  unordered_map<string, ttype> table;
+  unordered_map<string, pair<ttype, int>> table;
 };
 
 class SemanticAnalyzer {

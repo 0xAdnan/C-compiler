@@ -54,7 +54,7 @@ bool ASTFnDeclarator::semantic_action_start(SemanticAnalyzer *sa) const {
 }
 
 bool ASTBlockItemList::semantic_action_start(SemanticAnalyzer *sa) const {
-  auto prev_symbols = unordered_map<string, ttype>{};
+    auto prev_symbols = unordered_map<string, pair<ttype, int>>{};
   if (sa->peek()->context == "FunctionDeclarator") {
     prev_symbols = sa->peek()->table;
     sa->exit_scope();
@@ -62,7 +62,7 @@ bool ASTBlockItemList::semantic_action_start(SemanticAnalyzer *sa) const {
 
   sa->enter_scope(this->to_str());
   for (auto vt : prev_symbols) {
-    if (!sa->add_variable(vt.first, vt.second))
+    if (!sa->add_variable(vt.first, vt.second.first))
       return false;
   }
   return true;
@@ -120,22 +120,30 @@ void SemanticAnalyzer::enter_scope(string context) {
 
 void SemanticAnalyzer::exit_scope() {
   if (!symbol_table.empty()) {
-    cout << "Symbol Table before exiting: " << symbol_table.back().context
-         << endl;
-    // for (const auto &symbol_map : symbol_table) {
+    cout << "Symbol Table before exiting: " << symbol_table.back().context << endl;
     for (const auto &entry : symbol_table.back().table) {
-      string t_str = string(magic_enum::enum_name(entry.second).data());
-      cout << entry.first << " : " << t_str << endl;
+      string t_str = string(magic_enum::enum_name(entry.second.first).data());
+      cout << entry.first << " : " << t_str << ", Count: " << entry.second.second << endl;
     }
-    // }
     symbol_table.pop_back();
   }
 }
 
 bool SemanticAnalyzer::add_variable(string variable, ttype type) {
-  if (this->find(variable))
+  auto& currentScopeTable = symbol_table.back().table;
+  auto it = currentScopeTable.find(variable);
+  if (it != currentScopeTable.end())
     return false;
-  symbol_table.back().table[variable] = type;
+  
+  int totalDeclarations = 0;
+
+  for (const auto& scope : symbol_table) {
+    auto var_found = scope.table.find(variable);
+    if (var_found != scope.table.end()) {
+      totalDeclarations = max(totalDeclarations, var_found->second.second);
+    }
+  }
+  currentScopeTable[variable] = make_pair(type, totalDeclarations + 1);
   return true;
 }
 
