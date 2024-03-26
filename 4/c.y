@@ -177,8 +177,8 @@ postfix_expression
 	| postfix_expression '[' expression ']'                                          { $$ = new ASTPostExpr($1, $3); }
 	| postfix_expression '(' ')'                                                     { $$ = new ASTPostExpr($1); }
 	| postfix_expression '(' argument_expression_list ')'                            { $$ = new ASTPostExpr($1, $3); }
-	| postfix_expression '.' IDENTIFIER                                              { $$ = new ASTPostExpr($1, new ASTPtrOp(dot_op), new ASTId(yytext)); }
-	| postfix_expression PTR_OP IDENTIFIER                                           { $$ = new ASTPostExpr($1, new ASTPtrOp(ptr_op), new ASTId(yytext)); }
+	| postfix_expression '.' IDENTIFIER                                              { $$ = new ASTPostExpr($1, new ASTPtrOp(dot_op), new ASTId($3)); }
+	| postfix_expression PTR_OP IDENTIFIER                                           { $$ = new ASTPostExpr($1, new ASTPtrOp(ptr_op), new ASTId($3)); }
 	| postfix_expression INC_OP                                                      { $$ = new ASTPostExpr($1, new ASTIncOp(plus_plus)); }
 	| postfix_expression DEC_OP                                                      { $$ = new ASTPostExpr($1, new ASTIncOp(minus_minus)); }
 	| '(' type_name ')' '{' initializer_list '}'                                     { todo(84); }
@@ -352,7 +352,7 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER                                                                      { $$ = new ASTIdDeclarator(new ASTId(yytext)); }
+	: IDENTIFIER                                                                      { $$ = new ASTIdDeclarator(new ASTId($1)); }
 	| '(' declarator ')'                                                              { $$ = $2; }
 	| direct_declarator '[' ']'                                                       { todo(352); }
 	| direct_declarator '[' '*' ']'                                                   { todo(353); }
@@ -384,8 +384,8 @@ parameter_declaration
 	;
 
 identifier_list
-	: IDENTIFIER                                                                       { $$ = new ASTIdList(new ASTId(yytext)); }
-	| identifier_list ',' IDENTIFIER                                                   { $$ = new ASTIdList($1, new ASTId(yytext)); }
+	: IDENTIFIER                                                                       { $$ = new ASTIdList(new ASTId($1)); }
+	| identifier_list ',' IDENTIFIER                                                   { $$ = new ASTIdList($1, new ASTId($3)); }
 	;
 
 type_name
@@ -438,7 +438,7 @@ designator_list
 
 designator
 	: '[' constant_expression ']'                                                       { $$ = new ASTDesignator($2); }
-	| '.' IDENTIFIER                                                                    { $$ = new ASTDesignator(new ASTId(yytext)); }
+	| '.' IDENTIFIER                                                                    { $$ = new ASTDesignator(new ASTId($2)); }
 	;
 
 statement
@@ -451,7 +451,7 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement                                                          { $$ = new ASTGotoLabeledStmt(new ASTId(yytext), $3); }
+	: IDENTIFIER ':' statement                                                          { $$ = new ASTGotoLabeledStmt(new ASTId($1), $3); }
 	| CASE constant_expression ':' statement                                            { $$ = new ASTCaseLabeledStmt($2, $4); }
 	| DEFAULT ':' statement                                                             { $$ = new ASTDefLabeledStmt($3); } 
 	;
@@ -492,7 +492,7 @@ iteration_statement
 	;
 
 jump_statement
-  : GOTO IDENTIFIER ';'                                                               { $$ = new ASTGotoJmpStmt(new ASTId(yytext)); }
+  : GOTO IDENTIFIER ';'                                                               { $$ = new ASTGotoJmpStmt(new ASTId($2)); }
 	| CONTINUE ';'                                                                      { $$ = new ASTContJmpStmt(); }
   | BREAK ';'                                                                         { $$ = new ASTBreakJmpStmt(); }
 	| RETURN ';'                                                                        { $$ = new ASTRetJmpStmt(); }
