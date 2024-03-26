@@ -180,6 +180,7 @@ static void comment(void)
 
 static int check_type(void)
 {
+    yylval.str = strdup(yytext);
     switch (sym_type(yytext))
     {
     case TYPEDEF_NAME:                /* previously defined */

@@ -19,7 +19,7 @@ void todo(int);
 %}
 
 
-%token	IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME SIZEOF
+%token	I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME SIZEOF
 %token	PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token	AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token	SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
@@ -89,7 +89,10 @@ void todo(int);
   ASTExternDecl* ext_decl;
   ASTFnDef* fn_def;
   ASTDeclList* decl_list;
+  char* str;
 }
+
+%token <str> IDENTIFIER
 
 %nterm <p_expr> primary_expression
 %nterm <constant> constant
@@ -153,7 +156,7 @@ void todo(int);
 %%
 
 primary_expression
-	: IDENTIFIER                                                                     { $$ = new ASTPrimaryExpr(new ASTId(yytext)); }
+	: IDENTIFIER                                                                     { $$ = new ASTPrimaryExpr(new ASTId($1)); }
 	| constant                                                                       { $$ = new ASTPrimaryExpr($1); }
 	| string                                                                         { $$ = new ASTPrimaryExpr($1); }
 	| '(' expression ')'                                                             { $$ = new ASTPrimaryExpr($2); }
