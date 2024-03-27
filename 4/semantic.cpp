@@ -31,10 +31,9 @@ vector<string> ASTExpr::get_referred_vars() const {
   return referredVars;
 }
 
-
 bool ASTExpr::semantic_action_start(SemanticAnalyzer *sa) const {
   vector<string> referred_vars = get_referred_vars();
-for (auto var : referred_vars) {
+  for (auto var : referred_vars) {
     if (!sa->find_all(var))
       return false;
   }
@@ -54,7 +53,7 @@ bool ASTFnDeclarator::semantic_action_start(SemanticAnalyzer *sa) const {
 }
 
 bool ASTBlockItemList::semantic_action_start(SemanticAnalyzer *sa) const {
-    auto prev_symbols = unordered_map<string, pair<ttype, int>>{};
+  auto prev_symbols = unordered_map<string, SymbolInfo>{};
   if (sa->peek()->context == "FunctionDeclarator") {
     prev_symbols = sa->peek()->table;
     sa->exit_scope();
@@ -62,7 +61,7 @@ bool ASTBlockItemList::semantic_action_start(SemanticAnalyzer *sa) const {
 
   sa->enter_scope(this->to_str());
   for (auto vt : prev_symbols) {
-    if (!sa->add_variable(vt.first, vt.second.first))
+    if (!sa->add_variable(vt.first, vt.second.type_))
       return false;
   }
   return true;
@@ -120,30 +119,36 @@ void SemanticAnalyzer::enter_scope(string context) {
 
 void SemanticAnalyzer::exit_scope() {
   if (!symbol_table.empty()) {
-    cout << "Symbol Table before exiting: " << symbol_table.back().context << endl;
+    cout << "Symbol Table before exiting: " << symbol_table.back().context
+         << endl;
     for (const auto &entry : symbol_table.back().table) {
-      string t_str = string(magic_enum::enum_name(entry.second.first).data());
-      cout << entry.first << " : " << t_str << ", Count: " << entry.second.second << endl;
+      string t_str = string(magic_enum::enum_name(entry.second.type_).data());
+      cout << entry.first << " : " << t_str
+           << ", Count: " << entry.second.num_occurrence
+           << ", Pointer: " << entry.second.ptr
+           << ", IsConst: " << entry.second.is_const << endl;
     }
     symbol_table.pop_back();
   }
 }
 
-bool SemanticAnalyzer::add_variable(string variable, ttype type) {
-  auto& currentScopeTable = symbol_table.back().table;
+bool SemanticAnalyzer::add_variable(string variable, ttype type, int ptr,
+                                    bool is_const) {
+  auto &currentScopeTable = symbol_table.back().table;
   auto it = currentScopeTable.find(variable);
   if (it != currentScopeTable.end())
     return false;
-  
+
   int totalDeclarations = 0;
 
-  for (const auto& scope : symbol_table) {
+  for (const auto &scope : symbol_table) {
     auto var_found = scope.table.find(variable);
     if (var_found != scope.table.end()) {
-      totalDeclarations = max(totalDeclarations, var_found->second.second);
+      totalDeclarations =
+          max(totalDeclarations, var_found->second.num_occurrence);
     }
   }
-  currentScopeTable[variable] = make_pair(type, totalDeclarations + 1);
+  currentScopeTable[variable] = {type, ptr, is_const, totalDeclarations + 1};
   return true;
 }
 

@@ -2,7 +2,23 @@
 #define AST_HPP_INCLUDED
 
 #include "magic_enum.hpp"
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
+#include <llvm-19/llvm/IR/Value.h>
+#include <map>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -616,9 +632,11 @@ public:
 
 class ASTPtr : public ASTNode {
 public:
+  int counts;
+
   ASTPtr();
   ASTPtr(ASTPtr *n);
-  string to_str() const override { return "*Pointer"; }
+  string to_str() const override { return to_string(counts) + "*"; }
 };
 
 class ASTDirectDeclarator : public ASTNode {
@@ -645,9 +663,16 @@ public:
 
 class ASTParamList : public ASTNode {
 public:
+  bool is_variadic = false;
   ASTParamList(ASTParamDecl *n);
   ASTParamList(ASTParamList *n1, ASTParamDecl *n2);
-  string to_str() const override { return "ParameterList"; }
+  string to_str() const override {
+    if (!is_variadic)
+      return "ParameterList";
+    else {
+      return "ParameterList(Variadic)";
+    }
+  }
 
   pair<bool, unordered_map<string, ttype>> get_variables() const;
 };
@@ -683,9 +708,19 @@ public:
   string to_str() const override { return "Program"; }
 };
 
+/************************************************************************/
+/*                            SemanticAnalyzer                          */
+/************************************************************************/
+struct SymbolInfo {
+  ttype type_;
+  int ptr = 0;
+  bool is_const = false;
+  int num_occurrence = 1;
+};
+
 struct SymbolTable {
   string context;
-  unordered_map<string, pair<ttype, int>> table;
+  unordered_map<string, SymbolInfo> table;
 };
 
 class SemanticAnalyzer {
@@ -701,9 +736,23 @@ public:
   bool find_all(string variable);
   void enter_scope(string context);
   void exit_scope();
-  bool add_variable(string variable, ttype type);
+  bool add_variable(string variable, ttype type, int ptr = 0,
+                    bool is_const = false);
 
   SymbolTable *peek();
+};
+
+/************************************************************************/
+/*                            CodeGeneration                            */
+/************************************************************************/
+
+class CodeGen {
+  static unique_ptr<llvm::LLVMContext> context;
+  static unique_ptr<llvm::IRBuilder<>> builder;
+  static unique_ptr<llvm::Module> module;
+  static map<std::string, llvm::Value *> named_values;
+
+  void generate(ASTNode *node, SemanticAnalyzer *sa) { if (node) }
 };
 
 #endif /* AST_HPP_INCLUDED */

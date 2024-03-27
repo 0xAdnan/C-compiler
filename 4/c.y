@@ -377,7 +377,7 @@ pointer
 	;
 
 parameter_type_list
-	: parameter_list ',' ELLIPSIS                                                      { todo(285); }
+	: parameter_list ',' ELLIPSIS                                                      { $$ = $1; $1->is_variadic = true; }
 	| parameter_list                                                                   { $$ = $1; }
 	;
 

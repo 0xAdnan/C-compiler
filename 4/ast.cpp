@@ -1,6 +1,12 @@
 #include "ast.hpp"
+#include <cstdio>
 #include <unordered_map>
 #include <utility>
+
+void unexpected_tree(string node_name) {
+  printf("Unexpected Tree Structure: %s\n", node_name.c_str());
+  exit(1);
+}
 
 ASTStmt::ASTStmt() : ASTNode() {}
 
@@ -88,8 +94,7 @@ ASTFnDef::ASTFnDef(ASTDeclSpec *n1, ASTDirectDeclarator *n2,
   this->add_child(n3, true);
 }
 
-ASTId::ASTId(string name) : ASTNode(), name(name) {
-}
+ASTId::ASTId(string name) : ASTNode(), name(name) {}
 
 ASTDesignator::ASTDesignator(ASTCondExpr *n) : ASTExpr() { this->add_child(n); }
 
@@ -189,7 +194,6 @@ unordered_map<string, ttype> ASTDecl::get_variables() const {
       string varName = idNode->name;
       variables[varName] = variableType;
       auto *constNode = dynamic_cast<ASTConst *>(initDecl->children[1]);
-
     }
   }
   return variables;
@@ -507,18 +511,10 @@ ASTBlockItemList::ASTBlockItemList(ASTBlockItemList *n1, ASTBlockItem *n2)
   delete n1;
 }
 
-ASTPtr::ASTPtr() : ASTNode() {}
-// // ASTPtr::ASTPtr(ASTPtr *n) : ASTNode()   {if (n->children.size() == 1)
-// {
-//     this->add_child(n->children[0]);
-//   } else {
-//     this->add_child(n);
-//   }
+ASTPtr::ASTPtr() : ASTNode() { counts = 1; }
 
 ASTPtr::ASTPtr(ASTPtr *n) : ASTNode() {
-  for (auto child : n->children) {
-    this->add_child(child);
-  }
+  counts = n->counts + 1;
   delete n;
 }
 
@@ -539,9 +535,16 @@ ASTParamDecl::ASTParamDecl(ASTDeclSpec *n) : ASTNode() { this->add_child(n); }
 string ASTParamDecl::get_var_name() const {
   if (children.size() >= 1) {
     ASTId *id = dynamic_cast<ASTId *>(children[1]);
-    return id->name;
+    if (id != nullptr)
+      return id->name;
+    ASTIdDeclarator *idDecl = dynamic_cast<ASTIdDeclarator *>(children[1]);
+    if (idDecl != nullptr) {
+      ASTId *id = dynamic_cast<ASTId *>(idDecl->children[1]);
+      if (id != nullptr)
+        return id->name;
+    }
   }
-  return "";
+  unexpected_tree("ASTParamDecl");
 }
 
 ttype ASTParamDecl::get_type() const {
