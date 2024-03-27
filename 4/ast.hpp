@@ -2,21 +2,9 @@
 #define AST_HPP_INCLUDED
 
 #include "magic_enum.hpp"
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include <llvm-19/llvm/IR/Value.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -170,6 +158,8 @@ class ASTStmt : public ASTNode {
 public:
   ASTStmt();
 };
+
+
 
 class ASTExpr : public ASTStmt {
 public:
@@ -423,13 +413,32 @@ public:
 
 class ASTPostExpr : public ASTExpr {
 public:
-  ASTPostExpr(ASTPrimaryExpr *n);
-  ASTPostExpr(ASTPostExpr *n1, ASTExpr *n2);
-  ASTPostExpr(ASTPostExpr *n);
-  ASTPostExpr(ASTPostExpr *n1, ASTArgExpList *n2);
-  ASTPostExpr(ASTPostExpr *n1, ASTPtrOp *n2, ASTId *n3);
-  ASTPostExpr(ASTPostExpr *n1, ASTIncOp *n2);
-  string to_str() const override { return "PostFixExpression"; }
+  ASTPostExpr();
+  ASTPostExpr(ASTPrimaryExpr* n);
+};
+
+class ASTArray : public ASTPostExpr {
+public:
+  ASTArray(ASTPostExpr *n1, ASTExpr *n2);
+  string to_str() const override { return "Array"; }
+};
+
+class ASTFunctionCall : public ASTPostExpr {
+public:
+  ASTFunctionCall(ASTPostExpr *n1, ASTArgExpList *n2 = nullptr);
+  string to_str() const override { return "FunctionCall"; }
+};
+
+class ASTPostIncrement : public ASTPostExpr {
+public:
+  ASTPostIncrement(ASTPostExpr *n1);
+  string to_str() const override { return "PostIncrement"; }
+};
+
+class ASTPostDecrement : public ASTPostExpr {
+public:
+  ASTPostDecrement(ASTPostExpr *n1);
+  string to_str() const override { return "PostDecrement"; }
 };
 
 class ASTUnaryExpr : public ASTExpr {
@@ -746,13 +755,13 @@ public:
 /*                            CodeGeneration                            */
 /************************************************************************/
 
-class CodeGen {
-  static unique_ptr<llvm::LLVMContext> context;
-  static unique_ptr<llvm::IRBuilder<>> builder;
-  static unique_ptr<llvm::Module> module;
-  static map<std::string, llvm::Value *> named_values;
+// class CodeGen {
+//   static unique_ptr<llvm::LLVMContext> context;
+//   static unique_ptr<llvm::IRBuilder<>> builder;
+//   static unique_ptr<llvm::Module> module;
+//   static map<std::string, llvm::Value *> named_values;
 
-  void generate(ASTNode *node, SemanticAnalyzer *sa) { if (node) }
-};
+//   // void generate(ASTNode *node, SemanticAnalyzer *sa) { if (node) }
+// };
 
 #endif /* AST_HPP_INCLUDED */

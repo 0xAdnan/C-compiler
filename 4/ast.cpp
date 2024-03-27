@@ -267,32 +267,33 @@ ASTPrimaryExpr::ASTPrimaryExpr(ASTStrConst *n) : ASTExpr() {
 
 ASTPrimaryExpr::ASTPrimaryExpr(ASTExpr *n) : ASTExpr() { this->add_child(n); }
 
-ASTPostExpr::ASTPostExpr(ASTPrimaryExpr *n) : ASTExpr() { this->add_child(n); }
+ASTPostExpr::ASTPostExpr() : ASTExpr() {}
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTExpr *n2) : ASTExpr() {
+ASTPostExpr::ASTPostExpr(ASTPrimaryExpr* n) : ASTExpr() {
+    this->add_child(n);
+}
+
+ASTArray::ASTArray(ASTPostExpr *n1, ASTExpr *n2) : ASTPostExpr() {
   this->add_child(n1);
   this->add_child(n2);
 }
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n) : ASTExpr() { this->add_child(n); }
-
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTArgExpList *n2) : ASTExpr() {
+ASTFunctionCall::ASTFunctionCall(ASTPostExpr *n1, ASTArgExpList *n2) : ASTPostExpr() {
   this->add_child(n1);
-  this->add_child(n2);
+  if (n2 != nullptr) { 
+    this->add_child(n2);
+  }
 }
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTPtrOp *n2, ASTId *n3) : ASTExpr() {
+ASTPostIncrement::ASTPostIncrement(ASTPostExpr *n1) : ASTPostExpr() {
   this->add_child(n1);
-  this->add_child(n2);
-  this->add_child(n3);
 }
 
-ASTPostExpr::ASTPostExpr(ASTPostExpr *n1, ASTIncOp *n2) : ASTExpr() {
+ASTPostDecrement::ASTPostDecrement(ASTPostExpr *n1) : ASTPostExpr() {
   this->add_child(n1);
-  this->add_child(n2);
 }
 
-ASTUnaryExpr::ASTUnaryExpr(ASTPostExpr *n) : ASTExpr() { this->add_child(n); }
+ASTUnaryExpr::ASTUnaryExpr(ASTPostExpr *n) : ASTExpr() { this->add_child(n, true); }
 
 ASTUnaryExpr::ASTUnaryExpr(ASTIncOp *n1, ASTUnaryExpr *n2) : ASTExpr() {
   this->add_child(n1);
@@ -494,7 +495,7 @@ ASTDefLabeledStmt::ASTDefLabeledStmt(ASTStmt *n) : ASTLabeledStmt() {
 
 ASTBlockItem::ASTBlockItem(ASTDecl *n) : ASTNode() { this->add_child(n); }
 
-ASTBlockItem::ASTBlockItem(ASTStmt *n) : ASTNode() { this->add_child(n, true); }
+ASTBlockItem::ASTBlockItem(ASTStmt *n) : ASTNode() { this->add_child(n, false); }
 
 ASTBlockItemList::ASTBlockItemList() : ASTStmt() {}
 

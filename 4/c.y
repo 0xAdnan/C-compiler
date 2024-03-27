@@ -174,15 +174,15 @@ string
 
 postfix_expression
 	: primary_expression                                                             { $$ = new ASTPostExpr($1); }
-	| postfix_expression '[' expression ']'                                          { $$ = new ASTPostExpr($1, $3); }
-	| postfix_expression '(' ')'                                                     { $$ = new ASTPostExpr($1); }
-	| postfix_expression '(' argument_expression_list ')'                            { $$ = new ASTPostExpr($1, $3); }
-	| postfix_expression '.' IDENTIFIER                                              { $$ = new ASTPostExpr($1, new ASTPtrOp(dot_op), new ASTId($3)); }
-	| postfix_expression PTR_OP IDENTIFIER                                           { $$ = new ASTPostExpr($1, new ASTPtrOp(ptr_op), new ASTId($3)); }
-	| postfix_expression INC_OP                                                      { $$ = new ASTPostExpr($1, new ASTIncOp(plus_plus)); }
-	| postfix_expression DEC_OP                                                      { $$ = new ASTPostExpr($1, new ASTIncOp(minus_minus)); }
-	| '(' type_name ')' '{' initializer_list '}'                                     { todo(84); }
-	| '(' type_name ')' '{' initializer_list ',' '}'                                 { todo(85); }
+	| postfix_expression '[' expression ']'                                          { $$ = new ASTArray($1, $3); }
+	| postfix_expression '(' ')'                                                     { $$ = new ASTFunctionCall($1); }
+	| postfix_expression '(' argument_expression_list ')'                            { $$ = new ASTFunctionCall($1, $3); }
+	| postfix_expression '.' IDENTIFIER                                              { todo(180); }
+	| postfix_expression PTR_OP IDENTIFIER                                           { todo(181); }
+	| postfix_expression INC_OP                                                      { $$ = new ASTPostIncrement($1); }
+	| postfix_expression DEC_OP                                                      { $$ = new ASTPostDecrement($1); }
+	| '(' type_name ')' '{' initializer_list '}'                                     { todo(184); }
+	| '(' type_name ')' '{' initializer_list ',' '}'                                 { todo(185); }
 	;
 
 argument_expression_list
