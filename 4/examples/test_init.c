@@ -1,8 +1,9 @@
 int test(int x) {
-  x++;
+  x();
+  x(a, b, 3);
   x--;
-//   int arr[3] = {1, 2, 3};
-//   return arr[2] + test(5);
+  arr[2];
+  //   return arr[2] + test(5);
 }
 
 // int main() {

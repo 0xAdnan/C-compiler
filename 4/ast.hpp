@@ -2,6 +2,17 @@
 #define AST_HPP_INCLUDED
 
 #include "magic_enum.hpp"
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -158,8 +169,6 @@ class ASTStmt : public ASTNode {
 public:
   ASTStmt();
 };
-
-
 
 class ASTExpr : public ASTStmt {
 public:
@@ -397,6 +406,7 @@ public:
 
 class ASTArgExpList : public ASTNode {
 public:
+  ASTArgExpList();
   ASTArgExpList(ASTAssignmentExpr *n);
   ASTArgExpList(ASTArgExpList *n1, ASTAssignmentExpr *n2);
   string to_str() const override { return "ArgumentList"; }
@@ -414,7 +424,7 @@ public:
 class ASTPostExpr : public ASTExpr {
 public:
   ASTPostExpr();
-  ASTPostExpr(ASTPrimaryExpr* n);
+  ASTPostExpr(ASTPrimaryExpr *n);
 };
 
 class ASTArray : public ASTPostExpr {
@@ -425,20 +435,14 @@ public:
 
 class ASTFunctionCall : public ASTPostExpr {
 public:
-  ASTFunctionCall(ASTPostExpr *n1, ASTArgExpList *n2 = nullptr);
+  ASTFunctionCall(ASTPostExpr *n1, ASTArgExpList *n2);
   string to_str() const override { return "FunctionCall"; }
 };
 
 class ASTPostIncrement : public ASTPostExpr {
 public:
-  ASTPostIncrement(ASTPostExpr *n1);
+  ASTPostIncrement(ASTPostExpr *n1, ASTIncOp *n2);
   string to_str() const override { return "PostIncrement"; }
-};
-
-class ASTPostDecrement : public ASTPostExpr {
-public:
-  ASTPostDecrement(ASTPostExpr *n1);
-  string to_str() const override { return "PostDecrement"; }
 };
 
 class ASTUnaryExpr : public ASTExpr {
@@ -546,6 +550,8 @@ public:
   ASTForStmt(ASTExpr *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4);
   ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTStmt *n3);
   ASTForStmt(ASTDecl *n1, ASTExpr *n2, ASTExpr *n3, ASTStmt *n4);
+  bool semantic_action_start(SemanticAnalyzer *sa) const override;
+  bool semantic_action_end(SemanticAnalyzer *sa) const override;
   string to_str() const override { return "ForStatement"; }
 };
 
@@ -755,13 +761,21 @@ public:
 /*                            CodeGeneration                            */
 /************************************************************************/
 
-// class CodeGen {
-//   static unique_ptr<llvm::LLVMContext> context;
-//   static unique_ptr<llvm::IRBuilder<>> builder;
-//   static unique_ptr<llvm::Module> module;
-//   static map<std::string, llvm::Value *> named_values;
+class CodeGen {
+  unique_ptr<llvm::LLVMContext> context;
+  unique_ptr<llvm::IRBuilder<>> builder;
+  unique_ptr<llvm::Module> module;
+  map<std::string, llvm::Value *> env;
 
-//   // void generate(ASTNode *node, SemanticAnalyzer *sa) { if (node) }
-// };
+public:
+  CodeGen() {
+    context = make_unique<llvm::LLVMContext>();
+    builder =
+        std::unique_ptr<llvm::IRBuilder<>>(new llvm::IRBuilder<>(*context));
+    module = make_unique<llvm::Module>("Module", *context);
+  }
+
+  virtual void visit(ASTDecl *node) { node->get_variables(); }
+};
 
 #endif /* AST_HPP_INCLUDED */

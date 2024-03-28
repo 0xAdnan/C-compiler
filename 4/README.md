@@ -2,13 +2,13 @@
 C compiler
 
 To compile:
-`make`
+1. `mkdir build && cd build`
+2. `cmake ..`
 
 To generate the AST:
-`c examples/test1.c`
+`./cc examples/test1.c`
 
 TODO:
 1. Add pointer support
 2. Add const support
 3. Code generation
-

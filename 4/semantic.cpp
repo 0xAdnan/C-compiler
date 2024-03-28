@@ -2,6 +2,109 @@
 #include "magic_enum.hpp"
 #include <unordered_map>
 
+void unexpected_tree(string node_name) {
+  printf("Unexpected Tree Structure: %s\n", node_name.c_str());
+  exit(1);
+}
+
+unordered_map<string, ttype> ASTDecl::get_variables() const {
+  unordered_map<string, ttype> variables;
+  ttype variableType;
+
+  for (auto *child : this->children) {
+    if (auto *typeNode = dynamic_cast<ASTType *>(child)) {
+      variableType = (typeNode->t);
+    } else if (auto *idNode = dynamic_cast<ASTId *>(child)) {
+      variables[idNode->name] = variableType;
+    }
+  }
+
+  if (this->children.size() > 1) {
+    auto *initDeclList = dynamic_cast<ASTInitDeclList *>(children[1]);
+    auto *initDecl = dynamic_cast<ASTInitDecl *>(children[1]);
+    if (initDeclList) {
+      for (auto *child : initDeclList->children) {
+        if (auto *idNode = dynamic_cast<ASTId *>(child)) {
+          variables[idNode->name] = variableType;
+        } else if (auto *initDecl = dynamic_cast<ASTInitDecl *>(child)) {
+          if (!initDecl->children.empty()) {
+            if (auto *idNode = dynamic_cast<ASTId *>(initDecl->children[0])) {
+              string varName = idNode->name;
+              if (initDecl->children.size() > 1) {
+                if (auto *constNode =
+                        dynamic_cast<ASTConst *>(initDecl->children[1])) {
+                  variables[varName] = variableType;
+                } else {
+                  variables[varName] = variableType;
+                }
+              } else {
+                variables[varName] = variableType;
+              }
+            }
+          }
+        }
+      }
+    } else if (initDecl) {
+      auto idNode = dynamic_cast<ASTId *>(initDecl->children[0]);
+      string varName = idNode->name;
+      variables[varName] = variableType;
+      auto *constNode = dynamic_cast<ASTConst *>(initDecl->children[1]);
+    }
+  }
+  return variables;
+}
+
+string ASTParamDecl::get_var_name() const {
+  if (children.size() >= 1) {
+    ASTId *id = dynamic_cast<ASTId *>(children[1]);
+    if (id != nullptr)
+      return id->name;
+    ASTIdDeclarator *idDecl = dynamic_cast<ASTIdDeclarator *>(children[1]);
+    if (idDecl != nullptr) {
+      ASTId *id = dynamic_cast<ASTId *>(idDecl->children[1]);
+      if (id != nullptr)
+        return id->name;
+    }
+  }
+  unexpected_tree("ASTParamDecl");
+}
+
+ttype ASTParamDecl::get_type() const {
+  if (children.size() >= 1) {
+    ASTType *t = dynamic_cast<ASTType *>(children[0]);
+    if (t == NULL) {
+      cout << "Not supporting long long yet" << endl;
+      exit(1);
+    }
+    return t->t;
+  }
+  cout << "Error Happened" << endl;
+  exit(1);
+}
+pair<bool, unordered_map<string, ttype>> ASTParamList::get_variables() const {
+  unordered_map<string, ttype> variables = {};
+
+  for (auto child : children) {
+    ASTParamDecl *pd = dynamic_cast<ASTParamDecl *>(child);
+    string var_name = pd->get_var_name();
+    ttype var_type = pd->get_type();
+    if (variables.find(var_name) == variables.end()) {
+      variables[var_name] = var_type;
+    } else
+      return make_pair(false, unordered_map<string, ttype>{});
+  }
+
+  return make_pair(true, variables);
+}
+
+pair<bool, unordered_map<string, ttype>>
+ASTFnDeclarator::get_variables() const {
+  if (this->children.size() == 1)
+    return make_pair(true, unordered_map<string, ttype>{});
+
+  ASTParamList *pl = dynamic_cast<ASTParamList *>(this->children[1]);
+  return pl->get_variables();
+}
 bool ASTNode::semantic_action_start(SemanticAnalyzer *sa) const { return true; }
 
 bool ASTNode::semantic_action_end(SemanticAnalyzer *sa) const { return true; }
@@ -71,6 +174,15 @@ bool ASTBlockItemList::semantic_action_end(SemanticAnalyzer *sa) const {
   sa->exit_scope();
   return true;
 }
+
+bool ASTForStmt::semantic_action_start(SemanticAnalyzer *sa) const {
+  sa->enter_scope("ForLoop");
+  return true;
+};
+bool ASTForStmt::semantic_action_end(SemanticAnalyzer *sa) const {
+  sa->exit_scope();
+  return true;
+};
 
 /* Semantic Analyzer */
 

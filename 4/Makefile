@@ -1,5 +1,6 @@
 cc: cc.cpp c.tab.cpp c.lex.cpp ast.cpp ast.cpp ast.hpp semantic.cpp
-	g++ ast.cpp semantic.cpp c.tab.cpp c.lex.cpp cc.cpp -lm -ll -g -lfl -o $@
+	# g++ ast.cpp semantic.cpp c.tab.cpp c.lex.cpp cc.cpp -lm -ll -g -lfl -o $@
+	g++ ast.cpp semantic.cpp c.tab.cpp c.lex.cpp cc.cpp -o $@
 
 c.tab.cpp c.tab.hpp: c.y
 	bison --debug -o c.tab.cpp -d c.y

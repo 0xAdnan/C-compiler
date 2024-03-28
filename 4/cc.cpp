@@ -6,7 +6,7 @@
 
 extern "C" int yylex();
 extern ASTProgram *program_ast;
-extern int yydebug;
+/* extern int yydebug; */
 int yyparse();
 extern "C" FILE *yyin;
 
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
   yyin = fopen(filename, "r");
   assert(yyin);
 
-  yydebug = 1;
+  /* yydebug = 1; */
 
   int ret = yyparse();
   printf("retv = %d\n", ret);
