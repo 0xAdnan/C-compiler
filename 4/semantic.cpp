@@ -1,54 +1,101 @@
 #include "ast.hpp"
 #include "magic_enum.hpp"
+#include <llvm-19/llvm/IR/LLVMContext.h>
+#include <llvm-19/llvm/IR/Value.h>
 #include <unordered_map>
 
+void SymbolInfo::add_value(ASTConst *constNode) {
+  switch (constNode->ct) {
+  case const_type::i_const:
+    value = constNode->value_i;
+    break;
+  case const_type::f_const:
+    value = constNode->value_f;
+    break;
+  }
+}
+
+/************************************************************************/
+/*                               Utilites                               */
+/************************************************************************/
 void unexpected_tree(string node_name) {
   printf("Unexpected Tree Structure: %s\n", node_name.c_str());
   exit(1);
 }
 
-unordered_map<string, ttype> ASTDecl::get_variables() const {
-  unordered_map<string, ttype> variables;
-  ttype variableType;
+/*                               Declaration Utils                       */
+map<string, SymbolInfo> ASTDecl::get_variables() const {
+  map<string, SymbolInfo> variables;
 
-  for (auto *child : this->children) {
-    if (auto *typeNode = dynamic_cast<ASTType *>(child)) {
-      variableType = (typeNode->t);
-    } else if (auto *idNode = dynamic_cast<ASTId *>(child)) {
-      variables[idNode->name] = variableType;
-    }
-  }
+  auto typeNode = dynamic_cast<ASTType *>(this->children[0]);
+  if (typeNode == nullptr)
+    unexpected_tree(this->to_str());
 
-  if (this->children.size() > 1) {
-    auto *initDeclList = dynamic_cast<ASTInitDeclList *>(children[1]);
-    auto *initDecl = dynamic_cast<ASTInitDecl *>(children[1]);
-    if (initDeclList) {
+  ttype variableType = typeNode->t;
+
+  for (auto it = children.begin() + 1; it != children.end(); ++it) {
+    if (auto idNode = dynamic_cast<ASTId *>(*it)) {
+      SymbolInfo si;
+      si.type_ = variableType;
+      /* si.value = cg->create_alloca(idNode->name, variableType); */
+      /* si.value = cg->createGlobalVariable(idNode->name, variableType); */
+      si.value = nullptr;
+      variables[idNode->name] = si;
+    } else if (auto initDecl = dynamic_cast<ASTInitDecl *>(*it)) {
+      auto idNode = dynamic_cast<ASTId *>(initDecl->children[0]);
+      auto constNode =
+          dynamic_cast<ASTConst *>(initDecl->children[1]->children[0]);
+      if (idNode == nullptr || constNode == nullptr)
+        unexpected_tree(this->to_str());
+
+      SymbolInfo si;
+      si.type_ = variableType;
+      si.add_value(constNode);
+      /* si.value = cg->create_alloca(idNode->name, variableType); */
+
+      variables[idNode->name] = si;
+    } else if (auto initDeclList = dynamic_cast<ASTInitDeclList *>(*it)) {
       for (auto *child : initDeclList->children) {
         if (auto *idNode = dynamic_cast<ASTId *>(child)) {
-          variables[idNode->name] = variableType;
+          SymbolInfo si;
+          si.type_ = variableType;
+          /* si.value = cg->create_alloca(idNode->name, variableType); */
+          /* si.value = cg->createGlobalVariable(idNode->name, variableType); */
         } else if (auto *initDecl = dynamic_cast<ASTInitDecl *>(child)) {
           if (!initDecl->children.empty()) {
             if (auto *idNode = dynamic_cast<ASTId *>(initDecl->children[0])) {
               string varName = idNode->name;
               if (initDecl->children.size() > 1) {
-                if (auto *constNode =
-                        dynamic_cast<ASTConst *>(initDecl->children[1])) {
-                  variables[varName] = variableType;
+                if (auto *constNode = dynamic_cast<ASTConst *>(
+                        initDecl->children[1]->children[0])) {
+                  SymbolInfo si;
+                  si.type_ = variableType;
+                  si.add_value(constNode);
+                  /* si.value = cg->create_alloca(varName, variableType); */
+                  variables[varName] = si;
                 } else {
-                  variables[varName] = variableType;
+                  SymbolInfo si;
+                  si.type_ = variableType;
+                  /* si.value = cg->create_alloca(varName, variableType); */
+                  /* si.value = cg->createGlobalVariable(varName,
+                   * variableType);*/
+                  si.add_value(constNode);
+                  variables[varName] = si;
                 }
               } else {
-                variables[varName] = variableType;
+                SymbolInfo si;
+                si.type_ = variableType;
+                /* si.value = cg->create_alloca(varName, variableType); */
+                /* si.value = cg->createGlobalVariable(varName, variableType);
+                 */
+                variables[varName] = si;
               }
             }
           }
         }
       }
-    } else if (initDecl) {
-      auto idNode = dynamic_cast<ASTId *>(initDecl->children[0]);
-      string varName = idNode->name;
-      variables[varName] = variableType;
-      auto *constNode = dynamic_cast<ASTConst *>(initDecl->children[1]);
+    } else {
+      unexpected_tree(this->to_str());
     }
   }
   return variables;
@@ -81,26 +128,30 @@ ttype ASTParamDecl::get_type() const {
   cout << "Error Happened" << endl;
   exit(1);
 }
-pair<bool, unordered_map<string, ttype>> ASTParamList::get_variables() const {
-  unordered_map<string, ttype> variables = {};
+pair<bool, unordered_map<string, SymbolInfo>>
+ASTParamList::get_variables() const {
+  unordered_map<string, SymbolInfo> variables = {};
 
   for (auto child : children) {
     ASTParamDecl *pd = dynamic_cast<ASTParamDecl *>(child);
     string var_name = pd->get_var_name();
     ttype var_type = pd->get_type();
     if (variables.find(var_name) == variables.end()) {
-      variables[var_name] = var_type;
+      SymbolInfo si;
+      si.type_ = var_type;
+      si.value = nullptr;
+      variables[var_name] = si;
     } else
-      return make_pair(false, unordered_map<string, ttype>{});
+      return make_pair(false, unordered_map<string, SymbolInfo>{});
   }
 
   return make_pair(true, variables);
 }
 
-pair<bool, unordered_map<string, ttype>>
+pair<bool, unordered_map<string, SymbolInfo>>
 ASTFnDeclarator::get_variables() const {
   if (this->children.size() == 1)
-    return make_pair(true, unordered_map<string, ttype>{});
+    return make_pair(true, unordered_map<string, SymbolInfo>{});
 
   ASTParamList *pl = dynamic_cast<ASTParamList *>(this->children[1]);
   return pl->get_variables();
@@ -110,7 +161,7 @@ bool ASTNode::semantic_action_start(SemanticAnalyzer *sa) const { return true; }
 bool ASTNode::semantic_action_end(SemanticAnalyzer *sa) const { return true; }
 
 bool ASTDecl::semantic_action_start(SemanticAnalyzer *sa) const {
-  unordered_map<string, ttype> variables = this->get_variables();
+  map<string, SymbolInfo> variables = this->get_variables();
   for (const auto &var : variables) {
     if (!sa->add_variable(var.first, var.second))
       return false;
@@ -145,7 +196,8 @@ bool ASTExpr::semantic_action_start(SemanticAnalyzer *sa) const {
 
 bool ASTFnDeclarator::semantic_action_start(SemanticAnalyzer *sa) const {
   sa->enter_scope(this->to_str());
-  pair<bool, unordered_map<string, ttype>> variables = this->get_variables();
+  pair<bool, unordered_map<string, SymbolInfo>> variables =
+      this->get_variables();
   if (!variables.first)
     return false;
   for (const auto &var : variables.second) {
@@ -156,7 +208,7 @@ bool ASTFnDeclarator::semantic_action_start(SemanticAnalyzer *sa) const {
 }
 
 bool ASTBlockItemList::semantic_action_start(SemanticAnalyzer *sa) const {
-  auto prev_symbols = unordered_map<string, SymbolInfo>{};
+  auto prev_symbols = map<string, SymbolInfo>{};
   if (sa->peek()->context == "FunctionDeclarator") {
     prev_symbols = sa->peek()->table;
     sa->exit_scope();
@@ -164,7 +216,7 @@ bool ASTBlockItemList::semantic_action_start(SemanticAnalyzer *sa) const {
 
   sa->enter_scope(this->to_str());
   for (auto vt : prev_symbols) {
-    if (!sa->add_variable(vt.first, vt.second.type_))
+    if (!sa->add_variable(vt.first, vt.second))
       return false;
   }
   return true;
@@ -185,11 +237,12 @@ bool ASTForStmt::semantic_action_end(SemanticAnalyzer *sa) const {
 };
 
 /* Semantic Analyzer */
-
 bool SemanticAnalyzer::analyze(ASTProgram *p) {
   enter_scope("Root");
   bool result = analyze_node(p);
   exit_scope();
+
+  cg->emit();
   return result;
 }
 
@@ -244,8 +297,7 @@ void SemanticAnalyzer::exit_scope() {
   }
 }
 
-bool SemanticAnalyzer::add_variable(string variable, ttype type, int ptr,
-                                    bool is_const) {
+bool SemanticAnalyzer::add_variable(string variable, SymbolInfo si) {
   auto &currentScopeTable = symbol_table.back().table;
   auto it = currentScopeTable.find(variable);
   if (it != currentScopeTable.end())
@@ -260,7 +312,15 @@ bool SemanticAnalyzer::add_variable(string variable, ttype type, int ptr,
           max(totalDeclarations, var_found->second.num_occurrence);
     }
   }
-  currentScopeTable[variable] = {type, ptr, is_const, totalDeclarations + 1};
+  si.num_occurrence = totalDeclarations + 1;
+  currentScopeTable[variable] = si;
+
+  llvm::Value *llvmVal;
+  if (symbol_table.back().context == "Root")
+    llvmVal = cg->createGlobalVariable(variable, si.type_, si.value);
+  else
+    llvmVal = cg->create_alloca(variable, si.type_, si.value);
+
   return true;
 }
 

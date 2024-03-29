@@ -28,7 +28,8 @@ int main(int argc, char **argv) {
   if (ret != 0)
     exit(ret);
   program_ast->dump_ast(0);
-  SemanticAnalyzer sa = SemanticAnalyzer();
+  CodeGen *cg = new CodeGen();
+  SemanticAnalyzer sa = SemanticAnalyzer(cg);
   if (!sa.analyze(program_ast)) {
     cout << "Semantic Analysis Failed" << endl;
     exit(1);

@@ -16,6 +16,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <llvm-19/llvm/IR/Constant.h>
+#include <llvm-19/llvm/IR/GlobalVariable.h>
+#include <llvm-19/llvm/IR/Value.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -24,6 +27,34 @@
 
 using namespace std;
 
+enum ttype {
+  t_void,
+  t_char,
+  t_short,
+  t_int,
+  t_long,
+  t_float,
+  t_double,
+  t_signed,
+  t_unsigned,
+  t_bool,
+  t_complex,
+  t_imaginary
+};
+
+class ASTConst;
+
+struct SymbolInfo {
+  ttype type_;
+  void *value;
+  int ptr = 0;
+  bool is_const = false;
+  int num_occurrence = 1;
+
+  void add_value(ASTConst *ct);
+};
+
+class CodeGen;
 class SemanticAnalyzer;
 
 class ASTNode {
@@ -73,21 +104,6 @@ public:
   virtual bool semantic_action_start(SemanticAnalyzer *sa) const;
 
   virtual bool semantic_action_end(SemanticAnalyzer *sa) const;
-};
-
-enum ttype {
-  t_void,
-  t_char,
-  t_short,
-  t_int,
-  t_long,
-  t_float,
-  t_double,
-  t_signed,
-  t_unsigned,
-  t_bool,
-  t_complex,
-  t_imaginary
 };
 
 enum assignment_op {
@@ -282,7 +298,7 @@ public:
   ASTDecl(ASTDeclSpec *n);
   ASTDecl(ASTDeclSpec *n1, ASTInitDeclList *n2);
   string to_str() const override { return "Declaration"; }
-  unordered_map<string, ttype> get_variables() const;
+  map<string, SymbolInfo> get_variables() const;
 
   bool semantic_action_start(SemanticAnalyzer *sa) const override;
 };
@@ -370,16 +386,19 @@ public:
 class ASTConst : public ASTNode {
 public:
   const_type ct;
-  string value;
+  string value_str;
+  float *value_f;
+  int *value_i;
 
 public:
   ASTConst(const_type t, string value);
+
   string to_str() const override {
     if (ct == const_type::i_const)
-      return "IntConst: " + value;
+      return "IntConst: " + value_str;
     else if (ct == const_type::f_const)
-      return "FloatConst: " + value;
-    return "UnknownConst: " + value;
+      return "FloatConst: " + value_str;
+    return "UnknownConst: " + value_str;
   }
 };
 
@@ -689,7 +708,7 @@ public:
     }
   }
 
-  pair<bool, unordered_map<string, ttype>> get_variables() const;
+  pair<bool, unordered_map<string, SymbolInfo>> get_variables() const;
 };
 
 class ASTFnDeclarator : public ASTDirectDeclarator {
@@ -700,7 +719,7 @@ public:
 
   bool semantic_action_start(SemanticAnalyzer *sa) const override;
 
-  pair<bool, unordered_map<string, ttype>> get_variables() const;
+  pair<bool, unordered_map<string, SymbolInfo>> get_variables() const;
 };
 
 class ASTFnCallDeclarator : public ASTDirectDeclarator {
@@ -726,16 +745,10 @@ public:
 /************************************************************************/
 /*                            SemanticAnalyzer                          */
 /************************************************************************/
-struct SymbolInfo {
-  ttype type_;
-  int ptr = 0;
-  bool is_const = false;
-  int num_occurrence = 1;
-};
 
 struct SymbolTable {
   string context;
-  unordered_map<string, SymbolInfo> table;
+  map<string, SymbolInfo> table;
 };
 
 class SemanticAnalyzer {
@@ -743,7 +756,12 @@ private:
   vector<SymbolTable> symbol_table;
 
 public:
-  SemanticAnalyzer() { symbol_table = vector<SymbolTable>(); }
+  CodeGen *cg;
+
+  SemanticAnalyzer(CodeGen *cg) {
+    symbol_table = vector<SymbolTable>();
+    this->cg = cg;
+  }
   bool analyze(ASTProgram *p);
   bool analyze_node(ASTNode *node);
 
@@ -751,8 +769,7 @@ public:
   bool find_all(string variable);
   void enter_scope(string context);
   void exit_scope();
-  bool add_variable(string variable, ttype type, int ptr = 0,
-                    bool is_const = false);
+  bool add_variable(string variable, SymbolInfo);
 
   SymbolTable *peek();
 };
@@ -762,20 +779,181 @@ public:
 /************************************************************************/
 
 class CodeGen {
+
+public:
   unique_ptr<llvm::LLVMContext> context;
   unique_ptr<llvm::IRBuilder<>> builder;
   unique_ptr<llvm::Module> module;
   map<std::string, llvm::Value *> env;
 
-public:
   CodeGen() {
     context = make_unique<llvm::LLVMContext>();
+    module = make_unique<llvm::Module>("Module", *context);
     builder =
         std::unique_ptr<llvm::IRBuilder<>>(new llvm::IRBuilder<>(*context));
-    module = make_unique<llvm::Module>("Module", *context);
   }
 
-  virtual void visit(ASTDecl *node) { node->get_variables(); }
+  llvm::Value *visit(ASTDecl *decl) {
+    map<string, SymbolInfo> variables = decl->get_variables();
+    for (const auto &var : variables) {
+      switch (var.second.type_) {
+      case ttype::t_int:
+        val = builder->CreateAlloca(llvm::Type::getInt32Ty(*context), nullptr,
+                                    llvm::Twine(name));
+      case ttype::t_bool:
+        val = builder->CreateAlloca(llvm::Type::getInt1Ty(*context), nullptr,
+                                    llvm::Twine(name));
+      case ttype::t_char:
+        val = builder->CreateAlloca(llvm::Type::getInt8Ty(*context), nullptr,
+                                    llvm::Twine(name));
+      case ttype::t_float:
+        val = builder->CreateAlloca(llvm::Type::getFloatTy(*context), nullptr,
+                                    llvm::Twine(name));
+      default:
+        cout << "Doesn't Support DataType " << ctype << endl;
+        exit(1);
+      }
+    }
+    llvm::Value *val;
+
+    if (value != nullptr)
+      builder->CreateStore(val, get_const(ctype, value));
+
+    return val;
+  }
+
+  llvm::Value *create_alloca(string name, ttype ctype, void *value) {
+    llvm::Value *val;
+    switch (ctype) {
+    case ttype::t_int:
+      val = builder->CreateAlloca(llvm::Type::getInt32Ty(*context), nullptr,
+                                  llvm::Twine(name));
+    case ttype::t_bool:
+      val = builder->CreateAlloca(llvm::Type::getInt1Ty(*context), nullptr,
+                                  llvm::Twine(name));
+    case ttype::t_char:
+      val = builder->CreateAlloca(llvm::Type::getInt8Ty(*context), nullptr,
+                                  llvm::Twine(name));
+    case ttype::t_float:
+      val = builder->CreateAlloca(llvm::Type::getFloatTy(*context), nullptr,
+                                  llvm::Twine(name));
+    default:
+      cout << "Doesn't Support DataType " << ctype << endl;
+      exit(1);
+    }
+
+    if (value != nullptr)
+      builder->CreateStore(val, get_const(ctype, value));
+
+    return val;
+  }
+
+  llvm::Function *createFunctionDecl(string name,
+                                     map<string, SymbolInfo> params,
+                                     ttype return_type) {
+    std::vector<llvm::Type *> v_params;
+    for (auto it : params) {
+      v_params.push_back(ctype_2_llvmtype(it.second.type_));
+    }
+
+    llvm::FunctionType *ft =
+        llvm::FunctionType::get(ctype_2_llvmtype(return_type), v_params, false);
+
+    llvm::Function *f = llvm::Function::Create(
+        ft, llvm::Function::ExternalLinkage, name, module.get());
+
+    auto it = params.begin();
+    for (auto &arg : f->args()) {
+      arg.setName(it->first);
+      it++;
+    }
+    return f;
+  }
+
+  llvm::Function *createFunctionDef(string name, map<string, SymbolInfo> params,
+                                    ttype return_type) {
+    std::vector<llvm::Type *> v_params;
+    for (auto it : params) {
+      v_params.push_back(ctype_2_llvmtype(it.second.type_));
+    }
+
+    llvm::FunctionType *ft =
+        llvm::FunctionType::get(ctype_2_llvmtype(return_type), v_params, false);
+
+    llvm::Function *f = llvm::Function::Create(
+        ft, llvm::Function::ExternalLinkage, name, module.get());
+
+    auto it = params.begin();
+    for (auto &arg : f->args()) {
+      arg.setName(it->first);
+      it++;
+    }
+    return f;
+  }
+
+  llvm::Function *createMainFunction() {
+    llvm::FunctionType *mainType =
+        llvm::FunctionType::get(llvm::IntegerType::getInt32Ty(*context),
+                                std::vector<llvm::Type *>(), false);
+    llvm::Function *main = llvm::Function::Create(
+        mainType, llvm::Function::ExternalLinkage, "main", module.get());
+    llvm::BasicBlock *mainBasicBlock =
+        llvm::BasicBlock::Create(*context, "entry", main);
+    builder->SetInsertPoint(mainBasicBlock);
+    return main;
+  }
+
+  llvm::GlobalVariable *createGlobalVariable(string name, ttype ctype,
+                                             void *value) {
+    llvm::GlobalVariable *gv;
+    if (value == nullptr)
+      gv = new llvm::GlobalVariable(*module, ctype_2_llvmtype(ctype), false,
+                                    llvm::GlobalValue::CommonLinkage, nullptr,
+                                    name);
+    else
+      gv = new llvm::GlobalVariable(*module, ctype_2_llvmtype(ctype), false,
+                                    llvm::GlobalValue::CommonLinkage,
+                                    get_const(ctype, value), name);
+    return gv;
+  }
+
+  void emit() { module->print(llvm::errs(), nullptr); }
+
+private:
+  llvm::Type *ctype_2_llvmtype(ttype ctype) {
+    switch (ctype) {
+    case ttype::t_int:
+      return llvm::Type::getInt32Ty(*context);
+    case ttype::t_bool:
+      return llvm::Type::getInt1Ty(*context);
+    case ttype::t_char:
+      return llvm::Type::getInt8Ty(*context);
+    case ttype::t_float:
+      return llvm::Type::getFloatTy(*context);
+    default:
+      cout << "Doesn't Support DataType " << ctype << endl;
+      exit(1);
+    }
+  }
+  llvm::Constant *get_const(ttype ctype, void *value) {
+    switch (ctype) {
+    case ttype::t_int:
+      return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context),
+                                    (*(int *)value));
+    case ttype::t_bool:
+      return llvm::ConstantInt::get(llvm::Type::getInt1Ty(*context),
+                                    (*(int *)value));
+    case ttype::t_char:
+      return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*context),
+                                    (*(int *)value));
+    case ttype::t_float:
+      return llvm::ConstantFP::get(llvm::Type::getFloatTy(*context),
+                                   *(float *)value);
+    default:
+      cout << "Doesn't Support DataType " << ctype << endl;
+      exit(1);
+    }
+  }
 };
 
 #endif /* AST_HPP_INCLUDED */

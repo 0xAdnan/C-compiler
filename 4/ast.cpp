@@ -174,7 +174,20 @@ ASTShiftOp::ASTShiftOp(shift_op sp) : ASTNode(), sp(sp) {}
 ASTArithOp::ASTArithOp(arith_op ap) : ASTNode(), ap(ap) {}
 
 ASTConst::ASTConst(const_type t, string value)
-    : ASTNode(), ct(t), value(value) {}
+    : ASTNode(), ct(t), value_str(value) {
+
+  switch (t) {
+  case const_type::i_const:
+    // TODO
+    /* value_i = new int(stoi(value)); */
+    value_i = new int(1);
+    break;
+  case const_type::f_const:
+    /* value_f = new float(stof(value)); */
+    value_f = new float(1.0f);
+    break;
+  }
+}
 
 ASTIdList::ASTIdList(ASTId *n) : ASTNode() { this->add_child(n); }
 
