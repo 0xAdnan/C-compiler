@@ -2,7 +2,13 @@
 #include <cstdio>
 #include <iostream>
 
-#include "ast.hpp"
+#include "base.h"
+#include "enums.h"
+#include "decl.h"
+#include "expr.h"
+#include "prog.h"
+#include "stmt.h"
+
 using namespace std;
 
 ASTNode* program_ast = NULL;
@@ -39,41 +45,31 @@ void todo(int);
 %start translation_unit
 
 %code requires {
-#include "ast.hpp"
+#include "base.h"
+#include "enums.h"
+#include "decl.h"
+#include "expr.h"
+#include "prog.h"
+#include "stmt.h"
 }
 
 %union value {
-  ASTPrimaryExpr* p_expr;
-  ASTConst* constant;
-  ASTStrConst* str_const;
   ASTPostExpr* postfix_expr;
-  ASTArgExpList* arg_expr_l;
+  ASTArgExprList* arg_expr_l;
   ASTUnaryExpr* unary_expr;
-  ASTUnaryOp* unary_op;
-  ASTMulExpr* mul_expr;
-  ASTAddExpr* add_expr;
-  ASTShiftExpr* shift_expr;
-  ASTRelExpr* rel_expr;
-  ASTEqExpr* eq_expr;
-  ASTAndExpr* and_expr;
-  ASTExclusiveOrExpr* exor_expr;
-  ASTInclusiveOrExpr* inor_expr;
-  ASTLogicalAndExpr* l_and_expr;
-  ASTLogicalOrExpr* l_or_expr;
-  ASTCondExpr* cond_expr;
-  ASTAssignmentExpr* ass_expr;
-  ASTAssignmentOp* ass_op;
+  unary_op u_op;
   ASTExpr* expr;
-  ASTDecl* decl;
+  assignment_op ass_op;
+  ASTExprList* expr_l;
+  ASTDeclList* decl;
   ASTDeclSpec* decl_spec;
   ASTInitDeclList* init_decl_list;
   ASTInitDecl* init_decl;
-  ASTType* type;
+  ctype_ type;
   ASTDirectDeclarator* d_declarator;
   ASTPtr* ptr;
   ASTParamList* param_list;
   ASTParamDecl* param_decl;
-  ASTIdList* id_list;
   ASTInitializer* init;
   ASTInitializerList* init_list;
   ASTDesignator* design;
@@ -94,14 +90,10 @@ void todo(int);
 
 %token <str> IDENTIFIER
 
-%nterm <p_expr> primary_expression
-%nterm <constant> constant
-%nterm <str_const> string
 %nterm <postfix_expr> postfix_expression
 %nterm <arg_expr_l> argument_expression_list
 %nterm <unary_expr> unary_expression
-%nterm <unary_op> unary_operator
-%nterm <unary_expr> cast_expression
+%nterm <u_op> unary_operator
 %nterm <mul_expr> multiplicative_expression
 %nterm <add_expr> additive_expression
 %nterm <shift_expr> shift_expression
@@ -113,9 +105,9 @@ void todo(int);
 %nterm <l_and_expr> logical_and_expression
 %nterm <l_or_expr> logical_or_expression
 %nterm <cond_expr> conditional_expression
-%nterm <ass_expr> assignment_expression
+%nterm <expr> assignment_expression
 %nterm <ass_op> assignment_operator
-%nterm <expr> expression
+%nterm <expr_l> expression
 %nterm <cond_expr> constant_expression
 %nterm <decl> declaration
 %nterm <decl_spec> declaration_specifiers
@@ -129,15 +121,11 @@ void todo(int);
 %nterm <param_list> parameter_type_list
 %nterm <param_list> parameter_list
 %nterm <param_decl> parameter_declaration
-%nterm <id_list> identifier_list
 // %nterm <ast> type_name
 // %nterm <ast> abstract_declarator
 // %nterm <ast> direct_abstract_declarator
 %nterm <init> initializer
 %nterm <init_list> initializer_list
-%nterm <design_list> designation
-%nterm <design_list> designator_list
-%nterm <design> designator
 %nterm <stmt> statement
 %nterm <lab_stmt> labeled_statement
 %nterm <blk_ilist> compound_statement
@@ -150,30 +138,17 @@ void todo(int);
 %nterm <prog> translation_unit
 %nterm <ext_decl> external_declaration
 %nterm <fn_def> function_definition
-%nterm <decl_list> declaration_list
 
 
 %%
 
-primary_expression
-	: IDENTIFIER                                                                     { $$ = new ASTPrimaryExpr(new ASTId($1)); }
-	| constant                                                                       { $$ = new ASTPrimaryExpr($1); }
-	| string                                                                         { $$ = new ASTPrimaryExpr($1); }
-	| '(' expression ')'                                                             { $$ = new ASTPrimaryExpr($2); }
-	;
-
-constant
-	: I_CONSTANT		/* includes character_constant */                                { $$ = new ASTConst(i_const, yytext); }
-	| F_CONSTANT                                                                     { $$ = new ASTConst(f_const, yytext); }
-	;
-
-string
-	: STRING_LITERAL                                                                 { $$ = new ASTStrLiteralConst(); }
-	| FUNC_NAME                                                                      { $$ = new ASTFuncNameConst(); }
-	;
-
 postfix_expression
-	: primary_expression                                                             { $$ = new ASTPostExpr($1); }
+    : IDENTIFIER                                                                     { $$ = new ASTIdExpr($1); }
+	| I_CONSTANT		/* includes character_constant */                            { $$ = new ASTConst(i_const, yytext); }
+	| F_CONSTANT                                                                     { $$ = new ASTConst(f_const, yytext); }
+	| STRING_LITERAL                                                                 { $$ = new ASTConst(s_const, yytext); }
+	| FUNC_NAME                                                                      { $$ = new ASTConst(s_const, yytext); }
+	| '(' expression ')'                                                             { $$ = $2; }
 	| postfix_expression '[' expression ']'                                          { $$ = new ASTArray($1, $3); }
 	| postfix_expression '(' ')'                                                     { $$ = new ASTFunctionCall($1, new ASTArgExpList()); }
 	| postfix_expression '(' argument_expression_list ')'                            { $$ = new ASTFunctionCall($1, $3); }
@@ -181,124 +156,114 @@ postfix_expression
 	| postfix_expression PTR_OP IDENTIFIER                                           { todo(181); }
 	| postfix_expression INC_OP                                                      { $$ = new ASTPostIncrement($1, new ASTIncOp(plus_plus)); }
 	| postfix_expression DEC_OP                                                      { $$ = new ASTPostIncrement($1, new ASTIncOp(minus_minus)); }
-	| '(' type_name ')' '{' initializer_list '}'                                     { todo(184); }
-	| '(' type_name ')' '{' initializer_list ',' '}'                                 { todo(185); }
 	;
 
 argument_expression_list
-	: assignment_expression                                                          { $$ = new ASTArgExpList($1); }
+	: assignment_expression                                                          { $$ = new ASTArgExprList($1); }
 	| argument_expression_list ',' assignment_expression                             { $$ = new ASTArgExpList($1, $3); }
 	;
 
 unary_expression
 	: postfix_expression                                                             { $$ = new ASTUnaryExpr($1); }
-	| INC_OP unary_expression                                                        { $$ = new ASTUnaryExpr(new ASTIncOp(plus_plus), $2); }
-	| DEC_OP unary_expression                                                        { $$ = new ASTUnaryExpr(new ASTIncOp(minus_minus), $2); }
-	| unary_operator cast_expression                                                 { $$ = new ASTUnaryExpr($1, $2); }
-	| SIZEOF unary_expression                                                        { todo(98); }
-	| SIZEOF '(' type_name ')'                                                       { todo(99); }
-	| ALIGNOF '(' type_name ')'                                                      { todo(100); }
+	| INC_OP unary_expression                                                        { $$ = new ASTUnaryExpr(plus_plus, $2); }
+	| DEC_OP unary_expression                                                        { $$ = new ASTUnaryExpr(minus_minus, $2); }
+	| unary_operator unary_expression                                                 { $$ = new ASTUnaryExpr($1, $2); }
 	;
 
 unary_operator
-	: '&'                                                                            { $$ = new ASTUnaryOp(u_op_and); }
-	| '*'                                                                            { $$ = new ASTUnaryOp(u_op_star); }
-	| '+'                                                                            { $$ = new ASTUnaryOp(u_op_plus); }
-	| '-'                                                                            { $$ = new ASTUnaryOp(u_op_minus); }
-	| '~'                                                                            { $$ = new ASTUnaryOp(u_op_tilde); }
-	| '!'                                                                            { $$ = new ASTUnaryOp(u_op_not); }
-	;
-
-cast_expression
-	: unary_expression                                                               { $$ = $1; }
-	| '(' type_name ')' cast_expression                                              { todo(160); }
+	: '&'                                                                            { $$ = u_op_and; }
+	| '*'                                                                            { $$ = u_op_star; }
+	| '+'                                                                            { $$ = u_op_plus; }
+	| '-'                                                                            { $$ = u_op_minus; }
+	| '~'                                                                            { $$ = u_op_tilde; }
+	| '!'                                                                            { $$ = u_op_not; }
 	;
 
 multiplicative_expression
-	: cast_expression                                                                { $$ = new ASTMulExpr($1); }
-	| multiplicative_expression '*' cast_expression                                  { $$ = new ASTMulExpr($1, new ASTArithOp(mul_op), $3); }
-	| multiplicative_expression '/' cast_expression                                  { $$ = new ASTMulExpr($1, new ASTArithOp(div_op), $3); } 
-	| multiplicative_expression '%' cast_expression                                  { $$ = new ASTMulExpr($1, new ASTArithOp(remainder_op), $3); }
+	: unary_expression                                                                { $$ = $1; }
+	| multiplicative_expression '*' unary_expression                                  { $$ = new ASTBinaryExpr($1, b_mul, $3); }
+	| multiplicative_expression '/' unary_expression                                  { $$ = new ASTBinaryExpr($1, b_div, $3); }
+	| multiplicative_expression '%' unary_expression                                  { $$ = new ASTBinaryExpr($1, b_remainder, $3); }
 	;
 
 additive_expression
-	: multiplicative_expression                                                      { $$ = new ASTAddExpr($1); }
-	| additive_expression '+' multiplicative_expression                              { $$ = new ASTAddExpr($1, new ASTArithOp(add_op), $3); }
-	| additive_expression '-' multiplicative_expression                              { $$ = new ASTAddExpr($1, new ASTArithOp(minus_op), $3); }
+	: multiplicative_expression                                                      { $$ = $1; }
+	| additive_expression '+' multiplicative_expression                              { $$ = new ASTBinaryExpr($1, b_add, $3); }
+	| additive_expression '-' multiplicative_expression                              { $$ = new ASTBinaryExpr($1, b_minus, $3); }
 	;
 
 shift_expression
-	: additive_expression                                                            { $$ = new ASTShiftExpr($1); }
-	| shift_expression LEFT_OP additive_expression                                   { $$ = new ASTShiftExpr($1, new ASTShiftOp(left_shift_op), $3); }
-	| shift_expression RIGHT_OP additive_expression                                  { $$ = new ASTShiftExpr($1, new ASTShiftOp(right_shift_op), $3); }
+	: additive_expression                                                            { $$ = $1; }
+	| shift_expression LEFT_OP additive_expression                                   { $$ = new ASTBinaryExpr($1, b_left_shift, $3); }
+	| shift_expression RIGHT_OP additive_expression                                  { $$ = new ASTBinaryExpr($1, b_right_shift, $3); }
 	;
 
 relational_expression
-	: shift_expression                                                               { $$ = new ASTRelExpr($1); }
-	| relational_expression '<' shift_expression                                     { $$ = new ASTRelExpr($1, new ASTRelOp(less_op), $3); }
-	| relational_expression '>' shift_expression                                     { $$ = new ASTRelExpr($1, new ASTRelOp(greater_op), $3); }
-	| relational_expression LE_OP shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(less_eq), $3); }
-	| relational_expression GE_OP shift_expression                                   { $$ = new ASTRelExpr($1, new ASTRelOp(greater_eq), $3); }
+	: shift_expression                                                               { $$ = $1; }
+	| relational_expression '<' shift_expression                                     { $$ = new ASTBinaryExpr($1, b_less, $3); }
+	| relational_expression '>' shift_expression                                     { $$ = new ASTBinaryExpr($1, b_greater, $3); }
+	| relational_expression LE_OP shift_expression                                   { $$ = new ASTBinaryExpr($1, b_less_eq, $3); }
+	| relational_expression GE_OP shift_expression                                   { $$ = new ASTBinaryExpr($1, b_greater_eq, $3); }
 	;
 
 equality_expression
-	: relational_expression                                                          { $$ = new ASTEqExpr($1); }
-	| equality_expression EQ_OP relational_expression                                { $$ = new ASTEqExpr($1, new ASTEqOp(eq_op), $3); }
-	| equality_expression NE_OP relational_expression                                { $$ = new ASTEqExpr($1, new ASTEqOp(neq_op), $3); }
+	: relational_expression                                                          { $$ = $1; }
+	| equality_expression EQ_OP relational_expression                                { $$ = new ASTBinaryExpr($1, b_eq, $3); }
+	| equality_expression NE_OP relational_expression                                { $$ = new ASTBinaryExpr($1, b_neq, $3); }
 	;
 
 and_expression
-	: equality_expression                                                            { $$ = new ASTAndExpr($1); }
-	| and_expression '&' equality_expression                                         { $$ = new ASTAndExpr($1, $3); }
+	: equality_expression                                                            { $$ = $1; }
+	| and_expression '&' equality_expression                                         { $$ = new ASTBinaryExpr($1, b_bitand, $3); }
 	;
 
 exclusive_or_expression
-	: and_expression                                                                 { $$ = new ASTExclusiveOrExpr($1); }
-	| exclusive_or_expression '^' and_expression                                     { $$ = new ASTExclusiveOrExpr($1, $3); }
+	: and_expression                                                                 { $$ = $1; }
+	| exclusive_or_expression '^' and_expression                                     { $$ = new ASTBinaryExpr($1, b_xor, $3); }
 	;
 
 inclusive_or_expression
-	: exclusive_or_expression                                                        { $$ = new ASTInclusiveOrExpr($1); }
-	| inclusive_or_expression '|' exclusive_or_expression                            { $$ = new ASTInclusiveOrExpr($1, $3); }
+	: exclusive_or_expression                                                        { $$ = $1; }
+	| inclusive_or_expression '|' exclusive_or_expression                            { $$ = new ASTBinaryExpr($1, b_bitor, $3); }
 	;
 
 logical_and_expression
-	: inclusive_or_expression                                                        { $$ = new ASTLogicalAndExpr($1); }
-	| logical_and_expression AND_OP inclusive_or_expression                          { $$ = new ASTLogicalAndExpr($1, $3); }
+	: inclusive_or_expression                                                        { $$ = $1; }
+	| logical_and_expression AND_OP inclusive_or_expression                          { $$ = new ASTBinaryExpr($1, b_and, $3); }
 	;
 
 logical_or_expression
-	: logical_and_expression                                                         { $$ = new ASTLogicalOrExpr($1); }
-	| logical_or_expression OR_OP logical_and_expression                             { $$ = new ASTLogicalOrExpr($1, $3); }
+	: logical_and_expression                                                         { $$ = $1; }
+	| logical_or_expression OR_OP logical_and_expression                             { $$ = new ASTBinaryExpr($1, b_or, $3); }
 	;
 
 conditional_expression
-	: logical_or_expression                                                          { $$ = new ASTCondExpr($1); }
+	: logical_or_expression                                                          { $$ = $1; }
 	| logical_or_expression '?' expression ':' conditional_expression                { $$ = new ASTCondExpr($1, $3, $5); }
 	;
 
 assignment_expression
-	: conditional_expression                                                         { $$ = new ASTAssignmentExpr($1); }
+	: conditional_expression                                                         { $$ = $1; }
 	| unary_expression assignment_operator assignment_expression                     { $$ = new ASTAssignmentExpr($1, $2, $3);}
 	;
 
 assignment_operator
-	: '='                                                                            { $$ = new ASTAssignmentOp(assign); }
-	| MUL_ASSIGN                                                                     { $$ = new ASTAssignmentOp(mul_assign); }
-	| DIV_ASSIGN                                                                     { $$ = new ASTAssignmentOp(div_assign); }
-	| MOD_ASSIGN                                                                     { $$ = new ASTAssignmentOp(mod_assign); }
-	| ADD_ASSIGN                                                                     { $$ = new ASTAssignmentOp(add_assign); }
-	| SUB_ASSIGN                                                                     { $$ = new ASTAssignmentOp(sub_assign); }
-	| LEFT_ASSIGN                                                                    { $$ = new ASTAssignmentOp(left_assign); }
-	| RIGHT_ASSIGN                                                                   { $$ = new ASTAssignmentOp(right_assign); }
-	| AND_ASSIGN                                                                     { $$ = new ASTAssignmentOp(and_assign); }
-	| XOR_ASSIGN                                                                     { $$ = new ASTAssignmentOp(xor_assign); }
-	| OR_ASSIGN                                                                      { $$ = new ASTAssignmentOp(or_assign); }
+	: '='                                                                            { $$ = assign; }
+	| MUL_ASSIGN                                                                     { $$ = mul_assign; }
+	| DIV_ASSIGN                                                                     { $$ = div_assign; }
+	| MOD_ASSIGN                                                                     { $$ = mod_assign; }
+	| ADD_ASSIGN                                                                     { $$ = add_assign; }
+	| SUB_ASSIGN                                                                     { $$ = sub_assign; }
+	| LEFT_ASSIGN                                                                    { $$ = left_assign; }
+	| RIGHT_ASSIGN                                                                   { $$ = right_assign; }
+	| AND_ASSIGN                                                                     { $$ = and_assign; }
+	| XOR_ASSIGN                                                                     { $$ = xor_assign; }
+	| OR_ASSIGN                                                                      { $$ = or_assign; }
 	;
 
 expression
-	: assignment_expression                                                          { $$ = new ASTExpr($1); }
-	| expression ',' assignment_expression                                           { $$ = new ASTExpr($1, $3); }
+	: assignment_expression                                                          { $$ = new ASTExprList($1); }
+	| expression ',' assignment_expression                                           { $$ = new ASTExprList($1, $3); }
 	;
 
 constant_expression
@@ -306,8 +271,7 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';'                                                     { $$ = new ASTDecl($1); }
-	| declaration_specifiers init_declarator_list ';'                                { $$ = new ASTDecl($1, $2); }
+	: declaration_specifiers init_declarator_list ';'                                { $$ = new ASTDeclList($1, $2); }
 	;
 
 declaration_specifiers
@@ -328,19 +292,19 @@ init_declarator
 	;
 
 type_specifier
-	: VOID                                                                           { $$ = new ASTType(t_void); }
-	| CHAR                                                                           { $$ = new ASTType(t_char); }
-	| SHORT                                                                          { $$ = new ASTType(t_short); }
-	| INT                                                                            { $$ = new ASTType(t_int); }
-	| FLOAT                                                                          { $$ = new ASTType(t_float); }
-  | LONG                                                                           { $$ = new ASTType(t_long); }
-	| DOUBLE                                                                         { $$ = new ASTType(t_double); }
-	| SIGNED                                                                         { $$ = new ASTType(t_signed); }
-	| UNSIGNED                                                                       { $$ = new ASTType(t_unsigned); }
-	| BOOL                                                                           { $$ = new ASTType(t_bool); }
-	| COMPLEX                                                                        { $$ = new ASTType(t_complex); }
-	| IMAGINARY	  	/* non-mandated extension */                                     { $$ = new ASTType(t_imaginary); }
-	| TYPEDEF_NAME		                                                               { todo(262); }
+	: VOID                                                                           { $$ = t_void; }
+	| CHAR                                                                           { $$ = t_char; }
+	| SHORT                                                                          { $$ = t_short; }
+	| INT                                                                            { $$ = t_int; }
+	| FLOAT                                                                          { $$ = t_float; }
+    | LONG                                                                           { $$ = t_long; }
+	| DOUBLE                                                                         { $$ = t_double; }
+	| SIGNED                                                                         { $$ = t_signed; }
+	| UNSIGNED                                                                       { $$ = t_unsigned; }
+	| BOOL                                                                           { $$ = t_bool; }
+	| COMPLEX                                                                        { $$ = t_complex; }
+	| IMAGINARY	  	/* non-mandated extension */                                     { $$ = t_imaginary; }
+	| TYPEDEF_NAME		                                                             { todo(262); }
 	;
 
 specifier_qualifier_list
@@ -357,16 +321,8 @@ declarator
 
 direct_declarator
 	: IDENTIFIER                                                                      { $$ = new ASTIdDeclarator(new ASTId($1)); }
-	| '(' declarator ')'                                                              { $$ = $2; }
-	| direct_declarator '[' ']'                                                       { todo(352); }
-	| direct_declarator '[' '*' ']'                                                   { todo(353); }
-	| direct_declarator '[' CONST '*' ']'                                             { todo(363); }
-	| direct_declarator '[' CONST assignment_expression ']'                           { todo(364); }
-	| direct_declarator '[' CONST ']'                                                 { todo(364); }
-	| direct_declarator '[' assignment_expression ']'                                 { todo(360); }
-	| direct_declarator '(' parameter_type_list ')'                                   { $$ = new ASTFnDeclarator($1, $3);}
-	| direct_declarator '(' ')'                                                       { $$ = new ASTFnDeclarator($1);}
-	| direct_declarator '(' identifier_list ')'                                       { $$ = new ASTFnCallDeclarator($1, $3);}
+	| direct_declarator '(' parameter_type_list ')'                                   { $$ = new ASTFnDecl($1, $3);}
+	| direct_declarator '(' ')'                                                       { $$ = new ASTFnDecl($1);}
 	;
 
 pointer
@@ -388,66 +344,16 @@ parameter_list
 
 parameter_declaration
 	: declaration_specifiers declarator                                                { $$ = new ASTParamDecl($1, $2); }
-	| declaration_specifiers abstract_declarator                                       { todo(296); }
 	| declaration_specifiers                                                           { $$ = new ASTParamDecl($1); }
 	;
 
-identifier_list
-	: IDENTIFIER                                                                       { $$ = new ASTIdList(new ASTId($1)); }
-	| identifier_list ',' IDENTIFIER                                                   { $$ = new ASTIdList($1, new ASTId($3)); }
-	;
-
-type_name
-	: specifier_qualifier_list abstract_declarator
-	| specifier_qualifier_list
-	;
-
-abstract_declarator
-	: pointer direct_abstract_declarator
-	| pointer
-	| direct_abstract_declarator
-	;
-
-direct_abstract_declarator
-	: '(' abstract_declarator ')'
-	| '[' ']'
-	| '[' '*' ']'
-	| '[' STATIC assignment_expression ']'
-	| '[' assignment_expression ']'
-	| direct_abstract_declarator '[' ']'
-	| direct_abstract_declarator '[' '*' ']'
-	| direct_abstract_declarator '[' assignment_expression ']'
-	| '(' ')'
-	| '(' parameter_type_list ')'
-	| direct_abstract_declarator '(' ')'
-	| direct_abstract_declarator '(' parameter_type_list ')'
-	;
-
 initializer
-	: '{' initializer_list '}'                                                          { $$ = new ASTInitializer($2); }
-	| '{' initializer_list ',' '}'                                                      { $$ = new ASTInitializer($2); }
-	| assignment_expression                                                             { $$ = new ASTInitializer($1); }
+	: assignment_expression                                                           { $$ = new ASTInitializer($1); }
 	;
 
 initializer_list
-	: designation initializer                                                           { $$ = new ASTInitializerList($1, $2); }
-	| initializer                                                                       { $$ = new ASTInitializerList($1); }
-	| initializer_list ',' designation initializer                                      { $$ = new ASTInitializerList($1, $3, $4); }
+	: initializer                                                                       { $$ = new ASTInitializerList($1); }
 	| initializer_list ',' initializer                                                  { $$ = new ASTInitializerList($1, $3); }
-
-	;
-designation
-	: designator_list '='                                                               { $$ = $1; }
-	;
-
-designator_list
-	: designator                                                                        { $$ = new ASTDesignatorList($1); }
-	| designator_list designator                                                        { $$ = new ASTDesignatorList($1, $2); }
-	;
-
-designator
-	: '[' constant_expression ']'                                                       { $$ = new ASTDesignator($2); }
-	| '.' IDENTIFIER                                                                    { $$ = new ASTDesignator(new ASTId($2)); }
 	;
 
 statement
@@ -527,14 +433,9 @@ external_declaration
 	;
 
 function_definition
-	: declaration_specifiers declarator declaration_list compound_statement             { $$ = new ASTFnDef($1, $2, $3, $4); }
-	| declaration_specifiers declarator compound_statement                              { $$ = new ASTFnDef($1, $2, $3); }
+	: declaration_specifiers declarator compound_statement                              { $$ = new ASTFnDef($1, $2, $3); }
 	;
 
-declaration_list
-	: declaration                                                                       { $$ = new ASTDeclList(); }
-	| declaration_list declaration                                                      { $$ = new ASTDeclList($1, $2); }
-	;
 
 %%
 #include <stdio.h>

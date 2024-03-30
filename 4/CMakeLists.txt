@@ -8,7 +8,7 @@ find_package(FLEX REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/ast)
 
 ##################### FLEX-BISON ####################
 FLEX_TARGET(Lexer c.l ${CMAKE_CURRENT_BINARY_DIR}/c.lex.cpp)
@@ -16,7 +16,23 @@ BISON_TARGET(Parser c.y ${CMAKE_CURRENT_BINARY_DIR}/c.tab.cpp DEFINES_FILE ${CMA
 add_flex_bison_dependency(Lexer Parser)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-set(SOURCES cc.cpp ast.cpp semantic.cpp ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS} )
+set(SOURCES cc.cpp ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
+        src/ast/base.cpp
+        src/ast/base.h
+        src/ast/decl.cpp
+        src/ast/decl.h
+        src/visitor/Visitor.h
+        src/visitor/Codegen.cpp
+        src/visitor/Codegen.h
+        src/ast/enums.h
+        src/ast/expr.cpp
+        src/ast/expr.h
+        src/ast/prog.cpp
+        src/ast/prog.h
+        src/ast/stmt.cpp
+        src/ast/stmt.h
+        magic_enum.hpp
+)
 add_executable(cc ${SOURCES})
 
 
