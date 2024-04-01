@@ -5,11 +5,14 @@
 #ifndef CCOMPILER_BASE_H
 #define CCOMPILER_BASE_H
 
+#include <llvm/IR/Value.h>
 #include "vector"
 #include "string"
 #include "iostream"
+#include "enums.h"
 
-#include "../visitor/Visitor.h"
+
+class Codegen;
 using namespace std;
 
 
@@ -20,9 +23,10 @@ protected:
 
 public:
     vector<ASTNode *> children;
-    virtual string to_str() const = 0;
+    [[nodiscard]] virtual string to_str() const = 0;
     void dump_ast(int indent);
-    void accept(Visitor *visitor);
+
+    virtual llvm::Value* accept(Codegen *codegen);
 };
 
 

@@ -4,19 +4,16 @@
 
 #include "decl.h"
 
-ASTDeclSpec::ASTDeclSpec(ctype_ type, bool is_const) : ASTNode() {
-  this->type = type;
-  this->is_const = is_const;
-}
-
 
 ASTInitDecl::ASTInitDecl(ASTIDDecl * id): ASTNode() {
   this->name = id->name;
+  this->num_ptr = id->num_ptrs;
 }
 
-ASTInitDecl::ASTInitDecl(ASTIDDecl * id, ASTInitializer* init): ASTNode(){
+ASTInitDecl::ASTInitDecl(ASTIDDecl * id, ASTExpr* expr): ASTNode(){
   this->name = id->name;
-  this->value = init->expr;
+  this->value = expr;
+  this->num_ptr = id->num_ptrs;
 
   if(this->value != nullptr)
     children.push_back(this->value);
@@ -25,7 +22,9 @@ ASTInitDecl::ASTInitDecl(ASTIDDecl * id, ASTInitializer* init): ASTNode(){
 ASTInitDecl::ASTInitDecl(ASTFnDecl * fnDecl) {
   this->name = fnDecl->name;
   this->value = nullptr;
-  this->is_fn = true;
+  this->fnDecl = fnDecl;
+
+  this->num_ptr = fnDecl->num_ptrs;
 }
 
 
@@ -45,8 +44,33 @@ ASTDeclList::ASTDeclList(ASTDeclSpec *n1, ASTInitDeclList *n2): ASTNode(){
     decl->value = init->value;
     decl->is_const = n1->is_const;
     decl->num_ptr = init->num_ptr;
-    decl->is_fn = init->is_fn;
+    decl->fnDecl = init->fnDecl;
     declarations.push_back(decl);
     children.push_back(decl);
   }
 }
+
+ASTParamDecl::ASTParamDecl(ASTDeclSpec * declSpec, ASTIDDecl * id) {
+  this->type = declSpec->type;
+  this->is_const = declSpec->is_const;
+  this->name = id->name;
+  this->num_ptr = id->num_ptrs;
+}
+
+ASTParamDecl::ASTParamDecl(ASTDeclSpec * declSpec) {
+  this->type = declSpec->type;
+  this->is_const = declSpec->is_const;
+
+}
+
+
+ASTParamList::ASTParamList(ASTParamList * paramList, ASTParamDecl * paramDecl) {
+  for(auto x: paramList->params)
+    params.push_back(x);
+  params.push_back(paramDecl);
+}
+
+ASTParamList::ASTParamList(ASTParamDecl * x) {
+  params.push_back(x);
+}
+

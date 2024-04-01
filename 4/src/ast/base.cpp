@@ -12,7 +12,7 @@ void ASTNode::add_child(ASTNode *child) {
 
 void ASTNode::dump_ast(int indent) {
   auto myindent = indent;
-  bool has_children = this->children.size() > 0;
+  bool has_children = !this->children.empty();
 
   for (int i = 0; i < myindent; i++)
     cout << "    ";
@@ -34,8 +34,7 @@ void ASTNode::dump_ast(int indent) {
   cout << endl;
 }
 
-void ASTNode::accept(Visitor *visitor){
-  for(auto child: children)
-    child->accept(visitor);
+llvm::Value *ASTNode::accept(Codegen *codegen) {
+  cout << "Codegen for " <<  to_str() << "not supported yet." << endl;
+  assert(false);
 }
-

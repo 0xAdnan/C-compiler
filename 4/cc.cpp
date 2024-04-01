@@ -1,6 +1,7 @@
 
 #include "c.tab.hpp"
 #include "src/ast/prog.h"
+#include "Codegen.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +30,10 @@ int main(int argc, char **argv) {
   if (ret != 0)
     exit(ret);
   program_ast->dump_ast(0);
-//  CodeGen *cg = new CodeGen();
+
+  auto *cg = new Codegen();
+  cg->visit(program_ast);
+  cg->dump_ast();
 //  SemanticAnalyzer sa = SemanticAnalyzer(cg);
 //  if (!sa.analyze(program_ast)) {
 //    cout << "Semantic Analysis Failed" << endl;

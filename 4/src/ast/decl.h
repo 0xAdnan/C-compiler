@@ -6,10 +6,9 @@
 #define CCOMPILER_DECL_H
 
 #include "string"
-#include "enums.h"
+
 #include "base.h"
 #include "expr.h"
-#include "../../magic_enum.hpp"
 
 using namespace std;
 
@@ -18,10 +17,20 @@ using namespace std;
 class ASTDeclSpec: public ASTNode{
 public:
     ctype_ type;
-    bool is_const;
-    ASTDeclSpec(ctype_, bool);
+    bool is_const = false;
 
-    string to_str() const override{
+    ASTDeclSpec(){}
+
+    ASTDeclSpec(ctype_ t){
+       type = t;
+    }
+
+    ASTDeclSpec(ctype_ t, ASTDeclSpec* declSpec){
+      assert(declSpec->type == t_long && t == t_long);
+      type = t_long_long;
+    }
+
+    [[nodiscard]] string to_str() const override{
       return "DeclarationSpecifier";
     }
 };
@@ -31,10 +40,9 @@ public:
 class ASTDeclarator: public ASTNode{
 public:
     int num_ptrs = 0;
-    void add_ptr(){num_ptrs++;}
     ASTDeclarator():ASTNode(){}
 
-    string to_str() const override{
+    [[nodiscard]] string to_str() const override{
       return "Declarator: num_ptrs= " + to_string(num_ptrs);
     }
 };
@@ -47,43 +55,72 @@ public:
       this->name = name;
     }
 
-    string to_str() const override{
+    [[nodiscard]] string to_str() const override{
       return "IdDeclarator: " + this->name ;
     }
 };
 
+class ASTParamDecl: ASTNode{
+public:
+    ctype_ type;
+    string name;
+    bool is_const = false;
+    int num_ptr = 0;
+
+    ASTParamDecl(ASTDeclSpec*, ASTIDDecl*);
+    explicit ASTParamDecl(ASTDeclSpec*);
+
+    [[nodiscard]] string to_str() const override {
+      return "ParameterDecl";
+    }
+};
+
+class ASTParamList: public ASTNode{
+public:
+    vector<ASTParamDecl*> params;
+
+    explicit ASTParamList(ASTParamDecl*);
+    ASTParamList(ASTParamList*, ASTParamDecl*);
+
+
+    [[nodiscard]] string to_str() const {
+      return "Parameters";
+    }
+};
+
+class ASTParamTypeList: public ASTNode{
+public:
+    ASTParamList* paramList;
+    bool is_variadic = false;
+
+    explicit ASTParamTypeList(ASTParamList* params): ASTNode(){
+      this->paramList = params;
+      children.push_back(paramList);
+    }
+
+    [[nodiscard]] string to_str() const override {
+      return "ParameterDecls";
+    }
+};
 /* Function Identifier "int __f(int, int, bool)__" */
-class ASTParamTypeList;
 
 class ASTFnDecl: public ASTDeclarator {
 public:
     string name;
     ASTParamTypeList* params = nullptr;
 
-    ASTFnDecl(ASTIDDecl* id): ASTDeclarator(){
+    explicit ASTFnDecl(ASTIDDecl* id): ASTDeclarator(){
       this->name = id->name;
     }
 
     ASTFnDecl(ASTIDDecl* id, ASTParamTypeList* params): ASTDeclarator(){
       this->name = id->name;
       this->params = params;
+      children.push_back(params);
     }
 
-    string to_str() const override{
-      return "IdDeclarator: " + this->name ;
-    }
-};
-
-/* Rhs of the initialization "int x = _1_;" */
-class ASTInitializer: public ASTNode{
-public:
-    ASTExpr* expr;
-    ASTInitializer(ASTExpr* expr){
-      this->expr = expr; children.push_back(expr);
-    }
-
-    string to_str() const override{
-      return "Initializer";
+    [[nodiscard]] string to_str() const override{
+      return "FnDecl: " + this->name ;
     }
 };
 
@@ -93,14 +130,14 @@ public:
     string name;
     ASTExpr* value = nullptr;
     int num_ptr = 0;
-    bool is_fn = false;
+    ASTFnDecl* fnDecl = nullptr;
 
     explicit ASTInitDecl(ASTIDDecl*);
     explicit ASTInitDecl(ASTFnDecl*);
-    ASTInitDecl(ASTIDDecl*, ASTInitializer*);
+    ASTInitDecl(ASTIDDecl*, ASTExpr*);
 
-    string to_str() const override{
-      return "InitDecl";
+    [[nodiscard]] string to_str() const override{
+      return "InitDecl: num_ptrs=" + to_string(num_ptr);
     }
 };
 
@@ -110,7 +147,7 @@ public:
     ASTInitDeclList(ASTInitDeclList*, ASTInitDecl*);
     vector<ASTInitDecl*> initializations;
 
-    string to_str() const override{
+    [[nodiscard]] string to_str() const override{
       return "InitDeclList";
     }
 };
@@ -123,14 +160,16 @@ public:
     ASTExpr* value = nullptr;
     bool is_const = false;
     int num_ptr = 0;
-    bool is_fn = false;
+    ASTFnDecl* fnDecl = nullptr;
 
     ASTDecl(string name, ctype_ type): ASTNode(){
       this->name = name;
       this->type = type;
     }
 
-    string to_str() const override{
+    [[nodiscard]] string to_str() const override{
+      if(fnDecl)
+        return fnDecl->to_str();
       if(is_const)
         return "Declaration: " + name + ", type: " + to_string(type) + ", is_const: True, num_ptr: " + to_string(num_ptr);
       return "Declaration: " + name + ", type: " + to_string(type) + ", is_const: False, num_ptr: " + to_string(num_ptr);
@@ -142,28 +181,11 @@ public:
     ASTDeclList(ASTDeclSpec* n1, ASTInitDeclList* n2);
     vector<ASTDecl*> declarations;
 
-    string to_str() const override{
+    [[nodiscard]] string to_str() const override{
       return "DeclarationList";
     }
 };
 
-class ASTParam: ASTNode{
 
-};
-
-class ASTParamList: ASTNode{
-public:
-    vector<ASTParam*> params;
-};
-
-class ASTParamTypeList: ASTNode{
-public:
-    ASTParamList* paramList;
-    bool is_variadic = false;
-
-    ASTParamTypeList(ASTParamList* params): ASTNode(){
-      this->paramList = params;
-    }
-};
 
 #endif //CCOMPILER_DECL_H

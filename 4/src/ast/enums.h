@@ -5,12 +5,17 @@
 #ifndef CCOMPILER_ENUMS_H
 #define CCOMPILER_ENUMS_H
 
+#include "string"
+
+using namespace std;
+
 enum ctype_ {
     t_void,
     t_char,
     t_short,
     t_int,
     t_long,
+    t_long_long,
     t_float,
     t_double,
     t_signed,
@@ -20,7 +25,18 @@ enum ctype_ {
     t_imaginary
 };
 
-enum unary_op {
+enum op_type{
+    nop,
+    unary,
+    binary,
+    ternary,
+    assignment,
+};
+
+enum operators {
+    noop,
+
+// unary operator_
     u_op_plus_plus,
     u_op_minus_minus,
     u_op_and,
@@ -29,10 +45,8 @@ enum unary_op {
     u_op_minus,
     u_op_tilde,
     u_op_not,
-    noop
-};
 
-enum binary_op{
+// binary_op
     b_mul,
     b_div,
     b_remainder,
@@ -55,10 +69,10 @@ enum binary_op{
 
     b_and,
     b_or,
-};
 
+    t_cond,
 
-enum assignment_op {
+// assignment_op
     assign,
     mul_assign,
     div_assign,
@@ -70,7 +84,19 @@ enum assignment_op {
     and_assign,
     xor_assign,
     or_assign,
-
 };
+
+enum const_type {
+    i_const,
+    f_const,
+    s_const,
+};
+
+
+op_type get_op_type(operators op);
+
+string op_to_str(operators op);
+
+string const_type_to_str(const_type ct);
 
 #endif //CCOMPILER_ENUMS_H
