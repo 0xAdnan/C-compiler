@@ -86,6 +86,10 @@ void todo(int);
 }
 
 %token <str> IDENTIFIER
+%token <str> I_CONSTANT
+%token <str> F_CONSTANT
+%token <str> STRING_LITERAL
+%token <str> FUNC_NAME
 
 %nterm <expr> postfix_expression
 %nterm <expr> unary_expression
@@ -138,10 +142,10 @@ void todo(int);
 
 postfix_expression
     : IDENTIFIER                                                                     { $$ = new ASTIdExpr($1); }
-	| I_CONSTANT		/* includes character_constant */                            { $$ = new ASTConst(i_const, yytext); }
-	| F_CONSTANT                                                                     { $$ = new ASTConst(f_const, yytext); }
-	| STRING_LITERAL                                                                 { $$ = new ASTConst(s_const, yytext); }
-	| FUNC_NAME                                                                      { $$ = new ASTConst(s_const, yytext); }
+	| I_CONSTANT		/* includes character_constant */                            { $$ = new ASTConst(i_const, $1); }
+	| F_CONSTANT                                                                     { $$ = new ASTConst(f_const, $1); }
+	| STRING_LITERAL                                                                 { $$ = new ASTConst(s_const, $1); }
+	| FUNC_NAME                                                                      { $$ = new ASTConst(s_const, $1); }
 	| '(' expression ')'                                                             { $$ = $2; }
 	| postfix_expression '[' expression ']'                                          { $$ = new ASTArrayAccess($1, $3); }
 	| postfix_expression '(' ')'                                                     { $$ = new ASTFunctionCall($1); }
@@ -426,10 +430,10 @@ external_declaration
 
 function_definition
 	: declaration_specifiers declarator compound_statement {
-	    ASTIDDecl* id = dynamic_cast<ASTIDDecl*>($2);
-	    assert(id != nullptr);
+	    ASTFnDecl* fn = dynamic_cast<ASTFnDecl*>($2);
+	    assert(fn != nullptr);
 
-	    $$ = new ASTFnDef($1, id, $3);
+	    $$ = new ASTFnDef($1, fn, $3);
 	}
 	;
 

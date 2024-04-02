@@ -77,8 +77,10 @@ public:
     }
 
     [[nodiscard]] string to_str() const override {
-      return "Identifier: " + name;
+      return "IdentifierExpr: " + name;
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTConst: public ASTExpr{

@@ -325,6 +325,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Block";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTBlockList: public ASTStmt{
@@ -346,12 +348,14 @@ public:
       delete blocks;
 
       for(auto b: this->blocks)
-        children.push_back(b);
+        children.push_back(b->children[0]);
     }
 
     [[nodiscard]] string to_str() const override {
       return "BlockList";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 #endif //CCOMPILER_STMT_H

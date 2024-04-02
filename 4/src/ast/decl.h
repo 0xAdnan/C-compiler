@@ -60,7 +60,7 @@ public:
     }
 };
 
-class ASTParamDecl: ASTNode{
+class ASTParamDecl: public ASTNode{
 public:
     ctype_ type;
     string name;
@@ -71,7 +71,9 @@ public:
     explicit ASTParamDecl(ASTDeclSpec*);
 
     [[nodiscard]] string to_str() const override {
-      return "ParameterDecl";
+      if(is_const)
+        return to_string(type) + " " + name + " const " + to_string(num_ptr);
+      return to_string(type) + " " + name + " " + to_string(num_ptr);
     }
 };
 
@@ -169,11 +171,13 @@ public:
 
     [[nodiscard]] string to_str() const override{
       if(fnDecl)
-        return fnDecl->to_str();
+        return "Declaration";
       if(is_const)
         return "Declaration: " + name + ", type: " + to_string(type) + ", is_const: True, num_ptr: " + to_string(num_ptr);
       return "Declaration: " + name + ", type: " + to_string(type) + ", is_const: False, num_ptr: " + to_string(num_ptr);
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTDeclList: public ASTNode{
@@ -184,6 +188,8 @@ public:
     [[nodiscard]] string to_str() const override{
       return "DeclarationList";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 

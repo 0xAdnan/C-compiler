@@ -3,6 +3,7 @@
 //
 
 #include "decl.h"
+#include "Codegen.h"
 
 
 ASTInitDecl::ASTInitDecl(ASTIDDecl * id): ASTNode() {
@@ -45,9 +46,18 @@ ASTDeclList::ASTDeclList(ASTDeclSpec *n1, ASTInitDeclList *n2): ASTNode(){
     decl->is_const = n1->is_const;
     decl->num_ptr = init->num_ptr;
     decl->fnDecl = init->fnDecl;
+    if(decl->fnDecl)
+      decl->children.push_back(decl->fnDecl);
+    if(decl->value)
+      decl->children.push_back(decl->value);
+
     declarations.push_back(decl);
     children.push_back(decl);
   }
+}
+
+llvm::Value *ASTDeclList::accept(Codegen *codegen) {
+  return codegen->visit(this);
 }
 
 ASTParamDecl::ASTParamDecl(ASTDeclSpec * declSpec, ASTIDDecl * id) {
@@ -63,14 +73,22 @@ ASTParamDecl::ASTParamDecl(ASTDeclSpec * declSpec) {
 
 }
 
-
 ASTParamList::ASTParamList(ASTParamList * paramList, ASTParamDecl * paramDecl) {
   for(auto x: paramList->params)
     params.push_back(x);
   params.push_back(paramDecl);
+
+  children.clear();
+  for(auto x: params)
+    children.push_back(x);
 }
 
 ASTParamList::ASTParamList(ASTParamDecl * x) {
   params.push_back(x);
+
+  children.push_back(x);
 }
 
+llvm::Value *ASTDecl::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}

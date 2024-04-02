@@ -35,6 +35,6 @@ void ASTNode::dump_ast(int indent) {
 }
 
 llvm::Value *ASTNode::accept(Codegen *codegen) {
-  cout << "Codegen for " <<  to_str() << "not supported yet." << endl;
+  cout << "Codegen for '" <<  to_str() << "' not supported yet." << endl;
   assert(false);
 }

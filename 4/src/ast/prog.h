@@ -21,16 +21,16 @@ public:
 class ASTFnDef: public ASTExternDecl{
 public:
     ASTDeclSpec* declSpec;
-    ASTIDDecl* idDecl;
+    ASTFnDecl* fnDecl;
     ASTBlockList* body;
 
-    ASTFnDef(ASTDeclSpec* declSpec, ASTIDDecl* astidDecl, ASTBlockList* body): ASTExternDecl(){
+    ASTFnDef(ASTDeclSpec* declSpec, ASTFnDecl* astFnDecl, ASTBlockList* body): ASTExternDecl(){
       this->declSpec = declSpec;
-      this->idDecl = astidDecl;
+      this->fnDecl = astFnDecl;
       this->body = body;
 
       children.push_back(declSpec);
-      children.push_back(idDecl);
+      children.push_back(fnDecl);
       children.push_back(body);
     }
 
@@ -38,7 +38,7 @@ public:
       return "FunctionDef";
     }
 
-//    llvm::Value *accept(Codegen *codegen) override;
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTGlobalVar: public ASTExternDecl{
