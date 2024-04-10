@@ -57,9 +57,7 @@ public:
       return "Operator: " + op_to_str(operator_);
     }
 
-    llvm::Value *accept(Codegen *codegen) override {
-      return ASTNode::accept(codegen);
-    }
+    llvm::Value *accept(Codegen *codegen) override;
 
 private:
     void add_children(){
@@ -95,7 +93,7 @@ public:
       return "Const: " + const_type_to_str(ct) + " " + value;
     }
 
-    llvm::Value *accept(Codegen *codegen) override;
+llvm::Value *accept(Codegen *codegen) override;
 
 };
 

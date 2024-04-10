@@ -59,6 +59,8 @@ public:
 
     llvm::Value *visit(ASTConst *constant) const;
 
+    llvm::Value *visit(ASTExpr *expr);
+
 //    llvm::Value *visit(ASTDecl *decl);
 
 private:
@@ -79,6 +81,12 @@ private:
           exit(1);
       }
     }
+
+  llvm::Value* visit_unary(ASTExpr* expr);
+  llvm::Value* visit_binary(ASTExpr* expr);
+  llvm::Value* visit_conditional(ASTExpr* expr);
+  llvm::Value* visit_assignment(ASTExpr* expr);
+  
 };
 
 
