@@ -281,8 +281,15 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
   llvm::Value *L = expr->operands[0]->accept(this);
   llvm::Value *R = expr->operands[1]->accept(this);
 
-  if (!L || !R)
-    return nullptr;
+  assert(!L || !R);
+
+  Type* typeL = get_value_type(L);
+  Type* typeR = get_value_type(R);
+
+  assert(typeL == typeR);
+
+  builder->CreateLoad(typeL, L);
+  builder->CreateLoad(typeR, R);
 
   if (auto *LAlloca = llvm::dyn_cast<llvm::AllocaInst>(L))
   {
