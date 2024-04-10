@@ -274,6 +274,20 @@ llvm::Value *Codegen::visit(ASTExpr *expr)
   }
 }
 
+llvm::Type* get_value_type(llvm::Value* value) {
+  if (!value) return nullptr;
+
+  if (auto* allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
+    return allocaInst->getAllocatedType();
+  }
+  else if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
+    return constant->getType();
+  }
+  else {
+    return value->getType();
+  }
+}
+
 llvm::Value *Codegen::visit_binary(ASTExpr *expr)
 {
   assert(expr->operands.size() == 2);
@@ -281,25 +295,20 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
   llvm::Value *L = expr->operands[0]->accept(this);
   llvm::Value *R = expr->operands[1]->accept(this);
 
-  assert(!L || !R);
+  // assert(!L || !R);
 
-  Type* typeL = get_value_type(L);
-  Type* typeR = get_value_type(R);
+  llvm::Type *typeL = get_value_type(L);
+  llvm::Type *typeR = get_value_type(R);
 
   assert(typeL == typeR);
 
-  builder->CreateLoad(typeL, L);
-  builder->CreateLoad(typeR, R);
+ if (L->getType()->isPointerTy()) {
+    L = builder->CreateLoad(typeL, L);
+  }
+  if (R->getType()->isPointerTy()) {
+    R = builder->CreateLoad(typeR, R);
+  }
 
-  if (auto *LAlloca = llvm::dyn_cast<llvm::AllocaInst>(L))
-  {
-    if (auto *RAlloca = llvm::dyn_cast<llvm::AllocaInst>(R))
-    {
-      llvm::Type *typeL = LAlloca->getAllocatedType();
-      llvm::Type *typeR = RAlloca->getAllocatedType();
-
-      if (typeL != typeR)
-        return nullptr;
 
       if (typeL->isIntegerTy())
       {
@@ -383,8 +392,7 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
           return nullptr;
         }
       }
-    }
-  }
+     
   else
   {
     return nullptr;
