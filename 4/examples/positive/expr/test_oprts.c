@@ -2,7 +2,8 @@ int main()
 {
     // binary test
     int a = 5, b = 3;
-    int c =a+b;
+    // int c = 5 + 3;
+    int c = a + b;
 
     // printf("%d + %d = %d\n", a, b, a + b);
 

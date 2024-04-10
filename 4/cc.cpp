@@ -1,5 +1,5 @@
 #include "src/ast/prog.h"
-#include "Codegen.h"
+#include "codegen.h"
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -17,9 +17,9 @@ int main(int argc, char **argv) {
     usage();
     exit(1);
   }
-//  char *filename = argv[1];
+ char *filename = argv[1];
 //  char filename[1000] = "/home/satyam/dev/compiler_assignment/4/examples/positive/expr/init.c";
-  char filename[1000] = "/home/satyam/dev/compiler_assignment/4/examples/positive/stmts/ifStmt.c";
+  // char filename[1000] = "/home/satyam/dev/compiler_assignment/4/examples/positive/stmts/ifStmt.c";
   yyin = fopen(filename, "r");
   assert(yyin);
 

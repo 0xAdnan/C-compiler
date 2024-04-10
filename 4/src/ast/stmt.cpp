@@ -2,7 +2,7 @@
 // Created by satyam on 1/4/24.
 //
 #include "stmt.h"
-#include "Codegen.h"
+#include "codegen.h"
 
 llvm::Value *ASTBlockList::accept(Codegen *codegen) {
   return codegen->visit(this);

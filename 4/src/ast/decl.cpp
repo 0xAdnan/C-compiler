@@ -3,7 +3,7 @@
 //
 
 #include "decl.h"
-#include "Codegen.h"
+#include "codegen.h"
 
 
 ASTInitDecl::ASTInitDecl(ASTIDDecl * id): ASTNode() {

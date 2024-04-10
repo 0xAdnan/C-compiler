@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "src/ast/prog.h"
-#include "Codegen.h"
+#include "codegen.h"
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

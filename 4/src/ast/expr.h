@@ -95,6 +95,9 @@ public:
       return "Const: " + const_type_to_str(ct) + " " + value;
     }
 
+    llvm::Value *accept(Codegen *codegen) override;
+
+
 };
 
 class ASTArrayAccess: public ASTExpr{

@@ -23,9 +23,9 @@ set(SOURCES ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
         src/ast/base.h
         src/ast/decl.cpp
         src/ast/decl.h
-        src/visitor/Visitor.h
-        src/visitor/Codegen.cpp
-        src/visitor/Codegen.h
+        src/visitor/visitor.h
+        src/visitor/codegen.cpp
+        src/visitor/codegen.h
         src/ast/enums.h
         src/ast/expr.cpp
         src/ast/expr.h

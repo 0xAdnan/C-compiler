@@ -6,7 +6,7 @@
 #define CCOMPILER_CODEGEN_H
 
 
-#include "Visitor.h"
+#include "visitor.h"
 #include "enums.h"
 
 #include <llvm-17/llvm/IR/GlobalVariable.h>
@@ -54,11 +54,11 @@ public:
       module->print(llvm::outs(), nullptr);
     }
 
-    llvm::Value* visit(ASTProgram*);
+    Value* visit(ASTProgram*);
 
-    llvm::Value* visit(ASTFnDef*);
+    Value* visit(ASTFnDef*);
 
-    llvm::Value* visit(ASTGlobalVar*);
+    Value* visit(ASTGlobalVar*);
 
     Value *visit(ASTConst*) const;
 
@@ -75,7 +75,8 @@ public:
     Value *visit(ASTIfStmt*);
 
     Value *visit(ASTIfElseStmt*);
-    llvm::Value *visit(ASTExpr *expr);
+
+    Value *visit(ASTExpr*);
 
 //    llvm::Value *visit(ASTDecl *decl);
 
