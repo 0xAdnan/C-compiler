@@ -1,10 +1,8 @@
-
-#include "c.tab.hpp"
 #include "src/ast/prog.h"
 #include "Codegen.h"
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
 
 extern "C" int yylex();
 extern ASTProgram *program_ast;
@@ -19,7 +17,9 @@ int main(int argc, char **argv) {
     usage();
     exit(1);
   }
-  char const *filename = argv[1];
+//  char *filename = argv[1];
+//  char filename[1000] = "/home/satyam/dev/compiler_assignment/4/examples/positive/expr/init.c";
+  char filename[1000] = "/home/satyam/dev/compiler_assignment/4/examples/positive/stmts/ifStmt.c";
   yyin = fopen(filename, "r");
   assert(yyin);
 
@@ -31,12 +31,11 @@ int main(int argc, char **argv) {
     exit(ret);
   program_ast->dump_ast(0);
 
-  auto *cg = new Codegen();
+  auto *cg = new Codegen(filename);
   cg->visit(program_ast);
-  cg->dump_ast();
+  cg->dumpCode();
 //  SemanticAnalyzer sa = SemanticAnalyzer(cg);
 //  if (!sa.analyze(program_ast)) {
 //    cout << "Semantic Analysis Failed" << endl;
-    exit(1);
 //  }
 }

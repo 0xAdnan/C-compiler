@@ -10,56 +10,32 @@ op_type get_op_type(operators op){
     case noop:
       return nop;
     case u_op_plus_plus:
-      return unary;
     case u_op_minus_minus:
-      return unary;
     case u_op_and:
-      return unary;
     case u_op_star:
-      return unary;
     case u_op_plus:
-      return unary;
     case u_op_minus:
-      return unary;
     case u_op_tilde:
-      return unary;
     case u_op_not:
       return unary;
 
     case b_mul:
-      return binary;
     case b_div:
-      return binary;
     case b_remainder:
-      return binary;
     case b_add:
-      return binary;
     case b_minus:
-      return binary;
     case b_left_shift:
-      return binary;
     case b_right_shift:
-      return binary;
     case b_less:
-      return binary;
     case b_greater:
-      return binary;
     case b_less_eq:
-      return binary;
     case b_greater_eq:
-      return binary;
     case b_eq:
-      return binary;
     case b_neq:
-      return binary;
     case b_bitand:
-      return binary;
     case b_bitxor:
-      return binary;
     case b_bitor:
-      return binary;
     case b_and:
-      return binary;
     case b_or:
       return binary;
 
@@ -67,27 +43,18 @@ op_type get_op_type(operators op){
       return ternary;
 
     case assign:
-      return assignment;
     case mul_assign:
-      return assignment;
     case div_assign:
-      return assignment;
     case mod_assign:
-      return assignment;
     case add_assign:
-      return assignment;
     case sub_assign:
-      return assignment;
     case left_assign:
-      return assignment;
     case right_assign:
-      return assignment;
     case and_assign:
-      return assignment;
     case xor_assign:
-      return assignment;
     case or_assign:
       return assignment;
+
     default:
       return nop;
   }

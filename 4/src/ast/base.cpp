@@ -3,7 +3,7 @@
 //
 
 #include "base.h"
-
+#include "SemanticException.h"
 
 void ASTNode::add_child(ASTNode *child) {
   this->children.push_back(child);
@@ -35,6 +35,6 @@ void ASTNode::dump_ast(int indent) {
 }
 
 llvm::Value *ASTNode::accept(Codegen *codegen) {
-  cout << "Codegen for " <<  to_str() << "not supported yet." << endl;
-  assert(false);
+  string msg = "Codegen for '" +  to_str() + "' not supported yet.";
+  throw SemanticException(msg.c_str());
 }
