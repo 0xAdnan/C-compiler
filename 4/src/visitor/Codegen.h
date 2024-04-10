@@ -50,7 +50,7 @@ public:
       builder = make_unique<llvm::IRBuilder<>>(*context);
     }
 
-    void dump_ast() const{
+    void dumpCode() const{
       module->print(llvm::outs(), nullptr);
     }
 
@@ -60,17 +60,21 @@ public:
 
     Value* visit(ASTGlobalVar*);
 
-    Value *visit(ASTConst *) const;
+    Value *visit(ASTConst*) const;
 
     Value *visit(ASTBlockList*);
 
     Value *visit(ASTBlock*);
 
-    Value *visit(ASTDeclList *decls);
+    Value *visit(ASTDeclList*);
 
-    Value *visit(ASTDecl *decl);
+    Value *visit(ASTDecl*);
 
-    Value *visit(ASTIdExpr* idExpr);
+    Value *visit(ASTIdExpr*);
+
+    Value *visit(ASTIfStmt*);
+
+    Value *visit(ASTIfElseStmt*);
 
 private:
     [[nodiscard]] llvm::Type *ctype_2_llvmtype(ctype_ ctype, bool is_ptr=false) const {
@@ -110,8 +114,8 @@ private:
     void add_variable(const string& name, llvm::Value* arg){
       auto result = symbolTable.back().insert(make_pair(name, arg));
       if(!result.second){
-        cout << "Duplicate variable name" << endl;
-        assert(false);
+        string msg = "Duplicate variable: " + name;
+        throw SemanticException(msg.c_str());
       }
     }
 
@@ -125,8 +129,8 @@ private:
         return nullptr;
       }
 
-      cout << "No variable named " << name << endl;
-      assert(false);
+      string msg = "No variable named: " + name;
+      throw SemanticException(msg.c_str());
     }
 
     void exit_scope(){
@@ -136,8 +140,7 @@ private:
     [[nodiscard]] AllocaInst* create_alloca_of_type(ctype_ t, const string& name) const{
       switch (t) {
         case t_void:
-          cout << "Cannot be void";
-          assert(false);
+          throw SemanticException("Cannot be void");
         case t_char:
           return builder->CreateAlloca(Type::getInt8Ty(*context), nullptr, name);
         case t_short:
@@ -152,19 +155,15 @@ private:
         case t_double:
           return builder->CreateAlloca(Type::getDoubleTy(*context), nullptr, name);
         case t_signed:
-          cout << "Doesn't support signed";
-          assert(false);
+          throw SemanticException("Doesn't support signed");
         case t_unsigned:
-          cout << "Doesn't support unsigned";
-          assert(false);
+          throw SemanticException("Doesn't support unsigned");
         case t_bool:
           return builder->CreateAlloca(Type::getInt8Ty(*context), nullptr, name);
         case t_complex:
-          cout << "Doesn't support complex";
-          assert(false);
+          throw SemanticException("Doesn't support complex");
         case t_imaginary:
-          cout << "Doesn't support imaginary";
-          assert(false);
+          throw SemanticException("Doesn't support imaginary");
       }
     }
 

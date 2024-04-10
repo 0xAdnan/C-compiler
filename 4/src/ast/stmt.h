@@ -11,7 +11,9 @@
 
 class ASTStmt: public ASTNode{
 public:
-    ASTStmt(): ASTNode(){}
+    ASTStmt(): ASTNode(){
+      int x = 1;
+    }
 };
 
 
@@ -25,7 +27,6 @@ public:
 
     ASTExprStmt(ASTExpr* expr): ASTStmt() {
       this->expr = expr;
-
       children.push_back(expr);
     }
 
@@ -40,7 +41,6 @@ public:
 
     explicit ASTLabeledStmt(ASTStmt* stmt): ASTStmt(){
       this->stmt = stmt;
-
       children.push_back(stmt);
     }
 };
@@ -64,7 +64,6 @@ public:
 
     ASTCaseLabeledStmt(ASTExpr* cond, ASTStmt* stmt): ASTLabeledStmt(stmt){
       this->condition = cond;
-
       children.push_back(stmt);
     }
 
@@ -106,6 +105,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "If Stmt" ;
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTIfElseStmt: public ASTSelectStmt{
@@ -124,6 +125,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "IfElse Stmt" ;
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTSwitchStmt: public ASTSelectStmt{
@@ -337,16 +340,18 @@ public:
 
     explicit ASTBlockList(ASTBlock* block): ASTStmt(){
       blocks.push_back(block);
+      children.push_back(block->children[0]);
     }
 
     ASTBlockList(ASTBlockList* blocks, ASTBlock* block): ASTStmt(){
-      for(auto b: blocks->blocks){
+      for(auto b: blocks->blocks)
         this->blocks.push_back(b);
-      }
+
       this->blocks.push_back(block);
 
       delete blocks;
 
+      children.clear();
       for(auto b: this->blocks)
         children.push_back(b->children[0]);
     }

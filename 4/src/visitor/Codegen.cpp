@@ -33,17 +33,6 @@ llvm::Value *Codegen::visit(ASTFnDef *fnDef) {
     fn = Function::Create(FT, Function::ExternalLinkage, fnDef->fnDecl->name, *module);
   }
 
-  /*// Add parameter names
-  vector<string> paramNames;
-  for(auto p: fnDef->fnDecl->params->paramList->params){
-    assert(!p->name.empty());
-    paramNames.push_back(p->name);
-  }
-  unsigned idx = 0;
-  for (auto &arg : fn->args())
-    arg.setName(paramNames[idx++]);*/
-
-
   // Create a new basic block to start insertion into.
   BasicBlock *BB = BasicBlock::Create(*context, "entry", fn);
   builder->SetInsertPoint(BB);
@@ -54,13 +43,15 @@ llvm::Value *Codegen::visit(ASTFnDef *fnDef) {
   // Alloca the parameters of function to support &x. Function parameters are in register in llvm.
   // So to support that we to copy it to memory(stack)
   int idx=0;
-  for (auto &arg : fn->args()){
-    AllocaInst* paramAlloca = builder->CreateAlloca(
-            arg.getType(), nullptr,
-            fnDef->fnDecl->params->paramList->params[idx]->name
-            );
-    add_variable(std::string(arg.getName()), paramAlloca);
-    idx++;
+  if(fnDef->fnDecl->params) {
+    for (auto &arg: fn->args()) {
+      AllocaInst *paramAlloca = builder->CreateAlloca(
+              arg.getType(), nullptr,
+              fnDef->fnDecl->params->paramList->params[idx]->name
+      );
+      add_variable(std::string(arg.getName()), paramAlloca);
+      idx++;
+    }
   }
 
   fnDef->body->accept(this);
@@ -110,7 +101,12 @@ llvm::Value *Codegen::visit(ASTGlobalVar *globalVar) {
         }
       }
       auto constant = (llvm::Constant*)(decl->value->accept(this));
-      assert(constant != nullptr);
+
+      if(constant == nullptr){
+        string msg = "Global variable can only be initialized with constants";
+        throw SemanticException(msg.c_str());
+      }
+
       val = new llvm::GlobalVariable(
                   *module,
                   ctype_2_llvmtype(decl->type, decl->num_ptr > 0),
@@ -118,8 +114,6 @@ llvm::Value *Codegen::visit(ASTGlobalVar *globalVar) {
                   llvm::GlobalValue::CommonLinkage,
                   constant, decl->name
                   );
-
-//      ((GlobalVariable*)val)->setDSOLocal(true);
     }
     else{
       for (auto global = module->global_begin(); global != module->global_end(); ++global){
@@ -181,3 +175,63 @@ llvm::Value *Codegen::visit(ASTDecl *decl) {
 Value *Codegen::visit(ASTIdExpr *idExpr) {
   return find_variable(idExpr->name);
 }
+
+Value* Codegen::visit(ASTIfStmt *ifStmt) {
+  Function* parentFunc = builder->GetInsertBlock()->getParent();
+  // Create blocks for the then and else cases.  Insert the 'then' block at the
+  // end of the function.
+  BasicBlock *thenBB = BasicBlock::Create(*context, "then", parentFunc);
+  BasicBlock *elseBB = BasicBlock::Create(*context, "else");
+  BasicBlock *mergeBB = BasicBlock::Create(*context, "ifcont");
+
+  Value* condV = ifStmt->cond->accept(this);
+  builder->CreateCondBr(condV, thenBB, elseBB);
+
+  // Emit then value.
+  builder->SetInsertPoint(thenBB);
+
+  Value *thenV = ifStmt->stmt->accept(this);
+
+  builder->CreateBr(mergeBB);
+
+  // Emit else block.
+  parentFunc->insert(parentFunc->end(), elseBB);
+  builder->SetInsertPoint(elseBB);
+  builder->CreateBr(mergeBB);
+
+  // Emit merge block.
+  parentFunc->insert(parentFunc->end(), mergeBB);
+  builder->SetInsertPoint(mergeBB);
+
+  return nullptr;
+}
+
+Value* Codegen::visit(ASTIfElseStmt *ifStmt) {
+  Function* parentFunc = builder->GetInsertBlock()->getParent();
+  // Create blocks for the then and else cases.  Insert the 'then' block at the
+  // end of the function.
+  BasicBlock *thenBB = BasicBlock::Create(*context, "then", parentFunc);
+  BasicBlock *elseBB = BasicBlock::Create(*context, "else");
+  BasicBlock *mergeBB = BasicBlock::Create(*context, "ifcont");
+
+  Value* condV = ifStmt->cond->accept(this);
+  builder->CreateCondBr(condV, thenBB, elseBB);
+
+  // Emit then value.
+  builder->SetInsertPoint(thenBB);
+  ifStmt->stmt->accept(this);
+  builder->CreateBr(mergeBB);
+
+  // Emit else block.
+  parentFunc->insert(parentFunc->end(), elseBB);
+  builder->SetInsertPoint(elseBB);
+  ifStmt->elseStmt->accept(this);
+  builder->CreateBr(mergeBB);
+
+  // Emit merge block.
+  parentFunc->insert(parentFunc->end(), mergeBB);
+  builder->SetInsertPoint(mergeBB);
+
+  return nullptr;
+}
+

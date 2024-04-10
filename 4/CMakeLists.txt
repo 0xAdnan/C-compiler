@@ -8,6 +8,7 @@ find_package(FLEX REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/ast)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/visitor)
 
@@ -33,6 +34,7 @@ set(SOURCES ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
         src/ast/enums.cpp
         src/ast/prog.cpp
         src/ast/stmt.cpp
+        src/SemanticException.h
 )
 add_executable(cc cc.cpp ${SOURCES})
 

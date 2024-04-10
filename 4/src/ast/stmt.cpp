@@ -12,3 +12,11 @@ llvm::Value *ASTBlockList::accept(Codegen *codegen) {
 llvm::Value *ASTBlock::accept(Codegen *codegen) {
   return codegen->visit(this);
 }
+
+llvm::Value *ASTIfElseStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}
+
+llvm::Value *ASTIfStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}

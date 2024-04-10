@@ -25,7 +25,7 @@ void todo(int);
 %}
 
 
-%token	I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME SIZEOF
+%token	SIZEOF
 %token	PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token	AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token	SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
@@ -388,9 +388,31 @@ expression_statement
 	;
 
 selection_statement
-	: IF '(' expression ')' statement ELSE statement                                    { $$ = new ASTIfElseStmt($3, $5, $7); }
-	| IF '(' expression ')' statement                                                   { $$ = new ASTIfStmt($3, $5); }
-	| SWITCH '(' expression ')' statement                                               { $$ = new ASTSwitchStmt($3, $5); }
+	: IF '(' expression ')' statement ELSE statement
+	{
+	    ASTExprList* exprs = dynamic_cast<ASTExprList*>($3);
+	    assert(exprs != nullptr);
+	    assert(exprs->exprs.size() == 1);
+
+	    $$ = new ASTIfElseStmt(exprs->exprs[0], $5, $7);
+
+	}
+	| IF '(' expression ')' statement
+	{
+	    ASTExprList* exprs = dynamic_cast<ASTExprList*>($3);
+	    assert(exprs != nullptr);
+	    assert(exprs->exprs.size() == 1);
+
+	    $$ = new ASTIfStmt(exprs->exprs[0], $5);
+	}
+	| SWITCH '(' expression ')' statement
+	{
+	    ASTExprList* exprs = dynamic_cast<ASTExprList*>($3);
+	    assert(exprs != nullptr);
+	    assert(exprs->exprs.size() == 1);
+
+	    $$ = new ASTSwitchStmt(exprs->exprs[0], $5);
+	}
 	;
 
 iteration_statement

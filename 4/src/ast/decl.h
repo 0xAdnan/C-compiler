@@ -9,6 +9,7 @@
 
 #include "base.h"
 #include "expr.h"
+#include "SemanticException.h"
 
 using namespace std;
 
@@ -26,7 +27,10 @@ public:
     }
 
     ASTDeclSpec(ctype_ t, ASTDeclSpec* declSpec){
-      assert(declSpec->type == t_long && t == t_long);
+      if(!(declSpec->type == t_long && t == t_long)){
+        string msg = "Only supporting 'long' and 'long long'";
+        throw SemanticException(msg.c_str());
+      }
       type = t_long_long;
     }
 
