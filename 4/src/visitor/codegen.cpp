@@ -478,6 +478,28 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
   }
 }
 
+Value *Codegen::visit(ASTWhileStmt * whileStmt) {
+  Function *parentFunc = builder->GetInsertBlock()->getParent();
+
+  BasicBlock *condBB = BasicBlock::Create(*context, "cond", parentFunc);
+  BasicBlock *loopBB = BasicBlock::Create(*context, "loop", parentFunc);
+  BasicBlock *afterBB = BasicBlock::Create(*context, "afterloop");
+
+  builder->CreateBr(condBB);
+  builder->SetInsertPoint(condBB);
+  Value *condV = whileStmt->cond->accept(this);
+  builder->CreateCondBr(condV, loopBB, afterBB);
+
+  builder->SetInsertPoint(loopBB);
+  whileStmt->stmt->accept(this);
+  builder->CreateBr(condBB);
+
+  parentFunc->insert(parentFunc->end(), afterBB);
+  builder->SetInsertPoint(afterBB);
+
+  return nullptr;
+}
+
 // llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
 // {
 //   assert(expr->operands.size() == 2);

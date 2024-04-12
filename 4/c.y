@@ -416,7 +416,11 @@ selection_statement
 	;
 
 iteration_statement
-	: WHILE '(' expression ')' statement                                                { $$ = new ASTWhileStmt($3, $5); }
+	: WHILE '(' expression ')' statement
+	{
+	  assert($3->exprs.size() == 1);
+	  $$ = new ASTWhileStmt($3->exprs[0], $5);
+	}
 	| DO statement WHILE '(' expression ')' ';'                                         { $$ = new ASTDoWhileStmt($5, $2); }
 	| FOR '(' expression_statement expression_statement ')' statement                   { $$ = new ASTForStmt($3, $4, $6); }
 	| FOR '(' expression_statement expression_statement expression ')' statement        { $$ = new ASTForStmt($3, $4, $5, $7); }

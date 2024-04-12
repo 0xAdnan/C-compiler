@@ -78,6 +78,8 @@ public:
 
     Value *visit(ASTExpr*);
 
+    Value *visit(ASTWhileStmt*);
+
 //    llvm::Value *visit(ASTDecl *decl);
 
 private:

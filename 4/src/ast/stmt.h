@@ -162,6 +162,9 @@ public:
     [[nodiscard]] string to_str() const override {
       return "While Stmt" ;
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
+
 };
 
 class ASTDoWhileStmt: public ASTIterStmt{

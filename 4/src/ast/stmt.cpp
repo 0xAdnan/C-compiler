@@ -20,3 +20,7 @@ llvm::Value *ASTIfElseStmt::accept(Codegen *codegen) {
 llvm::Value *ASTIfStmt::accept(Codegen *codegen) {
   return codegen->visit(this);
 }
+
+llvm::Value *ASTWhileStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}
