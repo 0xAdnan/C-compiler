@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
   auto *cg = new Codegen(filename);
   cg->visit(program_ast);
   cg->dumpCode();
+  cg->dumpFile("/home/adnan/Documents/col728lab/compiler_assignment/4/src/visitor/output.ll");
+
 //  SemanticAnalyzer sa = SemanticAnalyzer(cg);
 //  if (!sa.analyze(program_ast)) {
 //    cout << "Semantic Analysis Failed" << endl;

@@ -8,7 +8,7 @@ int main()
 
 //    int f = a + b + a;
 
-    // printf("%d + %d = %d\n", a, b, a + b);
+    printf("%d",d);
 
     // printf("%d - %d = %d\n", a, b, a - b);
 

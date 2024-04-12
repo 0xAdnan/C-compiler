@@ -30,6 +30,9 @@
 #include <llvm-17/llvm/IR/Value.h>
 #include <map>
 #include <memory>
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/FileSystem.h"
+
 
 using namespace llvm;
 
@@ -54,6 +57,18 @@ public:
       module->print(llvm::outs(), nullptr);
     }
 
+
+void dumpFile(const std::string &filename) const {
+    std::error_code EC;
+    llvm::raw_fd_ostream file(filename, EC, llvm::sys::fs::OF_Text);
+
+    if (EC) {
+        llvm::errs() << "Error opening file: " << EC.message() << "\n";
+        return;
+    }
+
+    module->print(file, nullptr);
+}
     Value* visit(ASTProgram*);
 
     Value* visit(ASTFnDef*);
@@ -77,6 +92,12 @@ public:
     Value *visit(ASTIfElseStmt*);
 
     Value *visit(ASTExpr*);
+
+    Value *visit(ASTFunctionCall*);
+
+    Value *visit(ASTExprStmt*);
+
+
 
 //    llvm::Value *visit(ASTDecl *decl);
 

@@ -33,6 +33,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "ExpressionStmt";
     }
+    llvm::Value *accept(Codegen *codegen) override;
+
 };
 
 class ASTLabeledStmt: public ASTStmt{
