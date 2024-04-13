@@ -225,6 +225,8 @@ Value *Codegen::visit(ASTIfStmt *ifStmt)
   BasicBlock *mergeBB = BasicBlock::Create(*context, "ifcont");
 
   Value *condV = ifStmt->cond->accept(this);
+  condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
+
   builder->CreateCondBr(condV, thenBB, elseBB);
 
   // Emit then value.
@@ -256,6 +258,7 @@ Value *Codegen::visit(ASTIfElseStmt *ifStmt)
   BasicBlock *mergeBB = BasicBlock::Create(*context, "ifcont");
 
   Value *condV = ifStmt->cond->accept(this);
+  condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
   builder->CreateCondBr(condV, thenBB, elseBB);
 
   // Emit then value.
@@ -545,15 +548,19 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
 }
 
 Value *Codegen::visit(ASTWhileStmt * whileStmt) {
+
   Function *parentFunc = builder->GetInsertBlock()->getParent();
 
   BasicBlock *condBB = BasicBlock::Create(*context, "cond", parentFunc);
   BasicBlock *loopBB = BasicBlock::Create(*context, "loop", parentFunc);
   BasicBlock *afterBB = BasicBlock::Create(*context, "afterloop");
 
+  this->enter_loop(afterBB, condBB);
+
   builder->CreateBr(condBB);
   builder->SetInsertPoint(condBB);
   Value *condV = whileStmt->cond->accept(this);
+  condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
   builder->CreateCondBr(condV, loopBB, afterBB);
 
   builder->SetInsertPoint(loopBB);
@@ -563,6 +570,7 @@ Value *Codegen::visit(ASTWhileStmt * whileStmt) {
   parentFunc->insert(parentFunc->end(), afterBB);
   builder->SetInsertPoint(afterBB);
 
+  this->exit_loop();
   return nullptr;
 }
 
@@ -589,4 +597,11 @@ llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
   return builder->CreateStore(builder->CreateLoad(typeR, R), L);
 }
 
-// }
+Value *Codegen::visit(ASTBreakJmpStmt *) {
+  return builder->CreateBr(this->breakBlock);
+}
+
+Value *Codegen::visit(ASTContJmpStmt *) {
+  return builder->CreateBr(this->contBlock);
+}
+
