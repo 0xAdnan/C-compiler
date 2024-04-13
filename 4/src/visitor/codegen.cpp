@@ -6,7 +6,6 @@
 #include "expr.h"
 #include "utils.h"
 
-
 llvm::Value *Codegen::visit(ASTProgram *program)
 {
   int i = 0;
@@ -165,7 +164,7 @@ llvm::Value *Codegen::visit(ASTConst *constant) const
   case s_const:
     auto string_const = ConstantDataArray::getString(module->getContext(), constant->value, true);
 
-     // Create a global variable with the constant string
+    // Create a global variable with the constant string
     GlobalVariable *strVar = new llvm::GlobalVariable(
         /*Module=*/    *module,
         /*Type=*/      string_const->getType(),
@@ -231,10 +230,9 @@ Value *Codegen::visit(ASTIfStmt *ifStmt)
 
   // Emit then value.
   builder->SetInsertPoint(thenBB);
-
   Value *thenV = ifStmt->stmt->accept(this);
-
-  builder->CreateBr(mergeBB);
+  if(!builder->GetInsertBlock()->getTerminator())
+    builder->CreateBr(mergeBB);
 
   // Emit else block.
   parentFunc->insert(parentFunc->end(), elseBB);
@@ -264,7 +262,8 @@ Value *Codegen::visit(ASTIfElseStmt *ifStmt)
   // Emit then value.
   builder->SetInsertPoint(thenBB);
   ifStmt->stmt->accept(this);
-  builder->CreateBr(mergeBB);
+  if(!builder->GetInsertBlock()->getTerminator())
+    builder->CreateBr(mergeBB);
 
   // Emit else block.
   parentFunc->insert(parentFunc->end(), elseBB);
@@ -281,35 +280,35 @@ Value *Codegen::visit(ASTIfElseStmt *ifStmt)
 
 llvm::Value *Codegen::visit(ASTFunctionCall *fncall)
 {
-    string fnName = fncall->fn->name;
+  string fnName = fncall->fn->name;
 
-    llvm::Function *calleeF = module->getFunction(fnName);
-    if (!calleeF) {
-        llvm::errs() << "Unknown function referenced: " << fnName << "\n";
+  llvm::Function *calleeF = module->getFunction(fnName);
+  if (!calleeF) {
+    llvm::errs() << "Unknown function referenced: " << fnName << "\n";
+    return nullptr;
+  }
+
+  vector<llvm::Value *> argsV;
+  if (fncall->params) {
+    for (auto &arg : fncall->params->exprs) {
+      llvm::Value *argVal = arg->accept(this);
+      if (!argVal) {
         return nullptr;
+      }
+      if(llvm::isa<llvm::AllocaInst>(argVal))
+        argsV.push_back(builder->CreateLoad(get_value_type(argVal), argVal));
+      else
+        argsV.push_back(argVal);
     }
+  }
 
-    vector<llvm::Value *> argsV;
-    if (fncall->params) {
-        for (auto &arg : fncall->params->exprs) {
-          llvm::Value *argVal = arg->accept(this);
-          if (!argVal) {
-            return nullptr; 
-          }
-          if(llvm::isa<llvm::AllocaInst>(argVal))
-            argsV.push_back(builder->CreateLoad(get_value_type(argVal), argVal));
-          else
-            argsV.push_back(argVal);
-        }
-    }
-
-// Check for variadic fucntions and handle args accordingly
-    if (!calleeF->getFunctionType()->isVarArg() && (calleeF->arg_size() != argsV.size())) {
+  // Check for variadic fucntions and handle args accordingly
+  if (!calleeF->getFunctionType()->isVarArg() && (calleeF->arg_size() != argsV.size())) {
     llvm::errs() << "Incorrect number of arguments for function " << fnName << "\n";
     return nullptr;
-}
+  }
 
-return builder->CreateCall(calleeF, argsV);
+  return builder->CreateCall(calleeF, argsV);
 }
 
 llvm::Value *Codegen::visit(ASTRetJmpStmt* retStmt) {
@@ -369,98 +368,98 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
 
   assert(typeL == typeR);
 
- if (L->getType()->isPointerTy()) {
+  if (L->getType()->isPointerTy()) {
     L = builder->CreateLoad(typeL, L);
   }
   if (R->getType()->isPointerTy()) {
     R = builder->CreateLoad(typeR, R);
   }
 
-// codegen.dumpCode();
+  // codegen.dumpCode();
 
-      if (typeL->isIntegerTy())
-      {
-        switch (expr->operator_)
-        {
-        case b_mul:
-          return builder->CreateMul(L, R);
-        case b_div:
-          return builder->CreateSDiv(L, R);
-        case b_remainder:
-          return builder->CreateSRem(L, R);
-        case b_add:
-          return builder->CreateAdd(L, R);
-        case b_minus:
-          return builder->CreateSub(L, R);
-        case b_left_shift:
-          return builder->CreateShl(L, R);
-        case b_right_shift:
-          return builder->CreateLShr(L, R);
-        case b_less:
-          return builder->CreateICmpSLT(L, R);
-        case b_greater:
-          return builder->CreateICmpSGT(L, R);
-        case b_less_eq:
-          return builder->CreateICmpSLE(L, R);
-        case b_greater_eq:
-          return builder->CreateICmpSGE(L, R);
-        case b_eq:
-          return builder->CreateICmpEQ(L, R);
-        case b_neq:
-          return builder->CreateICmpNE(L, R);
-        case b_bitand:
-          return builder->CreateAnd(L, R);
-        case b_bitxor:
-          return builder->CreateXor(L, R);
-        case b_bitor:
-          return builder->CreateOr(L, R);
-        case b_and:
-          return builder->CreateLogicalAnd(L, R);
-        case b_or:
-          return builder->CreateLogicalOr(L, R);
-        case t_cond:
-          break;
-        default:
-          return nullptr;
-        }
-      }
-      else if (typeL->isFloatingPointTy())
-      {
-        switch (expr->operator_)
-        {
-        case b_mul:
-          return builder->CreateFMul(L, R);
-        case b_div:
-          return builder->CreateFDiv(L, R);
-        case b_remainder:
-          return builder->CreateFRem(L, R);
-        case b_add:
-          return builder->CreateFAdd(L, R);
-        case b_minus:
-          return builder->CreateFSub(L, R);
-        case b_less:
-          return builder->CreateFCmpOLT(L, R);
-        case b_greater:
-          return builder->CreateFCmpOGT(L, R);
-        case b_less_eq:
-          return builder->CreateFCmpOLE(L, R);
-        case b_greater_eq:
-          return builder->CreateFCmpOGE(L, R);
-        case b_eq:
-          return builder->CreateFCmpOEQ(L, R);
-        case b_neq:
-          return builder->CreateFCmpONE(L, R);
-        case b_and:
-          return builder->CreateLogicalAnd(L, R);
-        case b_or:
-          return builder->CreateLogicalOr(L, R);
-        case t_cond:
-          break;
-        default:
-          return nullptr;
-        }
-      }
-     
+  if (typeL->isIntegerTy())
+  {
+    switch (expr->operator_)
+    {
+    case b_mul:
+      return builder->CreateMul(L, R);
+    case b_div:
+      return builder->CreateSDiv(L, R);
+    case b_remainder:
+      return builder->CreateSRem(L, R);
+    case b_add:
+      return builder->CreateAdd(L, R);
+    case b_minus:
+      return builder->CreateSub(L, R);
+    case b_left_shift:
+      return builder->CreateShl(L, R);
+    case b_right_shift:
+      return builder->CreateLShr(L, R);
+    case b_less:
+      return builder->CreateICmpSLT(L, R);
+    case b_greater:
+      return builder->CreateICmpSGT(L, R);
+    case b_less_eq:
+      return builder->CreateICmpSLE(L, R);
+    case b_greater_eq:
+      return builder->CreateICmpSGE(L, R);
+    case b_eq:
+      return builder->CreateICmpEQ(L, R);
+    case b_neq:
+      return builder->CreateICmpNE(L, R);
+    case b_bitand:
+      return builder->CreateAnd(L, R);
+    case b_bitxor:
+      return builder->CreateXor(L, R);
+    case b_bitor:
+      return builder->CreateOr(L, R);
+    case b_and:
+      return builder->CreateLogicalAnd(L, R);
+    case b_or:
+      return builder->CreateLogicalOr(L, R);
+    case t_cond:
+      break;
+    default:
+      return nullptr;
+    }
+  }
+  else if (typeL->isFloatingPointTy())
+  {
+    switch (expr->operator_)
+    {
+    case b_mul:
+      return builder->CreateFMul(L, R);
+    case b_div:
+      return builder->CreateFDiv(L, R);
+    case b_remainder:
+      return builder->CreateFRem(L, R);
+    case b_add:
+      return builder->CreateFAdd(L, R);
+    case b_minus:
+      return builder->CreateFSub(L, R);
+    case b_less:
+      return builder->CreateFCmpOLT(L, R);
+    case b_greater:
+      return builder->CreateFCmpOGT(L, R);
+    case b_less_eq:
+      return builder->CreateFCmpOLE(L, R);
+    case b_greater_eq:
+      return builder->CreateFCmpOGE(L, R);
+    case b_eq:
+      return builder->CreateFCmpOEQ(L, R);
+    case b_neq:
+      return builder->CreateFCmpONE(L, R);
+    case b_and:
+      return builder->CreateLogicalAnd(L, R);
+    case b_or:
+      return builder->CreateLogicalOr(L, R);
+    case t_cond:
+      break;
+    default:
+      return nullptr;
+    }
+  }
+
   else
   {
     return nullptr;
@@ -574,14 +573,13 @@ Value *Codegen::visit(ASTWhileStmt * whileStmt) {
   return nullptr;
 }
 
-llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
-{
+llvm::Value *Codegen::visit_assignment(ASTExpr *expr) {
   assert(expr->operands.size() == 2);
 
   llvm::Value *L = expr->operands[0]->accept(this);
   llvm::Value *R = expr->operands[1]->accept(this);
 
-  if(!L || !R){
+  if (!L || !R) {
     llvm::errs() << "Error generating code for assignment\n";
     assert(false);
   }
@@ -589,12 +587,86 @@ llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
   llvm::Type *typeL = get_value_type(L);
   llvm::Type *typeR = get_value_type(R);
 
-  if(typeL != typeR){
+  if (typeL != typeR) {
     llvm::errs() << "Type mismatch in assignment\n";
     assert(false);
   }
 
-  return builder->CreateStore(builder->CreateLoad(typeR, R), L);
+  if (!llvm::isa<llvm::AllocaInst>(R)) {
+    switch (expr->operator_) {
+      case mul_assign:
+        R = builder->CreateMul(builder->CreateLoad(typeL, L), R);
+        break;
+      case div_assign:
+        R = builder->CreateSDiv(builder->CreateLoad(typeL, L), R);
+        break;
+      case mod_assign:
+        R = builder->CreateSRem(builder->CreateLoad(typeL, L), R);
+        break;
+      case add_assign:
+        R = builder->CreateAdd(builder->CreateLoad(typeL, L), R);
+        break;
+      case sub_assign:
+        R = builder->CreateSub(builder->CreateLoad(typeL, L), R);
+        break;
+      case left_assign:
+        R = builder->CreateShl(builder->CreateLoad(typeL, L), R);
+        break;
+      case right_assign:
+        R = builder->CreateLShr(builder->CreateLoad(typeL, L), R);
+        break;
+      case and_assign:
+        R = builder->CreateAnd(builder->CreateLoad(typeL, L), R);
+        break;
+      case xor_assign:
+        R = builder->CreateXor(builder->CreateLoad(typeL, L), R);
+        break;
+      case or_assign:
+        R = builder->CreateOr(builder->CreateLoad(typeL, L), R);
+        break;
+      default:
+        break;
+    }
+    return builder->CreateStore(R, L);
+  }
+
+
+  switch (expr->operator_) {
+    case mul_assign:
+      R = builder->CreateMul(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+      break;
+    case div_assign:
+      R = builder->CreateSDiv(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+      break;
+    case mod_assign:
+      R = builder->CreateSRem(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+      break;
+    case add_assign:
+      R = builder->CreateAdd(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+      break;
+    case sub_assign:
+      R = builder->CreateSub(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+      break;
+    case left_assign:
+      R = builder->CreateShl(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+      break;
+    case right_assign:
+      R = builder->CreateLShr(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+      break;
+    case and_assign:
+      R = builder->CreateAnd(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+      break;
+    case xor_assign:
+      R = builder->CreateXor(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+    break;
+  case or_assign:
+    R = builder->CreateOr(builder->CreateLoad(typeL, L), builder->CreateLoad(typeR, R));
+    break;
+  default:
+    R = builder->CreateLoad(typeR, R);
+    break;
+  }
+    return builder->CreateStore(R, L);
 }
 
 Value *Codegen::visit(ASTBreakJmpStmt *) {
@@ -604,4 +676,3 @@ Value *Codegen::visit(ASTBreakJmpStmt *) {
 Value *Codegen::visit(ASTContJmpStmt *) {
   return builder->CreateBr(this->contBlock);
 }
-

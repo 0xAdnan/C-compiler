@@ -101,9 +101,19 @@ void dumpFile(const std::string &filename) const {
 
     Value *visit(ASTWhileStmt*);
 
+    Value *visit(ASTBreakJmpStmt*);
+
+    Value *visit(ASTContJmpStmt*);
+
 //    llvm::Value *visit(ASTDecl *decl);
 
 private:
+    llvm::BasicBlock* breakBlock = nullptr;
+    llvm::BasicBlock* contBlock = nullptr;
+
+    llvm::BasicBlock* prevBreakBlock = nullptr;
+    llvm::BasicBlock* prevContBlock = nullptr;
+
     [[nodiscard]] llvm::Type *ctype_2_llvmtype(ctype_ ctype, bool is_ptr=false) const {
       if(is_ptr)
         return llvm::Type::getInt64PtrTy(*context);
@@ -201,11 +211,24 @@ private:
       }
     }
 
+    void enter_loop(llvm::BasicBlock* breakBlock, llvm::BasicBlock* contBlock){
+      prevBreakBlock = this->breakBlock;
+      prevContBlock = this->contBlock;
 
-  llvm::Value* visit_unary(ASTExpr* expr);
-  llvm::Value* visit_binary(ASTExpr* expr);
-  llvm::Value* visit_conditional(ASTExpr* expr);
-  llvm::Value* visit_assignment(ASTExpr* expr);
+      this->breakBlock = breakBlock;
+      this->contBlock = contBlock;
+    }
+
+    void exit_loop(){
+      this->breakBlock = prevBreakBlock;
+      this->contBlock = prevContBlock;
+    }
+
+
+    llvm::Value* visit_unary(ASTExpr* expr);
+    llvm::Value* visit_binary(ASTExpr* expr);
+    llvm::Value* visit_conditional(ASTExpr* expr);
+    llvm::Value* visit_assignment(ASTExpr* expr);
   
 };
 

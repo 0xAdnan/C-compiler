@@ -32,3 +32,11 @@ llvm::Value *ASTExprStmt::accept(Codegen *codegen) {
 llvm::Value *ASTRetJmpStmt::accept(Codegen *codegen) {
   return codegen->visit(this);
 }
+
+llvm::Value *ASTContJmpStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}
+
+llvm::Value *ASTBreakJmpStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}

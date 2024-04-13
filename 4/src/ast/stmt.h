@@ -284,6 +284,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Continue";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTBreakJmpStmt: public ASTJmpStmt{
@@ -293,6 +295,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Break";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTRetJmpStmt: public ASTJmpStmt{
