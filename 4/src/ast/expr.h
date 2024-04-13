@@ -35,7 +35,7 @@ public:
 
   ASTExpr(operators op, ASTExpr *expr1, ASTExpr *expr2) : ASTNode()
   {
-    assert(get_op_type(op) == binary);
+    // assert(get_op_type(op) == binary);
 
     this->operator_ = op;
     this->opType = get_op_type(op);

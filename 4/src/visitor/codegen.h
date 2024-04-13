@@ -97,7 +97,7 @@ void dumpFile(const std::string &filename) const {
 
     Value *visit(ASTExprStmt*);
 
-
+    Value *visit(ASTRetJmpStmt*);
 
     Value *visit(ASTWhileStmt*);
 

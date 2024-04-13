@@ -5,6 +5,26 @@
 #include "codegen.h"
 #include "expr.h"
 
+
+llvm::Type* get_value_type(llvm::Value* value) {
+  if (!value) return nullptr;
+
+  if (auto* allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
+    return allocaInst->getAllocatedType();
+  }
+  else if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
+    return constant->getType();
+  }
+  else {
+    return value->getType();
+  }
+}
+
+bool is_const_expr(ASTExpr* expr){
+  auto const_ = dynamic_cast<ASTConst*>(expr);
+  return const_ != nullptr;
+}
+
 llvm::Value *Codegen::visit(ASTProgram *program)
 {
   int i = 0;
@@ -161,7 +181,20 @@ llvm::Value *Codegen::visit(ASTConst *constant) const
   case f_const:
     return llvm::ConstantFP::get(llvm::Type::getInt32Ty(*context), stof(constant->value));
   case s_const:
-    return ConstantDataArray::getString(module->getContext(), constant->value, true);
+    auto string_const = ConstantDataArray::getString(module->getContext(), constant->value, true);
+
+     // Create a global variable with the constant string
+    GlobalVariable *strVar = new llvm::GlobalVariable(
+        /*Module=*/    *module,
+        /*Type=*/      string_const->getType(),
+        /*isConstant=*/true,
+        /*Linkage=*/   GlobalValue::PrivateLinkage,
+        /*Initializer=*/string_const,
+        /*Name=*/      ".str");
+
+    strVar->setAlignment(Align(1));
+    return strVar;
+
   }
 }
 
@@ -184,7 +217,7 @@ llvm::Value *Codegen::visit(ASTDecl *decl)
   if (decl->value)
   {
     llvm::Value *v = decl->value->accept(this);
-    builder->CreateStore(allocaInst, v);
+    builder->CreateStore(v, allocaInst);
   }
 
   add_variable(decl->name, allocaInst);
@@ -273,21 +306,38 @@ llvm::Value *Codegen::visit(ASTFunctionCall *fncall)
 
     vector<llvm::Value *> argsV;
     if (fncall->params) {
-        for (auto &arg : fncall->params->exprs) { 
-            llvm::Value *argVal = arg->accept(this);
-            if (!argVal) {
-                return nullptr; 
-            }
+        for (auto &arg : fncall->params->exprs) {
+          llvm::Value *argVal = arg->accept(this);
+          if (!argVal) {
+            return nullptr; 
+          }
+          if(llvm::isa<llvm::AllocaInst>(argVal))
+            argsV.push_back(builder->CreateLoad(get_value_type(argVal), argVal));
+          else
             argsV.push_back(argVal);
         }
     }
 
-    if (calleeF->arg_size() != argsV.size()) {
-        llvm::errs() << "Incorrect number of arguments for function " << fnName << "\n";
-        return nullptr;
-    }
+// Check for variadic fucntions and handle args accordingly
+    if (!calleeF->getFunctionType()->isVarArg() && (calleeF->arg_size() != argsV.size())) {
+    llvm::errs() << "Incorrect number of arguments for function " << fnName << "\n";
+    return nullptr;
+}
 
-    return builder->CreateCall(calleeF, argsV);
+return builder->CreateCall(calleeF, argsV);
+}
+
+llvm::Value *Codegen::visit(ASTRetJmpStmt* retStmt) {
+  if(retStmt->expr){
+    llvm::Value* retVal = retStmt->expr->accept(this);
+    if(!retVal){
+      llvm::errs() << "Error generating code for return statement expression.\n";
+      return nullptr;
+    }
+    return builder->CreateRet(retVal);
+  } else {
+    return builder->CreateRetVoid();
+  }
 }
 
 llvm::Value *Codegen::visit(ASTExprStmt *expStmt){
@@ -313,24 +363,10 @@ llvm::Value *Codegen::visit(ASTExpr *expr)
     return visit_binary(expr);
   // case ternary:
   //   return visit_conditional(expr);
-  // case assignment:
-  //   return visit_assignment(expr);
+  case assignment:
+    return visit_assignment(expr);
   default:
     assert(false);
-  }
-}
-
-llvm::Type* get_value_type(llvm::Value* value) {
-  if (!value) return nullptr;
-
-  if (auto* allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
-    return allocaInst->getAllocatedType();
-  }
-  else if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
-    return constant->getType();
-  }
-  else {
-    return value->getType();
   }
 }
 
@@ -548,39 +584,24 @@ Value *Codegen::visit(ASTWhileStmt * whileStmt) {
   return nullptr;
 }
 
-// llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
-// {
-//   assert(expr->operands.size() == 2);
+llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
+{
+  assert(expr->operands.size() == 2);
 
-//   llvm::Value *L = expr->operands[0]->accept(this);
-//   llvm::Value *R = expr->operands[1]->accept(this);
+  llvm::Value *L = expr->operands[0]->accept(this);
+  llvm::Value *R = expr->operands[1]->accept(this);
 
-//   if(!L || !R) return nullptr;
+  if(!L || !R) return nullptr;
 
-//   llvm::Type *typeL = L->getType();
-//   llvm::Type *typeR = R->getType();
+  llvm::Type *typeL = L->getType();
+  llvm::Type *typeR = R->getType();
 
-//   if(typeL != typeR) return nullptr;
+  if(typeL != typeR) return nullptr;
 
-//   llvm::Value *result = nullptr;
+  llvm::Value *result = nullptr;
 
-//   switch(expr->operator_){
-//     case assign:
-//       result = builder->CreateStore(R, L);
-//     case mul_assign:
-//       result = builder->CreateStore(builder->CreateMul(L,R), L);
-//     case div_assign:
-//       if(typeL->isIntegerTy())
-//         result = builder->CreateStore(builder->CreateSDiv(L,R), L);
-//     else if(typeL->isFloatingPointTy())
-//           result = builder->CreateStore(builder->CreateFDiv(L,R), L);
-//     case mod_assign:
-//       if(typeL->isIntegerTy())
-//         result = builder->CreateStore(builder->CreateSRem(L,R), L);
-//     else if (typeL->isFloatingPointTy())
-//           result = builder->CreateStore(builder->CreateFRem(L,R),L);
-//     // case add_assign:
 
-//   }
+  return builder->CreateStore(R, builder->CreateLoad(typeL, L));
+}
 
 // }

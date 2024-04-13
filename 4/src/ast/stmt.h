@@ -311,6 +311,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Return";
     }
+    llvm::Value *accept(Codegen *codegen) override;
+
 };
 
 class ASTBlock: public ASTNode{
