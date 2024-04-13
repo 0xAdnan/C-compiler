@@ -4,26 +4,8 @@
 
 #include "codegen.h"
 #include "expr.h"
+#include "utils.h"
 
-
-llvm::Type* get_value_type(llvm::Value* value) {
-  if (!value) return nullptr;
-
-  if (auto* allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
-    return allocaInst->getAllocatedType();
-  }
-  else if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
-    return constant->getType();
-  }
-  else {
-    return value->getType();
-  }
-}
-
-bool is_const_expr(ASTExpr* expr){
-  auto const_ = dynamic_cast<ASTConst*>(expr);
-  return const_ != nullptr;
-}
 
 llvm::Value *Codegen::visit(ASTProgram *program)
 {
@@ -179,7 +161,7 @@ llvm::Value *Codegen::visit(ASTConst *constant) const
   case i_const:
     return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), stoi(constant->value));
   case f_const:
-    return llvm::ConstantFP::get(llvm::Type::getInt32Ty(*context), stof(constant->value));
+    return llvm::ConstantFP::get(llvm::Type::getDoubleTy(*context), stof(constant->value));
   case s_const:
     auto string_const = ConstantDataArray::getString(module->getContext(), constant->value, true);
 
@@ -591,17 +573,20 @@ llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
   llvm::Value *L = expr->operands[0]->accept(this);
   llvm::Value *R = expr->operands[1]->accept(this);
 
-  if(!L || !R) return nullptr;
+  if(!L || !R){
+    llvm::errs() << "Error generating code for assignment\n";
+    assert(false);
+  }
 
-  llvm::Type *typeL = L->getType();
-  llvm::Type *typeR = R->getType();
+  llvm::Type *typeL = get_value_type(L);
+  llvm::Type *typeR = get_value_type(R);
 
-  if(typeL != typeR) return nullptr;
+  if(typeL != typeR){
+    llvm::errs() << "Type mismatch in assignment\n";
+    assert(false);
+  }
 
-  llvm::Value *result = nullptr;
-
-
-  return builder->CreateStore(R, builder->CreateLoad(typeL, L));
+  return builder->CreateStore(builder->CreateLoad(typeR, R), L);
 }
 
 // }

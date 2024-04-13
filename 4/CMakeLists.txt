@@ -35,6 +35,7 @@ set(SOURCES ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
         src/ast/prog.cpp
         src/ast/stmt.cpp
         src/SemanticException.h
+        src/utils.h
 )
 add_executable(cc cc.cpp ${SOURCES})
 
