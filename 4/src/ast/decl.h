@@ -5,6 +5,7 @@
 #ifndef CCOMPILER_DECL_H
 #define CCOMPILER_DECL_H
 
+#include <llvm/Support/raw_ostream.h>
 #include "string"
 
 #include "base.h"
@@ -29,7 +30,8 @@ public:
     ASTDeclSpec(ctype_ t, ASTDeclSpec* declSpec){
       if(!(declSpec->type == t_long && t == t_long)){
         string msg = "Only supporting 'long' and 'long long'";
-        throw SemanticException(msg.c_str());
+        llvm::errs() << msg << "\n";
+        assert(false);
       }
       type = t_long_long;
     }

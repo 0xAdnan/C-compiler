@@ -30,6 +30,9 @@
 #include <llvm-17/llvm/IR/Value.h>
 #include <map>
 #include <memory>
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/FileSystem.h"
+
 
 using namespace llvm;
 
@@ -54,6 +57,18 @@ public:
       module->print(llvm::outs(), nullptr);
     }
 
+
+void dumpFile(const std::string &filename) const {
+    std::error_code EC;
+    llvm::raw_fd_ostream file(filename, EC, llvm::sys::fs::OF_Text);
+
+    if (EC) {
+        llvm::errs() << "Error opening file: " << EC.message() << "\n";
+        return;
+    }
+
+    module->print(file, nullptr);
+}
     Value* visit(ASTProgram*);
 
     Value* visit(ASTFnDef*);
@@ -77,6 +92,12 @@ public:
     Value *visit(ASTIfElseStmt*);
 
     Value *visit(ASTExpr*);
+
+    Value *visit(ASTFunctionCall*);
+
+    Value *visit(ASTExprStmt*);
+
+
 
     Value *visit(ASTWhileStmt*);
 
@@ -121,7 +142,8 @@ private:
       auto result = symbolTable.back().insert(make_pair(name, arg));
       if(!result.second){
         string msg = "Duplicate variable: " + name;
-        throw SemanticException(msg.c_str());
+        llvm::errs() << msg << "\n";
+        assert(false);
       }
     }
 
@@ -136,7 +158,8 @@ private:
       }
 
       string msg = "No variable named: " + name;
-      throw SemanticException(msg.c_str());
+      llvm::errs() << msg << "\n";
+      assert(false);
     }
 
     void exit_scope(){
@@ -146,7 +169,8 @@ private:
     [[nodiscard]] AllocaInst* create_alloca_of_type(ctype_ t, const string& name) const{
       switch (t) {
         case t_void:
-          throw SemanticException("Cannot be void");
+          llvm::errs() << "Cannot be void" << "\n";
+          assert(false);
         case t_char:
           return builder->CreateAlloca(Type::getInt8Ty(*context), nullptr, name);
         case t_short:
@@ -161,15 +185,19 @@ private:
         case t_double:
           return builder->CreateAlloca(Type::getDoubleTy(*context), nullptr, name);
         case t_signed:
-          throw SemanticException("Doesn't support signed");
+          llvm::errs() << "Doesn't support signed" << "\n";
+          assert(false);
         case t_unsigned:
-          throw SemanticException("Doesn't support unsigned");
+          llvm::errs() << "Doesn't support unsigned" << "\n";
+          assert(false);
         case t_bool:
           return builder->CreateAlloca(Type::getInt8Ty(*context), nullptr, name);
         case t_complex:
-          throw SemanticException("Doesn't support complex");
+          llvm::errs() << "Doesn't support complex" << "\n";
+          assert(false);
         case t_imaginary:
-          throw SemanticException("Doesn't support imaginary");
+          llvm::errs() << "Doesn't support imaginary" << "\n";
+          assert(false);
       }
     }
 

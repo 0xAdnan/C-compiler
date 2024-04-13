@@ -148,8 +148,18 @@ postfix_expression
 	| FUNC_NAME                                                                      { $$ = new ASTConst(s_const, $1); }
 	| '(' expression ')'                                                             { $$ = $2; }
 	| postfix_expression '[' expression ']'                                          { $$ = new ASTArrayAccess($1, $3); }
-	| postfix_expression '(' ')'                                                     { $$ = new ASTFunctionCall($1); }
-	| postfix_expression '(' expression ')'                                          { $$ = new ASTFunctionCall($1, $3); }
+	| postfix_expression '(' ')'
+	{
+		ASTIdExpr* idExpr = dynamic_cast<ASTIdExpr*>($1);
+		assert(idExpr !=nullptr);
+    	$$ = new ASTFunctionCall(idExpr);
+	}
+	| postfix_expression '(' expression ')'
+	{
+		ASTIdExpr* idExpr = dynamic_cast<ASTIdExpr*>($1);
+		assert(idExpr !=nullptr);
+    	$$ = new ASTFunctionCall(idExpr, $3);
+	}
 	| postfix_expression INC_OP                                                      { $$ = new ASTPostIncrement($1, true); }
 	| postfix_expression DEC_OP                                                      { $$ = new ASTPostIncrement($1, false); }
 	;

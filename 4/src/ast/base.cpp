@@ -2,6 +2,7 @@
 // Created by satyam on 29/3/24.
 //
 
+#include <llvm/Support/raw_ostream.h>
 #include "base.h"
 #include "SemanticException.h"
 
@@ -36,5 +37,6 @@ void ASTNode::dump_ast(int indent) {
 
 llvm::Value *ASTNode::accept(Codegen *codegen) {
   string msg = "Codegen for '" +  to_str() + "' not supported yet.";
-  throw SemanticException(msg.c_str());
+  llvm::errs() << msg << "\n";
+  assert(false);
 }

@@ -19,20 +19,22 @@ public:
 
 class ASTExprStmt: public ASTStmt{
 public:
-    ASTExpr* expr;
+    ASTExprList* exprs;
 
     ASTExprStmt(){
-      expr = nullptr;
+      exprs = nullptr;
     }
 
-    ASTExprStmt(ASTExpr* expr): ASTStmt() {
-      this->expr = expr;
-      children.push_back(expr);
+    ASTExprStmt(ASTExprList* exprs): ASTStmt() {
+      this->exprs = exprs;
+      children.push_back(exprs);
     }
 
     [[nodiscard]] string to_str() const override {
       return "ExpressionStmt";
     }
+    llvm::Value *accept(Codegen *codegen) override;
+
 };
 
 class ASTLabeledStmt: public ASTStmt{

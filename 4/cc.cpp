@@ -17,8 +17,8 @@ int main(int argc, char **argv) {
     usage();
     exit(1);
   }
- char *filename = argv[1];
-//  char filename[1000] = "/home/satyam/dev/compiler_assignment/4/examples/positive/expr/init.c";
+// char *filename = argv[1];
+  char filename[1000] = "/home/satyam/dev/compiler_assignment/4/examples/hello_world.c";
   // char filename[1000] = "/home/satyam/dev/compiler_assignment/4/examples/positive/stmts/ifStmt.c";
   yyin = fopen(filename, "r");
   assert(yyin);
@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
   auto *cg = new Codegen(filename);
   cg->visit(program_ast);
   cg->dumpCode();
+  cg->dumpFile("output.ll");
+
 //  SemanticAnalyzer sa = SemanticAnalyzer(cg);
 //  if (!sa.analyze(program_ast)) {
 //    cout << "Semantic Analysis Failed" << endl;

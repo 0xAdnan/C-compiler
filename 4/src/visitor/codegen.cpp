@@ -3,12 +3,14 @@
 //
 
 #include "codegen.h"
+#include "expr.h"
 
 llvm::Value *Codegen::visit(ASTProgram *program)
 {
   int i = 0;
   for (; i < program->extDecls.size() - 1; i++)
     program->extDecls[i]->accept(this);
+
   return program->extDecls[i]->accept(this);
 }
 
@@ -52,7 +54,7 @@ llvm::Value *Codegen::visit(ASTFnDef *fnDef)
       AllocaInst *paramAlloca = builder->CreateAlloca(
           arg.getType(), nullptr,
           fnDef->fnDecl->params->paramList->params[idx]->name);
-      add_variable(std::string(arg.getName()), paramAlloca);
+      add_variable(std::string(fnDef->fnDecl->params->paramList->params[idx]->name), paramAlloca);
       idx++;
     }
   }
@@ -116,7 +118,8 @@ llvm::Value *Codegen::visit(ASTGlobalVar *globalVar)
       if (constant == nullptr)
       {
         string msg = "Global variable can only be initialized with constants";
-        throw SemanticException(msg.c_str());
+        llvm::errs() << msg << "\n";
+        assert(false);
       }
 
       val = new llvm::GlobalVariable(
@@ -189,6 +192,9 @@ llvm::Value *Codegen::visit(ASTDecl *decl)
   return allocaInst;
 }
 
+
+
+
 Value *Codegen::visit(ASTIdExpr *idExpr)
 {
   return find_variable(idExpr->name);
@@ -255,12 +261,52 @@ Value *Codegen::visit(ASTIfElseStmt *ifStmt)
   return nullptr;
 }
 
+llvm::Value *Codegen::visit(ASTFunctionCall *fncall)
+{
+    string fnName = fncall->fn->name;
+
+    llvm::Function *calleeF = module->getFunction(fnName);
+    if (!calleeF) {
+        llvm::errs() << "Unknown function referenced: " << fnName << "\n";
+        return nullptr;
+    }
+
+    vector<llvm::Value *> argsV;
+    if (fncall->params) {
+        for (auto &arg : fncall->params->exprs) { 
+            llvm::Value *argVal = arg->accept(this);
+            if (!argVal) {
+                return nullptr; 
+            }
+            argsV.push_back(argVal);
+        }
+    }
+
+    if (calleeF->arg_size() != argsV.size()) {
+        llvm::errs() << "Incorrect number of arguments for function " << fnName << "\n";
+        return nullptr;
+    }
+
+    return builder->CreateCall(calleeF, argsV);
+}
+
+llvm::Value *Codegen::visit(ASTExprStmt *expStmt){
+  if(expStmt->exprs != nullptr)
+    return expStmt->exprs->accept(this);
+
+  return nullptr;
+}
+
+
 llvm::Value *Codegen::visit(ASTExpr *expr)
 {
   op_type ot = get_op_type(expr->operator_);
 
   switch (ot)
   {
+  case nop:
+    llvm::errs() << "Invalid operator type in expression\n";
+    assert(false);
   case unary:
     return visit_unary(expr);
   case binary:
@@ -295,7 +341,7 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
   llvm::Value *L = expr->operands[0]->accept(this);
   llvm::Value *R = expr->operands[1]->accept(this);
 
-  // assert(!L || !R);
+  assert(L && R);
 
   llvm::Type *typeL = get_value_type(L);
   llvm::Type *typeR = get_value_type(R);
@@ -309,6 +355,7 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
     R = builder->CreateLoad(typeR, R);
   }
 
+// codegen.dumpCode();
 
       if (typeL->isIntegerTy())
       {
@@ -398,6 +445,7 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
     return nullptr;
   }
 }
+
 
 llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
 {

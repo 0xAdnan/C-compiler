@@ -24,3 +24,7 @@ llvm::Value *ASTIfStmt::accept(Codegen *codegen) {
 llvm::Value *ASTWhileStmt::accept(Codegen *codegen) {
   return codegen->visit(this);
 }
+
+llvm::Value *ASTExprStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}

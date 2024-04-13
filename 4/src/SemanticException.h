@@ -12,24 +12,21 @@
 
 using namespace std;
 
-class SemanticException: public exception{
-private:
-    string message;
-
-public:
-    // Constructor accepts a const char* that is used to set
-    // the exception message
-    explicit SemanticException(const char* msg): message(msg){
-    }
-
-    explicit SemanticException(string msg): message(std::move(msg)){
-    }
-
-    // Override the what() method to return our message
-    [[nodiscard]] const char* what() const noexcept override{
-      return ("Semantic Error:\n\t\t" + message).c_str();
-    }
-};
-
+//class SemanticException: public exception{
+//private:
+//    char* message;
+//
+//public:
+//    // Constructor accepts a const char* that is used to set
+//    // the exception message
+//    explicit SemanticException(char* msg): message(msg){
+//    }
+//
+//    // Override the what() method to return our message
+//    [[nodiscard]] const char* what() const noexcept override{
+//      return message;
+//    }
+//};
+//
 
 #endif //CCOMPILER_SEMANTICEXCEPTION_H
