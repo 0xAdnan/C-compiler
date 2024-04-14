@@ -24,8 +24,10 @@ set(SOURCES ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
         src/ast/decl.cpp
         src/ast/decl.h
         src/visitor/visitor.h
-        src/visitor/codegen.cpp
         src/visitor/codegen.h
+        src/visitor/decl_codegen.cpp
+        src/visitor/expr_codegen.cpp
+        src/visitor/stmt_codegen.cpp
         src/ast/enums.h
         src/ast/expr.cpp
         src/ast/expr.h
@@ -34,8 +36,6 @@ set(SOURCES ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
         src/ast/enums.cpp
         src/ast/prog.cpp
         src/ast/stmt.cpp
-        src/SemanticException.h
-        src/utils.h
 )
 add_executable(cc cc.cpp ${SOURCES})
 

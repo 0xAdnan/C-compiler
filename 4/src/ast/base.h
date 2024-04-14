@@ -13,20 +13,24 @@
 
 
 class Codegen;
+
 using namespace std;
 
 
 class ASTNode {
 protected:
     ASTNode() { children = vector<ASTNode *>(); }
+
     void add_child(ASTNode *child);
 
 public:
     vector<ASTNode *> children;
+
     [[nodiscard]] virtual string to_str() const = 0;
+
     void dump_ast(int indent);
 
-    virtual llvm::Value* accept(Codegen *codegen);
+    virtual llvm::Value *accept(Codegen *codegen);
 };
 
 

@@ -9,22 +9,22 @@
 #include "decl.h"
 #include "stmt.h"
 
-class ASTExternDecl: public ASTNode{
+class ASTExternDecl : public ASTNode {
 public:
-    ASTExternDecl(): ASTNode(){}
+    ASTExternDecl() : ASTNode() {}
 
     llvm::Value *accept(Codegen *codegen) override {
       return ASTNode::accept(codegen);
     }
 };
 
-class ASTFnDef: public ASTExternDecl{
+class ASTFnDef : public ASTExternDecl {
 public:
-    ASTDeclSpec* declSpec;
-    ASTFnDecl* fnDecl;
-    ASTBlockList* body;
+    ASTDeclSpec *declSpec;
+    ASTFnDecl *fnDecl;
+    ASTBlockList *body;
 
-    ASTFnDef(ASTDeclSpec* declSpec, ASTFnDecl* astFnDecl, ASTBlockList* body): ASTExternDecl(){
+    ASTFnDef(ASTDeclSpec *declSpec, ASTFnDecl *astFnDecl, ASTBlockList *body) : ASTExternDecl() {
       this->declSpec = declSpec;
       this->fnDecl = astFnDecl;
       this->body = body;
@@ -41,11 +41,11 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 };
 
-class ASTGlobalVar: public ASTExternDecl{
+class ASTGlobalVar : public ASTExternDecl {
 public:
-    ASTDeclList* declaration;
+    ASTDeclList *declaration;
 
-    explicit ASTGlobalVar(ASTDeclList* decl): ASTExternDecl(){
+    explicit ASTGlobalVar(ASTDeclList *decl) : ASTExternDecl() {
       declaration = decl;
 
       children.push_back(decl);
@@ -58,31 +58,31 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 };
 
-class ASTProgram: public ASTNode{
+class ASTProgram : public ASTNode {
 public:
-  vector<ASTExternDecl*> extDecls;
+    vector<ASTExternDecl *> extDecls;
 
-  explicit ASTProgram(ASTExternDecl* decl){
-    extDecls.push_back(decl);
+    explicit ASTProgram(ASTExternDecl *decl) {
+      extDecls.push_back(decl);
 
-    children.push_back(decl);
-  }
-
-  ASTProgram(ASTProgram* program, ASTExternDecl* decl){
-    for(auto p: program->extDecls){
-      extDecls.push_back(p);
+      children.push_back(decl);
     }
-    extDecls.push_back(decl);
 
-    children.clear();
-    for(auto c: extDecls){
-      children.push_back(c);
+    ASTProgram(ASTProgram *program, ASTExternDecl *decl) {
+      for (auto p: program->extDecls) {
+        extDecls.push_back(p);
+      }
+      extDecls.push_back(decl);
+
+      children.clear();
+      for (auto c: extDecls) {
+        children.push_back(c);
+      }
     }
-  }
 
-  [[nodiscard]] string to_str() const override {
-    return "Program";
-  }
+    [[nodiscard]] string to_str() const override {
+      return "Program";
+    }
 
 };
 

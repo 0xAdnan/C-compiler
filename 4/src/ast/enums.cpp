@@ -5,7 +5,7 @@
 #include "enums.h"
 
 
-op_type get_op_type(operators op){
+op_type get_op_type(operators op) {
   switch (op) {
     case noop:
       return nop;
@@ -60,7 +60,7 @@ op_type get_op_type(operators op){
   }
 }
 
-string op_to_str(operators op){
+string op_to_str(operators op) {
   switch (op) {
     case noop:
       return "noop";
@@ -148,8 +148,8 @@ string op_to_str(operators op){
   }
 }
 
-string const_type_to_str(const_type ct){
-  switch (ct){
+string const_type_to_str(const_type ct) {
+  switch (ct) {
     case i_const:
       return "int";
     case f_const:

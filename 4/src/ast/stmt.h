@@ -9,23 +9,23 @@
 #include "decl.h"
 
 
-class ASTStmt: public ASTNode{
+class ASTStmt : public ASTNode {
 public:
-    ASTStmt(): ASTNode(){
+    ASTStmt() : ASTNode() {
       int x = 1;
     }
 };
 
 
-class ASTExprStmt: public ASTStmt{
+class ASTExprStmt : public ASTStmt {
 public:
-    ASTExprList* exprs;
+    ASTExprList *exprs;
 
-    ASTExprStmt(){
+    ASTExprStmt() {
       exprs = nullptr;
     }
 
-    ASTExprStmt(ASTExprList* exprs): ASTStmt() {
+    ASTExprStmt(ASTExprList *exprs) : ASTStmt() {
       this->exprs = exprs;
       children.push_back(exprs);
     }
@@ -33,25 +33,26 @@ public:
     [[nodiscard]] string to_str() const override {
       return "ExpressionStmt";
     }
+
     llvm::Value *accept(Codegen *codegen) override;
 
 };
 
-class ASTLabeledStmt: public ASTStmt{
+class ASTLabeledStmt : public ASTStmt {
 public:
-    ASTStmt* stmt;
+    ASTStmt *stmt;
 
-    explicit ASTLabeledStmt(ASTStmt* stmt): ASTStmt(){
+    explicit ASTLabeledStmt(ASTStmt *stmt) : ASTStmt() {
       this->stmt = stmt;
       children.push_back(stmt);
     }
 };
 
-class ASTGotoLabeledStmt: public ASTLabeledStmt{
+class ASTGotoLabeledStmt : public ASTLabeledStmt {
 public:
     string label;
 
-    ASTGotoLabeledStmt(string label, ASTStmt* stmt): ASTLabeledStmt(stmt){
+    ASTGotoLabeledStmt(string label, ASTStmt *stmt) : ASTLabeledStmt(stmt) {
       this->label = label;
     }
 
@@ -60,63 +61,63 @@ public:
     }
 };
 
-class ASTCaseLabeledStmt: public ASTLabeledStmt{
+class ASTCaseLabeledStmt : public ASTLabeledStmt {
 public:
-    ASTExpr* condition;
+    ASTExpr *condition;
 
-    ASTCaseLabeledStmt(ASTExpr* cond, ASTStmt* stmt): ASTLabeledStmt(stmt){
+    ASTCaseLabeledStmt(ASTExpr *cond, ASTStmt *stmt) : ASTLabeledStmt(stmt) {
       this->condition = cond;
       children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
-      return "Case" ;
+      return "Case";
     }
 };
 
-class ASTDefLabeledStmt: public ASTLabeledStmt{
+class ASTDefLabeledStmt : public ASTLabeledStmt {
 public:
-    ASTDefLabeledStmt(ASTStmt* stmt): ASTLabeledStmt(stmt){}
+    ASTDefLabeledStmt(ASTStmt *stmt) : ASTLabeledStmt(stmt) {}
 
     [[nodiscard]] string to_str() const override {
-      return "Default" ;
+      return "Default";
     }
 };
 
-class ASTSelectStmt: public ASTStmt{
+class ASTSelectStmt : public ASTStmt {
 public:
-    ASTExpr* cond;
+    ASTExpr *cond;
 
-    ASTSelectStmt(ASTExpr* cond): ASTStmt(){
+    ASTSelectStmt(ASTExpr *cond) : ASTStmt() {
       this->cond = cond;
 
       children.push_back(cond);
     }
 };
 
-class ASTIfStmt: public ASTSelectStmt{
+class ASTIfStmt : public ASTSelectStmt {
 public:
-    ASTStmt* stmt;
+    ASTStmt *stmt;
 
-    ASTIfStmt(ASTExpr* cond, ASTStmt* stmt): ASTSelectStmt(cond){
+    ASTIfStmt(ASTExpr *cond, ASTStmt *stmt) : ASTSelectStmt(cond) {
       this->stmt = stmt;
 
       children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
-      return "If Stmt" ;
+      return "If Stmt";
     }
 
     llvm::Value *accept(Codegen *codegen) override;
 };
 
-class ASTIfElseStmt: public ASTSelectStmt{
+class ASTIfElseStmt : public ASTSelectStmt {
 public:
-    ASTStmt* stmt;
-    ASTStmt* elseStmt;
+    ASTStmt *stmt;
+    ASTStmt *elseStmt;
 
-    ASTIfElseStmt(ASTExpr* cond, ASTStmt* stmt1, ASTStmt* stmt2): ASTSelectStmt(cond){
+    ASTIfElseStmt(ASTExpr *cond, ASTStmt *stmt1, ASTStmt *stmt2) : ASTSelectStmt(cond) {
       this->stmt = stmt1;
       this->elseStmt = stmt2;
 
@@ -125,35 +126,36 @@ public:
     }
 
     [[nodiscard]] string to_str() const override {
-      return "IfElse Stmt" ;
+      return "IfElse Stmt";
     }
 
     llvm::Value *accept(Codegen *codegen) override;
 };
 
-class ASTSwitchStmt: public ASTSelectStmt{
+class ASTSwitchStmt : public ASTSelectStmt {
 public:
-    ASTStmt* stmt;
+    ASTStmt *stmt;
 
-    ASTSwitchStmt(ASTExpr* cond, ASTStmt* stmt): ASTSelectStmt(cond){
+    ASTSwitchStmt(ASTExpr *cond, ASTStmt *stmt) : ASTSelectStmt(cond) {
       this->stmt = stmt;
 
       children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
-      return "Switch Stmt" ;
+      return "Switch Stmt";
     }
 };
 
-class ASTIterStmt: public ASTStmt{};
+class ASTIterStmt : public ASTStmt {
+};
 
-class ASTWhileStmt: public ASTIterStmt{
+class ASTWhileStmt : public ASTIterStmt {
 public:
-    ASTExpr* cond;
-    ASTStmt* stmt;
+    ASTExpr *cond;
+    ASTStmt *stmt;
 
-    ASTWhileStmt(ASTExpr* cond, ASTStmt* stmt): ASTIterStmt(){
+    ASTWhileStmt(ASTExpr *cond, ASTStmt *stmt) : ASTIterStmt() {
       this->cond = cond;
       this->stmt = stmt;
 
@@ -162,19 +164,19 @@ public:
     }
 
     [[nodiscard]] string to_str() const override {
-      return "While Stmt" ;
+      return "While Stmt";
     }
 
     llvm::Value *accept(Codegen *codegen) override;
 
 };
 
-class ASTDoWhileStmt: public ASTIterStmt{
+class ASTDoWhileStmt : public ASTIterStmt {
 public:
-    ASTExpr* cond;
-    ASTStmt* stmt;
+    ASTExpr *cond;
+    ASTStmt *stmt;
 
-    ASTDoWhileStmt(ASTExpr* cond, ASTStmt* stmt): ASTIterStmt(){
+    ASTDoWhileStmt(ASTExpr *cond, ASTStmt *stmt) : ASTIterStmt() {
       this->cond = cond;
       this->stmt = stmt;
 
@@ -183,18 +185,18 @@ public:
     }
 
     [[nodiscard]] string to_str() const override {
-      return "DoWhile Stmt" ;
+      return "DoWhile Stmt";
     }
 };
 
-class ASTForStmt: public ASTIterStmt{
+class ASTForStmt : public ASTIterStmt {
 public:
-    ASTExprStmt* expr1;
-    ASTExprStmt* expr2;
-    ASTExpr* expr3;
-    ASTStmt* stmt;
+    ASTExprStmt *expr1;
+    ASTExprStmt *expr2;
+    ASTExpr *expr3;
+    ASTStmt *stmt;
 
-    ASTForStmt(ASTExprStmt* expr1, ASTExprStmt* expr2, ASTExpr* expr3, ASTStmt* stmt): ASTIterStmt(){
+    ASTForStmt(ASTExprStmt *expr1, ASTExprStmt *expr2, ASTExpr *expr3, ASTStmt *stmt) : ASTIterStmt() {
       this->expr1 = expr1;
       this->expr2 = expr2;
       this->expr3 = expr3;
@@ -206,7 +208,7 @@ public:
       children.push_back(stmt);
     }
 
-    ASTForStmt(ASTExprStmt* exprStmt, ASTExprStmt* expr2, ASTStmt* stmt): ASTIterStmt(){
+    ASTForStmt(ASTExprStmt *exprStmt, ASTExprStmt *expr2, ASTStmt *stmt) : ASTIterStmt() {
       this->expr1 = exprStmt;
       this->expr2 = expr2;
       this->expr3 = nullptr;
@@ -219,18 +221,18 @@ public:
 
 
     [[nodiscard]] string to_str() const override {
-      return "For Stmt" ;
+      return "For Stmt";
     }
 };
 
-class ASTForStmt2: public ASTIterStmt{
+class ASTForStmt2 : public ASTIterStmt {
 public:
-    ASTDeclList* declList;
-    ASTExprStmt* expr2;
-    ASTExpr* expr3;
-    ASTStmt* stmt;
+    ASTDeclList *declList;
+    ASTExprStmt *expr2;
+    ASTExpr *expr3;
+    ASTStmt *stmt;
 
-    ASTForStmt2(ASTDeclList* declList, ASTExprStmt* expr2, ASTExpr* expr3, ASTStmt* stmt): ASTIterStmt(){
+    ASTForStmt2(ASTDeclList *declList, ASTExprStmt *expr2, ASTExpr *expr3, ASTStmt *stmt) : ASTIterStmt() {
       this->declList = declList;
       this->expr2 = expr2;
       this->expr3 = expr3;
@@ -242,7 +244,7 @@ public:
       children.push_back(stmt);
     }
 
-    ASTForStmt2(ASTDeclList* declList, ASTExprStmt* expr2, ASTStmt* stmt): ASTIterStmt(){
+    ASTForStmt2(ASTDeclList *declList, ASTExprStmt *expr2, ASTStmt *stmt) : ASTIterStmt() {
       this->declList = declList;
       this->expr2 = expr2;
       this->expr3 = nullptr;
@@ -255,20 +257,20 @@ public:
 
 
     [[nodiscard]] string to_str() const override {
-      return "For Stmt" ;
+      return "For Stmt";
     }
 };
 
-class ASTJmpStmt: public ASTStmt{
+class ASTJmpStmt : public ASTStmt {
 public:
-    ASTJmpStmt(): ASTStmt(){}
+    ASTJmpStmt() : ASTStmt() {}
 };
 
-class ASTGotoJmpStmt: public ASTJmpStmt{
+class ASTGotoJmpStmt : public ASTJmpStmt {
 public:
     string label;
 
-    ASTGotoJmpStmt(string label): ASTJmpStmt(){
+    ASTGotoJmpStmt(string label) : ASTJmpStmt() {
       this->label = label;
     }
 
@@ -277,9 +279,9 @@ public:
     }
 };
 
-class ASTContJmpStmt: public ASTJmpStmt{
+class ASTContJmpStmt : public ASTJmpStmt {
 public:
-    ASTContJmpStmt(): ASTJmpStmt(){}
+    ASTContJmpStmt() : ASTJmpStmt() {}
 
     [[nodiscard]] string to_str() const override {
       return "Continue";
@@ -288,9 +290,9 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 };
 
-class ASTBreakJmpStmt: public ASTJmpStmt{
+class ASTBreakJmpStmt : public ASTJmpStmt {
 public:
-    ASTBreakJmpStmt(): ASTJmpStmt(){}
+    ASTBreakJmpStmt() : ASTJmpStmt() {}
 
     [[nodiscard]] string to_str() const override {
       return "Break";
@@ -299,13 +301,13 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 };
 
-class ASTRetJmpStmt: public ASTJmpStmt{
+class ASTRetJmpStmt : public ASTJmpStmt {
 public:
-    ASTExpr* expr;
+    ASTExpr *expr;
 
-    ASTRetJmpStmt(): ASTJmpStmt(){ expr = nullptr; }
+    ASTRetJmpStmt() : ASTJmpStmt() { expr = nullptr; }
 
-    explicit ASTRetJmpStmt(ASTExpr* expr): ASTJmpStmt(){
+    explicit ASTRetJmpStmt(ASTExpr *expr) : ASTJmpStmt() {
       this->expr = expr;
 
       children.push_back(expr);
@@ -315,22 +317,23 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Return";
     }
+
     llvm::Value *accept(Codegen *codegen) override;
 
 };
 
-class ASTBlock: public ASTNode{
+class ASTBlock : public ASTNode {
 public:
-    ASTDeclList* declaration = nullptr;
-    ASTStmt* stmt = nullptr;
+    ASTDeclList *declaration = nullptr;
+    ASTStmt *stmt = nullptr;
 
-    explicit ASTBlock(ASTDeclList* declaration): ASTNode() {
+    explicit ASTBlock(ASTDeclList *declaration) : ASTNode() {
       this->declaration = declaration;
 
       children.push_back(declaration);
     }
 
-    explicit ASTBlock(ASTStmt* stmt): ASTNode() {
+    explicit ASTBlock(ASTStmt *stmt) : ASTNode() {
       this->stmt = stmt;
 
       children.push_back(stmt);
@@ -343,19 +346,19 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 };
 
-class ASTBlockList: public ASTStmt{
+class ASTBlockList : public ASTStmt {
 public:
-    vector<ASTBlock*> blocks;
+    vector<ASTBlock *> blocks;
 
-    ASTBlockList(): ASTStmt(){}
+    ASTBlockList() : ASTStmt() {}
 
-    explicit ASTBlockList(ASTBlock* block): ASTStmt(){
+    explicit ASTBlockList(ASTBlock *block) : ASTStmt() {
       blocks.push_back(block);
       children.push_back(block->children[0]);
     }
 
-    ASTBlockList(ASTBlockList* blocks, ASTBlock* block): ASTStmt(){
-      for(auto b: blocks->blocks)
+    ASTBlockList(ASTBlockList *blocks, ASTBlock *block) : ASTStmt() {
+      for (auto b: blocks->blocks)
         this->blocks.push_back(b);
 
       this->blocks.push_back(block);
@@ -363,7 +366,7 @@ public:
       delete blocks;
 
       children.clear();
-      for(auto b: this->blocks)
+      for (auto b: this->blocks)
         children.push_back(b->children[0]);
     }
 

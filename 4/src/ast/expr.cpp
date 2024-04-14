@@ -22,8 +22,8 @@ llvm::Value *ASTFunctionCall::accept(Codegen *codegen) {
 
 
 llvm::Value *ASTExprList::accept(Codegen *codegen) {
-  llvm::Value* value = nullptr;
-  for(auto expr: exprs){
+  llvm::Value *value = nullptr;
+  for (auto expr: exprs) {
     value = expr->accept(codegen);
   }
   return value;

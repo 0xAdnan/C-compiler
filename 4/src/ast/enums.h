@@ -25,7 +25,7 @@ enum ctype_ {
     t_imaginary
 };
 
-enum op_type{
+enum op_type {
     nop,
     unary,
     binary,

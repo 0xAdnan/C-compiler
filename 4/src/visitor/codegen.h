@@ -36,86 +36,87 @@
 
 using namespace llvm;
 
-class Codegen: public Visitor {
+class Codegen : public Visitor {
 public:
     unique_ptr<llvm::LLVMContext> context;
     unique_ptr<llvm::IRBuilder<>> builder;
     unique_ptr<llvm::Module> module;
 
-    FunctionType* fnType = nullptr;
+    FunctionType *fnType = nullptr;
 
     vector<map<std::string, llvm::Value *>> symbolTable;
     bool is_scope_incomplete = false;
 
-    explicit Codegen(const string& file_name): Visitor(){
+    explicit Codegen(const string &file_name) : Visitor() {
       context = make_unique<llvm::LLVMContext>();
       module = make_unique<llvm::Module>(file_name, *context);
       builder = make_unique<llvm::IRBuilder<>>(*context);
     }
 
-    void dumpCode() const{
+    void dumpCode() const {
       module->print(llvm::outs(), nullptr);
     }
 
 
-void dumpFile(const std::string &filename) const {
-    std::error_code EC;
-    llvm::raw_fd_ostream file(filename, EC, llvm::sys::fs::OF_Text);
+    void dumpFile(const std::string &filename) const {
+      std::error_code EC;
+      llvm::raw_fd_ostream file(filename, EC, llvm::sys::fs::OF_Text);
 
-    if (EC) {
+      if (EC) {
         llvm::errs() << "Error opening file: " << EC.message() << "\n";
         return;
+      }
+
+      module->print(file, nullptr);
     }
 
-    module->print(file, nullptr);
-}
-    Value* visit(ASTProgram*);
+    Value *visit(ASTProgram *);
 
-    Value* visit(ASTFnDef*);
+    Value *visit(ASTFnDef *);
 
-    Value* visit(ASTGlobalVar*);
+    Value *visit(ASTGlobalVar *);
 
-    Value *visit(ASTConst*) const;
+    Value *visit(ASTBlockList *);
 
-    Value *visit(ASTBlockList*);
+    Value *visit(ASTBlock *);
 
-    Value *visit(ASTBlock*);
+    Value *visit(ASTDeclList *);
 
-    Value *visit(ASTDeclList*);
+    Value *visit(ASTDecl *);
 
-    Value *visit(ASTDecl*);
+    Value *visit(ASTIdExpr *);
 
-    Value *visit(ASTIdExpr*);
+    Value *visit(ASTIfStmt *);
 
-    Value *visit(ASTIfStmt*);
+    Value *visit(ASTIfElseStmt *);
 
-    Value *visit(ASTIfElseStmt*);
+    Value *visit(ASTExpr *);
 
-    Value *visit(ASTExpr*);
+    Value *visit(ASTConst *);
 
-    Value *visit(ASTFunctionCall*);
+    Value *visit(ASTFunctionCall *);
 
-    Value *visit(ASTExprStmt*);
+    Value *visit(ASTExprStmt *);
 
-    Value *visit(ASTRetJmpStmt*);
+    Value *visit(ASTRetJmpStmt *);
 
-    Value *visit(ASTWhileStmt*);
+    Value *visit(ASTWhileStmt *);
 
-    Value *visit(ASTBreakJmpStmt*);
+    Value *visit(ASTBreakJmpStmt *);
 
-    Value *visit(ASTContJmpStmt*);
+    Value *visit(ASTContJmpStmt *);
 
 //    llvm::Value *visit(ASTDecl *decl);
 
 private:
-    llvm::BasicBlock* breakBlock = nullptr;
-    llvm::BasicBlock* contBlock = nullptr;
+    llvm::BasicBlock *breakBlock = nullptr;
+    llvm::BasicBlock *contBlock = nullptr;
 
-    llvm::BasicBlock* prevBreakBlock = nullptr;
-    llvm::BasicBlock* prevContBlock = nullptr;
+    llvm::BasicBlock *prevBreakBlock = nullptr;
+    llvm::BasicBlock *prevContBlock = nullptr;
 
-    [[nodiscard]] llvm::Type *ctype_2_llvmtype(ctype_ ctype, bool is_ptr=false) const {
-      if(is_ptr)
+    [[nodiscard]] llvm::Type *ctype_2_llvmtype(ctype_ ctype, bool is_ptr = false) const {
+      if (is_ptr)
         return llvm::Type::getInt64PtrTy(*context);
       switch (ctype) {
         case ctype_::t_int:
@@ -132,9 +133,9 @@ private:
       }
     }
 
-    void enter_scope(){
+    void enter_scope() {
       map<std::string, llvm::Value *> newContext;
-      if(is_scope_incomplete){
+      if (is_scope_incomplete) {
         assert(symbolTable.size() == 1);
         is_scope_incomplete = false;
         return;
@@ -142,28 +143,28 @@ private:
       symbolTable.push_back(newContext);
     }
 
-    void enter_scope(FunctionType* ft){
+    void enter_scope(FunctionType *ft) {
       enter_scope();
       this->fnType = ft;
       is_scope_incomplete = true;
     }
 
-    void add_variable(const string& name, llvm::Value* arg){
+    void add_variable(const string &name, llvm::Value *arg) {
       auto result = symbolTable.back().insert(make_pair(name, arg));
-      if(!result.second){
+      if (!result.second) {
         string msg = "Duplicate variable: " + name;
         llvm::errs() << msg << "\n";
         assert(false);
       }
     }
 
-    Value* find_variable(const string& name){
-      for(auto symbols = symbolTable.rbegin(); symbols != symbolTable.rend(); symbols++){
+    Value *find_variable(const string &name) {
+      for (auto symbols = symbolTable.rbegin(); symbols != symbolTable.rend(); symbols++) {
         auto symbol = symbols->find(name);
-        if(symbol != symbols->end())
+        if (symbol != symbols->end())
           return symbol->second;
       }
-      if(auto gv = module->getGlobalVariable(name) != nullptr){
+      if (auto gv = module->getGlobalVariable(name) != nullptr) {
         return nullptr;
       }
 
@@ -172,11 +173,11 @@ private:
       assert(false);
     }
 
-    void exit_scope(){
+    void exit_scope() {
       symbolTable.pop_back();
     }
 
-    [[nodiscard]] AllocaInst* create_alloca_of_type(ctype_ t, const string& name) const{
+    [[nodiscard]] AllocaInst *create_alloca_of_type(ctype_ t, const string &name) const {
       switch (t) {
         case t_void:
           llvm::errs() << "Cannot be void" << "\n";
@@ -211,7 +212,7 @@ private:
       }
     }
 
-    void enter_loop(llvm::BasicBlock* breakBlock, llvm::BasicBlock* contBlock){
+    void enter_loop(llvm::BasicBlock *breakBlock, llvm::BasicBlock *contBlock) {
       prevBreakBlock = this->breakBlock;
       prevContBlock = this->contBlock;
 
@@ -219,17 +220,37 @@ private:
       this->contBlock = contBlock;
     }
 
-    void exit_loop(){
+    void exit_loop() {
       this->breakBlock = prevBreakBlock;
       this->contBlock = prevContBlock;
     }
 
 
-    llvm::Value* visit_unary(ASTExpr* expr);
-    llvm::Value* visit_binary(ASTExpr* expr);
-    llvm::Value* visit_conditional(ASTExpr* expr);
-    llvm::Value* visit_assignment(ASTExpr* expr);
-  
+    llvm::Value *visit_unary(ASTExpr *expr);
+
+    llvm::Value *visit_binary(ASTExpr *expr);
+
+    llvm::Value *visit_conditional(ASTExpr *expr);
+
+    llvm::Value *visit_assignment(ASTExpr *expr);
+
+
+    static llvm::Type *get_value_type(llvm::Value *value) {
+      if (!value) return nullptr;
+
+      if (auto *allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
+        return allocaInst->getAllocatedType();
+      } else if (auto *constant = llvm::dyn_cast<llvm::Constant>(value)) {
+        return constant->getType();
+      } else {
+        return value->getType();
+      }
+    }
+
+    static bool is_const_expr(ASTExpr *expr) {
+      auto const_ = dynamic_cast<ASTConst *>(expr);
+      return const_ != nullptr;
+    }
 };
 
 

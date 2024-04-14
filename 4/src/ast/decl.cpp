@@ -6,21 +6,21 @@
 #include "codegen.h"
 
 
-ASTInitDecl::ASTInitDecl(ASTIDDecl * id): ASTNode() {
+ASTInitDecl::ASTInitDecl(ASTIDDecl *id) : ASTNode() {
   this->name = id->name;
   this->num_ptr = id->num_ptrs;
 }
 
-ASTInitDecl::ASTInitDecl(ASTIDDecl * id, ASTExpr* expr): ASTNode(){
+ASTInitDecl::ASTInitDecl(ASTIDDecl *id, ASTExpr *expr) : ASTNode() {
   this->name = id->name;
   this->value = expr;
   this->num_ptr = id->num_ptrs;
 
-  if(this->value != nullptr)
+  if (this->value != nullptr)
     children.push_back(this->value);
 }
 
-ASTInitDecl::ASTInitDecl(ASTFnDecl * fnDecl) {
+ASTInitDecl::ASTInitDecl(ASTFnDecl *fnDecl) {
   this->name = fnDecl->name;
   this->value = nullptr;
   this->fnDecl = fnDecl;
@@ -29,26 +29,26 @@ ASTInitDecl::ASTInitDecl(ASTFnDecl * fnDecl) {
 }
 
 
-ASTInitDeclList::ASTInitDeclList(ASTInitDecl * n): ASTNode(){
+ASTInitDeclList::ASTInitDeclList(ASTInitDecl *n) : ASTNode() {
   initializations.push_back(n);
 }
 
-ASTInitDeclList::ASTInitDeclList(ASTInitDeclList* n1, ASTInitDecl * n2): ASTNode(){
-  for(auto x: n1->initializations)
+ASTInitDeclList::ASTInitDeclList(ASTInitDeclList *n1, ASTInitDecl *n2) : ASTNode() {
+  for (auto x: n1->initializations)
     initializations.push_back(x);
   initializations.push_back(n2);
 }
 
-ASTDeclList::ASTDeclList(ASTDeclSpec *n1, ASTInitDeclList *n2): ASTNode(){
-  for(auto init: n2->initializations){
+ASTDeclList::ASTDeclList(ASTDeclSpec *n1, ASTInitDeclList *n2) : ASTNode() {
+  for (auto init: n2->initializations) {
     auto decl = new ASTDecl(init->name, n1->type);
     decl->value = init->value;
     decl->is_const = n1->is_const;
     decl->num_ptr = init->num_ptr;
     decl->fnDecl = init->fnDecl;
-    if(decl->fnDecl)
+    if (decl->fnDecl)
       decl->children.push_back(decl->fnDecl);
-    if(decl->value)
+    if (decl->value)
       decl->children.push_back(decl->value);
 
     declarations.push_back(decl);
@@ -60,30 +60,30 @@ llvm::Value *ASTDeclList::accept(Codegen *codegen) {
   return codegen->visit(this);
 }
 
-ASTParamDecl::ASTParamDecl(ASTDeclSpec * declSpec, ASTIDDecl * id) {
+ASTParamDecl::ASTParamDecl(ASTDeclSpec *declSpec, ASTIDDecl *id) {
   this->type = declSpec->type;
   this->is_const = declSpec->is_const;
   this->name = id->name;
   this->num_ptr = id->num_ptrs;
 }
 
-ASTParamDecl::ASTParamDecl(ASTDeclSpec * declSpec) {
+ASTParamDecl::ASTParamDecl(ASTDeclSpec *declSpec) {
   this->type = declSpec->type;
   this->is_const = declSpec->is_const;
 
 }
 
-ASTParamList::ASTParamList(ASTParamList * paramList, ASTParamDecl * paramDecl) {
-  for(auto x: paramList->params)
+ASTParamList::ASTParamList(ASTParamList *paramList, ASTParamDecl *paramDecl) {
+  for (auto x: paramList->params)
     params.push_back(x);
   params.push_back(paramDecl);
 
   children.clear();
-  for(auto x: params)
+  for (auto x: params)
     children.push_back(x);
 }
 
-ASTParamList::ASTParamList(ASTParamDecl * x) {
+ASTParamList::ASTParamList(ASTParamDecl *x) {
   params.push_back(x);
 
   children.push_back(x);
