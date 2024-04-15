@@ -25,7 +25,8 @@ Value *Codegen::visit(ASTIfStmt *ifStmt) {
   // Emit else block.
   parentFunc->insert(parentFunc->end(), elseBB);
   builder->SetInsertPoint(elseBB);
-  builder->CreateBr(mergeBB);
+  if (!builder->GetInsertBlock()->getTerminator())
+    builder->CreateBr(mergeBB);
 
   // Emit merge block.
   parentFunc->insert(parentFunc->end(), mergeBB);
@@ -56,7 +57,8 @@ Value *Codegen::visit(ASTIfElseStmt *ifStmt) {
   parentFunc->insert(parentFunc->end(), elseBB);
   builder->SetInsertPoint(elseBB);
   ifStmt->elseStmt->accept(this);
-  builder->CreateBr(mergeBB);
+  if (!builder->GetInsertBlock()->getTerminator())
+    builder->CreateBr(mergeBB);
 
   // Emit merge block.
   parentFunc->insert(parentFunc->end(), mergeBB);

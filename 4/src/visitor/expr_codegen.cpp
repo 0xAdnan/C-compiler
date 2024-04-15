@@ -77,7 +77,6 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr) {
     R = builder->CreateLoad(typeR, R);
   }
 
-  // codegen.dumpCode();
 
   if (typeL->isIntegerTy()) {
     switch (expr->operator_) {

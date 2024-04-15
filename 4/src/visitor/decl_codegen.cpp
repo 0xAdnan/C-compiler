@@ -47,6 +47,7 @@ llvm::Value *Codegen::visit(ASTFnDef *fnDef) {
       AllocaInst *paramAlloca = builder->CreateAlloca(
               arg.getType(), nullptr,
               fnDef->fnDecl->params->paramList->params[idx]->name);
+      builder->CreateStore(&arg, paramAlloca);
       add_variable(std::string(fnDef->fnDecl->params->paramList->params[idx]->name), paramAlloca);
       idx++;
     }
@@ -54,10 +55,11 @@ llvm::Value *Codegen::visit(ASTFnDef *fnDef) {
 
   fnDef->body->accept(this);
 
-  if(!builder->GetInsertBlock()->getTerminator()){
-    llvm::errs() << "Error: Function does not return\n";
-    assert(false);
-  }
+if (!builder->GetInsertBlock()->getTerminator()) {
+  llvm::Type *retType = ctype_2_llvmtype(fnDef->declSpec->type, fnDef->fnDecl->num_ptrs > 0);
+  llvm::Constant *defValue = llvm::Constant::getNullValue(retType);
+  builder->CreateRet(defValue);
+}
 
   verifyFunction(*fn);
 

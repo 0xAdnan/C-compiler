@@ -9,7 +9,7 @@ To generate the AST:
 `./cc examples/test1.c`
 
 TODO:
-1. goTo 
+1. ~~goTo~~
 2. for statements
 3. Arrays handle
 4. Constant Propagation
