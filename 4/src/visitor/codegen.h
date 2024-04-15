@@ -44,7 +44,7 @@ public:
 
     FunctionType *fnType = nullptr;
 
-    vector<map<std::string, llvm::Value *>> symbolTable;
+    vector<map < std::string, llvm::Value *>> symbolTable;
     bool is_scope_incomplete = false;
 
     explicit Codegen(const string &file_name) : Visitor() {
@@ -102,11 +102,17 @@ public:
 
     Value *visit(ASTWhileStmt *);
 
+    Value *visit(ASTForStmt *);
+
+    Value *visit(ASTForStmt2 *);
+
     Value *visit(ASTBreakJmpStmt *);
 
     Value *visit(ASTContJmpStmt *);
 
-//    llvm::Value *visit(ASTDecl *decl);
+    Value *visit(ASTGotoLabeledStmt *);
+
+    Value *visit(ASTGotoJmpStmt *);
 
 private:
     llvm::BasicBlock *breakBlock = nullptr;
@@ -114,6 +120,9 @@ private:
 
     llvm::BasicBlock *prevBreakBlock = nullptr;
     llvm::BasicBlock *prevContBlock = nullptr;
+
+    map<string, llvm::BasicBlock *> labelMap;
+    int completedLabels = 0;
 
     [[nodiscard]] llvm::Type *ctype_2_llvmtype(ctype_ ctype, bool is_ptr = false) const {
       if (is_ptr)
@@ -134,7 +143,7 @@ private:
     }
 
     void enter_scope() {
-      map<std::string, llvm::Value *> newContext;
+      map < std::string, llvm::Value * > newContext;
       if (is_scope_incomplete) {
         assert(symbolTable.size() == 1);
         is_scope_incomplete = false;
@@ -251,6 +260,7 @@ private:
       auto const_ = dynamic_cast<ASTConst *>(expr);
       return const_ != nullptr;
     }
+
 };
 
 

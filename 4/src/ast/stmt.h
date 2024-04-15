@@ -11,9 +11,7 @@
 
 class ASTStmt : public ASTNode {
 public:
-    ASTStmt() : ASTNode() {
-      int x = 1;
-    }
+    ASTStmt() : ASTNode() {}
 };
 
 
@@ -59,6 +57,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Label: " + label;
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTCaseLabeledStmt : public ASTLabeledStmt {
@@ -219,10 +219,11 @@ public:
       children.push_back(stmt);
     }
 
-
     [[nodiscard]] string to_str() const override {
       return "For Stmt";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTForStmt2 : public ASTIterStmt {
@@ -255,10 +256,11 @@ public:
       children.push_back(stmt);
     }
 
-
     [[nodiscard]] string to_str() const override {
-      return "For Stmt";
+      return "For Stmt2";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTJmpStmt : public ASTStmt {
@@ -277,6 +279,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Goto label: " + label;
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 class ASTContJmpStmt : public ASTJmpStmt {

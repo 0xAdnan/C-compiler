@@ -40,3 +40,19 @@ llvm::Value *ASTContJmpStmt::accept(Codegen *codegen) {
 llvm::Value *ASTBreakJmpStmt::accept(Codegen *codegen) {
   return codegen->visit(this);
 }
+
+llvm::Value *ASTForStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}
+
+llvm::Value *ASTForStmt2::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}
+
+llvm::Value *ASTGotoJmpStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}
+
+llvm::Value *ASTGotoLabeledStmt::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}

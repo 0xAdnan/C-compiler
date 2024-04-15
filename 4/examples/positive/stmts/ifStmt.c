@@ -13,4 +13,6 @@ int main(){
   if(0){
     int x = 3;
   }
+
+  return 0;
 }

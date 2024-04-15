@@ -53,8 +53,18 @@ llvm::Value *Codegen::visit(ASTFnDef *fnDef) {
   }
 
   fnDef->body->accept(this);
+
+  if(!builder->GetInsertBlock()->getTerminator()){
+    llvm::errs() << "Error: Function does not return\n";
+    assert(false);
+  }
+
   verifyFunction(*fn);
 
+  if(this->completedLabels != this->labelMap.size()){
+    llvm::errs() << "Error: Undefined Label\n";
+    assert(false);
+  }
   return fn;
 }
 
@@ -152,6 +162,4 @@ llvm::Value *Codegen::visit(ASTDecl *decl) {
 
   return allocaInst;
 }
-
-
 
