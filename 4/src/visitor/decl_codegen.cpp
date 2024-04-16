@@ -153,7 +153,14 @@ llvm::Value *Codegen::visit(ASTDeclList *decls) {
 llvm::Value *Codegen::visit(ASTDecl *decl) {
   if (decl->is_const)
     cout << "Not supporting Const Semantics" << endl;
-  AllocaInst *allocaInst = create_alloca_of_type(decl->type, decl->name);
+
+  AllocaInst *allocaInst = nullptr;
+  if (decl->num_ptr == 0) {
+    allocaInst = create_alloca_of_type(decl->type, decl->name);
+  } else {
+    llvm::Type *type = ctype_2_llvmtype(decl->type, decl->num_ptr);
+    allocaInst = builder->CreateAlloca(type, nullptr, decl->name);
+  }
 
   if (decl->value) {
     llvm::Value *v = decl->value->accept(this);

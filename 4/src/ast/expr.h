@@ -14,6 +14,7 @@ public:
     operators operator_;
     op_type opType;
     vector<ASTExpr *> operands;
+    bool is_LHS=false;
 
     ASTExpr() : ASTNode() {
       operator_ = noop;
@@ -36,6 +37,10 @@ public:
       this->operator_ = op;
       this->opType = get_op_type(op);
 
+      if(this->opType == assignment){
+        expr1->is_LHS = true;
+      }
+
       operands.push_back(expr1);
       operands.push_back(expr2);
       add_children();
@@ -46,6 +51,10 @@ public:
 
       this->operator_ = op;
       this->opType = get_op_type(op);
+
+      if(this->opType == assignment){
+        expr1->is_LHS = true;
+      }
 
       operands.push_back(expr1);
       operands.push_back(expr2);

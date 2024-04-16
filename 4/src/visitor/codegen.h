@@ -243,8 +243,11 @@ private:
 
     llvm::Value *visit_assignment(ASTExpr *expr);
 
+    bool is_ptr(llvm::Value* val){
+      return false;
+    }
 
-    static llvm::Type *get_value_type(llvm::Value *value) {
+    llvm::Type *get_value_type(llvm::Value *value) {
       if (!value) return nullptr;
 
       if (auto *allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
@@ -260,6 +263,8 @@ private:
       auto const_ = dynamic_cast<ASTConst *>(expr);
       return const_ != nullptr;
     }
+
+    
 
 };
 
