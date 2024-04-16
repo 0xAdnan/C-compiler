@@ -188,11 +188,13 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
   switch (unaryExp->operator_)
   {
   case u_op_plus_plus:
-    if (typeL->isIntegerTy())
+    if (get_value_type(L)->isIntegerTy())
     {
-      return builder->CreateAdd(L, llvm::ConstantInt::get(typeL, 1, true));
+      llvm::Value* l = builder->CreateLoad(get_value_type(L), L);
+      l = builder->CreateAdd(l, llvm::ConstantInt::get(*context, APInt(32, 1)));
+      return builder->CreateStore(l, L);
     }
-    else if (typeL->isFloatingPointTy())
+    else if (get_value_type(L)->isFloatingPointTy())
     {
       return builder->CreateFAdd(L, llvm::ConstantFP::get(typeL, 1.0));
     }
@@ -219,10 +221,10 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
       if(unaryExp->is_LHS){
         return builder->CreateLoad(L->getType(), L);
       } else {
-        return L;
+//        return L;
         // builder->CreateLoad(L->getType(), L);
-        // llvm::Type *elementType = get_value_type(L);
-        // return builder->CreateLoad(elementType, L);
+//         llvm::Type *elementType = get_value_type(L);
+//         return builder->CreateLoad(builder->CreateLoad(elementType, L));
       }
     } else {
       llvm::errs() << "Derefrencing non pointer variable";

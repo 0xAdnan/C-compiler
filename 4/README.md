@@ -14,7 +14,7 @@ TODO:
 3. Arrays handle
 4. Constant Propagation
 5. DeadCode Removal
-6. Pointer Handle - Adnan
+6. Pointer Handle
 7. Address handling
 ~~8. Different Assignment Handle - Adnan~~
 9. Create Test for If and while statements
@@ -28,3 +28,16 @@ Compile LLVM IR to Executable
 2. `clang -pie output.o -o output`
 3. `./output`
 
+TODO cases:-
+1. Pointer(4, 25)
+2. Fix minus minus for post and pre
+
+
+Failing cases:-
+1. Pointers(4, 5, 13, 14, 20)
+2. Do while(8)
+3. goTo (10)
+4. Array (15, 26)
+5. Assignment Chaining (11)
+6. struct (17, 18, 19, 24)
+7. typedef (22)

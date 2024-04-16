@@ -28,3 +28,7 @@ llvm::Value *ASTExprList::accept(Codegen *codegen) {
   }
   return value;
 }
+
+llvm::Value *ASTPostIncrement::accept(Codegen *codegen) {
+  return codegen->visit(this);
+}

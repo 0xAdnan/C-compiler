@@ -201,6 +201,8 @@ public:
         return "PostIncrement";
       return "PostDecrement";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
 };
 
 #endif // CCOMPILER_EXPR_H

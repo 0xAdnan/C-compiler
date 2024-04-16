@@ -12,8 +12,14 @@ Value *Codegen::visit(ASTIfStmt *ifStmt) {
   BasicBlock *mergeBB = BasicBlock::Create(*context, "ifcont");
 
   Value *condV = ifStmt->cond->accept(this);
+  if(llvm::isa<AllocaInst>(condV)){
+    condV = builder->CreateLoad(get_value_type(condV), condV);
+    condV = builder->CreateICmpNE(condV, ConstantInt::get(Type::getInt32Ty(*context), 0));
+  }
+  else{
+    condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
+  }
   condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
-
   builder->CreateCondBr(condV, thenBB, elseBB);
 
   // Emit then value.
@@ -44,6 +50,13 @@ Value *Codegen::visit(ASTIfElseStmt *ifStmt) {
   BasicBlock *mergeBB = BasicBlock::Create(*context, "ifcont");
 
   Value *condV = ifStmt->cond->accept(this);
+  if(llvm::isa<AllocaInst>(condV)){
+    condV = builder->CreateLoad(get_value_type(condV), condV);
+    condV = builder->CreateICmpNE(condV, ConstantInt::get(Type::getInt32Ty(*context), 0));
+  }
+  else{
+    condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
+  }
   condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
   builder->CreateCondBr(condV, thenBB, elseBB);
 
@@ -74,6 +87,11 @@ llvm::Value *Codegen::visit(ASTRetJmpStmt *retStmt) {
       llvm::errs() << "Error generating code for return statement expression.\n";
       return nullptr;
     }
+    if(llvm::isa<AllocaInst>(retVal)) {
+      retVal = builder->CreateLoad(get_value_type(retVal), retVal);
+    } else if(llvm::isa<GlobalVariable>(retVal)){
+      retVal = builder->CreateLoad(get_value_type(retVal), retVal);
+    }
     return builder->CreateRet(retVal);
   } else {
     return builder->CreateRetVoid();
@@ -93,7 +111,13 @@ Value *Codegen::visit(ASTWhileStmt *whileStmt) {
   builder->CreateBr(condBB);
   builder->SetInsertPoint(condBB);
   Value *condV = whileStmt->cond->accept(this);
-  condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
+  if(llvm::isa<AllocaInst>(condV)){
+    condV = builder->CreateLoad(get_value_type(condV), condV);
+    condV = builder->CreateICmpNE(condV, ConstantInt::get(Type::getInt32Ty(*context), 0));
+  }
+  else{
+    condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));
+  }
   builder->CreateCondBr(condV, loopBB, afterBB);
 
   builder->SetInsertPoint(loopBB);

@@ -114,6 +114,8 @@ public:
 
     Value *visit(ASTGotoJmpStmt *);
 
+    Value *visit(ASTPostIncrement *);
+
 private:
     llvm::BasicBlock *breakBlock = nullptr;
     llvm::BasicBlock *contBlock = nullptr;
@@ -173,8 +175,8 @@ private:
         if (symbol != symbols->end())
           return symbol->second;
       }
-      if (auto gv = module->getGlobalVariable(name) != nullptr) {
-        return nullptr;
+      if (auto gv = module->getGlobalVariable(name)) {
+        return gv;
       }
 
       string msg = "No variable named: " + name;
@@ -252,9 +254,11 @@ private:
 
       if (auto *allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
         return allocaInst->getAllocatedType();
+      } else if(auto *global = llvm::dyn_cast<llvm::GlobalVariable>(value)){
+        return global->getValueType();
       } else if (auto *constant = llvm::dyn_cast<llvm::Constant>(value)) {
         return constant->getType();
-      } else {
+      }else {
         return value->getType();
       }
     }

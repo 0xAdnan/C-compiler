@@ -134,7 +134,7 @@ llvm::Value *Codegen::visit(ASTGlobalVar *globalVar) {
               ctype_2_llvmtype(decl->type, decl->num_ptr > 0),
               decl->is_const,
               llvm::GlobalValue::CommonLinkage,
-              nullptr, decl->name);
+              ConstantInt::get(ctype_2_llvmtype(decl->type), 0), decl->name);
       ((GlobalVariable *) val)->setDSOLocal(true);
     }
   }
@@ -170,5 +170,19 @@ llvm::Value *Codegen::visit(ASTDecl *decl) {
   add_variable(decl->name, allocaInst);
 
   return allocaInst;
+}
+
+Value *Codegen::visit(ASTPostIncrement * postIncrement) {
+  Value *v = postIncrement->expr->accept(this);
+  Value *load = builder->CreateLoad(get_value_type(v), v);
+
+  Value* inc = nullptr;
+  if(postIncrement->is_inc)
+    inc = builder->CreateAdd(load, ConstantInt::get(*context, APInt(32, 1)), "inc");
+  else
+    inc = builder->CreateSub(load, ConstantInt::get(*context, APInt(32, 1)), "dec");
+
+  builder->CreateStore(inc, v);
+  return load;
 }
 
