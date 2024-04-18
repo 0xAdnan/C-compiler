@@ -33,11 +33,16 @@ TODO cases:-
 2. Fix minus minus for post and pre
 
 
-Failing cases:-
+<!-- Failing cases:-
 1. Pointers(4, 5, 13, 14, 20)
 2. Do while(8)
 3. goTo (10)
 4. Array (15, 26)
 5. Assignment Chaining (11)
 6. struct (17, 18, 19, 24)
-7. typedef (22)
+7. typedef (22) -->
+
+25, 30, 31, 33, 38, 39, 42, 54, 57, 58, 59, 76, 88, 95, 98, 113, 124, 164, 166(check answer), 167, 177, 
+
+check void, long, char, double, short support?
+static variable support?
