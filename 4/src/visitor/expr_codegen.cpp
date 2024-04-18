@@ -470,3 +470,22 @@ llvm::Value *Codegen::visit(ASTFunctionCall *fncall)
 
   return builder->CreateCall(calleeF, argsV);
 }
+
+Value *Codegen::visit(ASTPostIncrement * postIncrement) {
+  Value *v = postIncrement->expr->accept(this);
+
+  Value* inc = nullptr;
+  if(postIncrement->is_inc)
+    inc = builder->CreateAdd(v, ConstantInt::get(*context, APInt(32, 1)), "inc");
+  else
+    inc = builder->CreateSub(v, ConstantInt::get(*context, APInt(32, 1)), "dec");
+
+  if (auto* li = dyn_cast<llvm::LoadInst>(v)){
+    return builder->CreateStore(inc, li->getPointerOperand());
+  }
+  else{
+    llvm::errs() << "Something Wrong happened in postfix++";
+    assert(false);
+  }
+}
+
