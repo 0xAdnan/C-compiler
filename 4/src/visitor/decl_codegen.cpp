@@ -48,7 +48,10 @@ llvm::Value *Codegen::visit(ASTFnDef *fnDef) {
               arg.getType(), nullptr,
               fnDef->fnDecl->params->paramList->params[idx]->name);
       builder->CreateStore(&arg, paramAlloca);
-      add_variable(std::string(fnDef->fnDecl->params->paramList->params[idx]->name), paramAlloca);
+      add_variable(
+              std::string(fnDef->fnDecl->params->paramList->params[idx]->name),
+              paramAlloca, fnDef->fnDecl->params->paramList->params[idx]->type,
+              fnDef->fnDecl->params->paramList->params[idx]->num_ptr);
       idx++;
     }
   }
@@ -101,7 +104,8 @@ llvm::Value *Codegen::visit(ASTGlobalVar *globalVar) {
               params,
               decl->fnDecl->params->is_variadic);
       val = Function::Create(FT, Function::ExternalLinkage, decl->name, *module);
-    } else if (decl->value) {
+    }
+    else if (decl->value) {
       for (auto global = module->global_begin(); global != module->global_end(); ++global) {
         if (global->getName() == decl->name) {
           global->eraseFromParent();
@@ -122,7 +126,8 @@ llvm::Value *Codegen::visit(ASTGlobalVar *globalVar) {
               decl->is_const,
               llvm::GlobalValue::CommonLinkage,
               constant, decl->name);
-    } else {
+    }
+    else {
       for (auto global = module->global_begin(); global != module->global_end(); ++global) {
         if (global->getName() == decl->name) {
           global->eraseFromParent();
@@ -167,22 +172,8 @@ llvm::Value *Codegen::visit(ASTDecl *decl) {
     builder->CreateStore(v, allocaInst);
   }
 
-  add_variable(decl->name, allocaInst);
+  add_variable(decl->name, allocaInst, decl->type, decl->num_ptr);
 
   return allocaInst;
-}
-
-Value *Codegen::visit(ASTPostIncrement * postIncrement) {
-  Value *v = postIncrement->expr->accept(this);
-  Value *load = builder->CreateLoad(get_value_type(v), v);
-
-  Value* inc = nullptr;
-  if(postIncrement->is_inc)
-    inc = builder->CreateAdd(load, ConstantInt::get(*context, APInt(32, 1)), "inc");
-  else
-    inc = builder->CreateSub(load, ConstantInt::get(*context, APInt(32, 1)), "dec");
-
-  builder->CreateStore(inc, v);
-  return load;
 }
 

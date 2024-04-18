@@ -36,6 +36,19 @@
 
 using namespace llvm;
 
+class SymbolInfo{
+public:
+    llvm::Value* value;
+    llvm::Type* ty;
+    int num_ptrs;
+
+    SymbolInfo(llvm::Value* value, llvm::Type* ty, int num_ptrs){
+      this->value = value;
+      this->ty = ty;
+      this->num_ptrs = num_ptrs;
+    }
+};
+
 class Codegen : public Visitor {
 public:
     unique_ptr<llvm::LLVMContext> context;
@@ -44,7 +57,7 @@ public:
 
     FunctionType *fnType = nullptr;
 
-    vector<map < std::string, llvm::Value *>> symbolTable;
+    vector<map<std::string, shared_ptr<SymbolInfo>>> symbolTable;
     bool is_scope_incomplete = false;
 
     explicit Codegen(const string &file_name) : Visitor() {
@@ -145,7 +158,7 @@ private:
     }
 
     void enter_scope() {
-      map < std::string, llvm::Value * > newContext;
+      map<std::string, shared_ptr<SymbolInfo>> newContext;
       if (is_scope_incomplete) {
         assert(symbolTable.size() == 1);
         is_scope_incomplete = false;
@@ -160,8 +173,11 @@ private:
       is_scope_incomplete = true;
     }
 
-    void add_variable(const string &name, llvm::Value *arg) {
-      auto result = symbolTable.back().insert(make_pair(name, arg));
+    void add_variable(const string &name, llvm::Value *val, ctype_ ct, int num_ptrs=0) {
+//      auto result = symbolTable.back().insert(make_pair(name, make_unique<SymbolInfo>(SymbolInfo(val, ct, num_ptrs))));
+      auto result = symbolTable.back().insert(
+              make_pair(name, make_shared<SymbolInfo>(SymbolInfo(val, ctype_2_llvmtype(ct), num_ptrs)))
+      );
       if (!result.second) {
         string msg = "Duplicate variable: " + name;
         llvm::errs() << msg << "\n";
@@ -169,14 +185,14 @@ private:
       }
     }
 
-    Value *find_variable(const string &name) {
+    shared_ptr<SymbolInfo> find_variable(const string &name) {
       for (auto symbols = symbolTable.rbegin(); symbols != symbolTable.rend(); symbols++) {
         auto symbol = symbols->find(name);
         if (symbol != symbols->end())
           return symbol->second;
       }
       if (auto gv = module->getGlobalVariable(name)) {
-        return gv;
+        return make_shared<SymbolInfo>(SymbolInfo(gv, gv->getValueType(), 0));
       }
 
       string msg = "No variable named: " + name;
@@ -244,10 +260,6 @@ private:
     llvm::Value *visit_conditional(ASTExpr *expr);
 
     llvm::Value *visit_assignment(ASTExpr *expr);
-
-    bool is_ptr(llvm::Value* val){
-      return false;
-    }
 
     llvm::Type *get_value_type(llvm::Value *value) {
       if (!value) return nullptr;

@@ -24,12 +24,12 @@ llvm::Value *Codegen::visit(ASTConst *constant)
 
     // Create a global variable with the constant string
     auto *strVar = new llvm::GlobalVariable(
-        /*Module=*/*module,
-        /*Type=*/string_const->getType(),
-        /*isConstant=*/true,
-        /*Linkage=*/GlobalValue::PrivateLinkage,
-        /*Initializer=*/string_const,
-        /*Name=*/".str");
+        *module,
+        string_const->getType(),
+        true,
+        GlobalValue::PrivateLinkage,
+        string_const,
+        ".str");
 
     strVar->setAlignment(Align(1));
     return strVar;
@@ -38,7 +38,14 @@ llvm::Value *Codegen::visit(ASTConst *constant)
 
 Value *Codegen::visit(ASTIdExpr *idExpr)
 {
-  return find_variable(idExpr->name);
+  auto symbolInfo = find_variable(idExpr->name);
+  if(idExpr->is_LHS)
+    return symbolInfo->value;
+  if(symbolInfo->num_ptrs>=1) {
+    return builder->CreateLoad(llvm::Type::getInt64PtrTy(*context), symbolInfo->value);
+  }
+
+  return builder->CreateLoad(symbolInfo->ty, symbolInfo->value);
 }
 
 llvm::Value *Codegen::visit(ASTExpr *expr)
@@ -75,16 +82,14 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
   llvm::Type *typeL = get_value_type(L);
   llvm::Type *typeR = get_value_type(R);
 
-  assert(typeL == typeR);
-
-  if (L->getType()->isPointerTy())
+  /*if (L->getType()->isPointerTy())
   {
     L = builder->CreateLoad(typeL, L);
   }
   if (R->getType()->isPointerTy())
   {
     R = builder->CreateLoad(typeR, R);
-  }
+  }*/
 
   if (typeL->isIntegerTy())
   {
@@ -113,8 +118,12 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
     case b_greater_eq:
       return builder->CreateICmpSGE(L, R);
     case b_eq:
+      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
+      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateICmpEQ(L, R);
     case b_neq:
+      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
+      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateICmpNE(L, R);
     case b_bitand:
       return builder->CreateAnd(L, R);
@@ -123,8 +132,12 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
     case b_bitor:
       return builder->CreateOr(L, R);
     case b_and:
+      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
+      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateLogicalAnd(L, R);
     case b_or:
+      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
+      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateLogicalOr(L, R);
     case t_cond:
       break;
@@ -178,6 +191,7 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
 {
   assert(unaryExp->operands.size() == 1);
 
+  unaryExp->operands[0]->is_LHS = unaryExp->is_LHS;
   llvm::Value *L = unaryExp->operands[0]->accept(this);
 
   if (!L)
@@ -188,53 +202,73 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
   switch (unaryExp->operator_)
   {
   case u_op_plus_plus:
-    if (get_value_type(L)->isIntegerTy())
-    {
-      llvm::Value* l = builder->CreateLoad(get_value_type(L), L);
-      l = builder->CreateAdd(l, llvm::ConstantInt::get(*context, APInt(32, 1)));
-      return builder->CreateStore(l, L);
+    if(unaryExp->is_LHS){
+      llvm::errs() << "++ not allowed in LHS";
+      assert(false);
     }
-    else if (get_value_type(L)->isFloatingPointTy())
-    {
+    if (get_value_type(L)->isIntegerTy()){
+      auto l = builder->CreateAdd(L, llvm::ConstantInt::get(*context, APInt(32, 1)));
+      if (auto* li = dyn_cast<llvm::LoadInst>(L)){
+        return builder->CreateStore(l, li->getPointerOperand());
+      }else{
+        llvm::errs() << "Something Wrong happened in ++";
+        assert(false);
+      }
+    }
+    else if (get_value_type(L)->isFloatingPointTy()){
       return builder->CreateFAdd(L, llvm::ConstantFP::get(typeL, 1.0));
     }
 
   case u_op_minus_minus:
-    if (typeL->isIntegerTy())
-    {
-      return builder->CreateSub(L, llvm::ConstantInt::get(typeL, 1, true));
+    if(unaryExp->is_LHS){
+      llvm::errs() << "-- not allowed in LHS";
+      assert(false);
     }
-    else if (typeL->isFloatingPointTy())
-    {
+    if(get_value_type(L)->isIntegerTy()){
+      llvm::Value* l = builder->CreateLoad(get_value_type(L), L);
+      l = builder->CreateSub(l, llvm::ConstantInt::get(*context, APInt(32, 1)));
+      return builder->CreateStore(l, L);
+    }
+    else if(get_value_type(L)->isFloatingPointTy()){
       return builder->CreateFSub(L, llvm::ConstantFP::get(typeL, 1.0));
     }
 
   case u_op_and:
+    if(unaryExp->is_LHS){
+      return L;
+    }
   // if (!L->getType()->isPointerTy()) {
   //   llvm::errs() << "Attempting to take the address of a non-pointer type";
   //   assert(false);
   // }
-  return L; 
+    else{
+      return L;
+    }
 
   case u_op_star:
-    if (L->getType()->isPointerTy()) {
-      if(unaryExp->is_LHS){
-        return builder->CreateLoad(L->getType(), L);
-      } else {
-//        return L;
-        // builder->CreateLoad(L->getType(), L);
-//         llvm::Type *elementType = get_value_type(L);
-//         return builder->CreateLoad(builder->CreateLoad(elementType, L));
+    if(unaryExp->is_LHS)
+      return builder->CreateLoad(L->getType(), L);
+    else{
+      auto idExpr = dynamic_cast<ASTIdExpr*>(unaryExp->operands[0]);
+      if(idExpr == nullptr){
+        llvm::errs() << "Cannot reference a non-identifier";
+        assert(false);
       }
-    } else {
-      llvm::errs() << "Derefrencing non pointer variable";
-      assert(false);
+      return builder->CreateLoad(find_variable(idExpr->name)->ty, L);
     }
 
   case u_op_plus:
+    if(unaryExp->is_LHS){
+      llvm::errs() << "+ not allowed in LHS";
+      assert(false);
+    }
     return L;
 
   case u_op_minus:
+    if(unaryExp->is_LHS){
+      llvm::errs() << "- not allowed in LHS";
+      assert(false);
+    }
     if (typeL->isIntegerTy())
     {
       return builder->CreateNeg(L);
@@ -243,42 +277,74 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
     {
       return builder->CreateFNeg(L);
     }
+    return nullptr;
 
   case u_op_tilde:
+    if(unaryExp->is_LHS){
+      llvm::errs() << "~ not allowed in LHS";
+      assert(false);
+    }
     if (typeL->isIntegerTy())
     {
       return builder->CreateNot(L);
     }
+    return nullptr;
 
   case u_op_not:
-    auto size_in_bits = L->getType()->getPrimitiveSizeInBits();
-    if (L->getType()->isFloatingPointTy())
-    {
-      return builder->CreateFCmpOEQ(L, llvm::ConstantFP::get(L->getType(), 0.0));
+    if(unaryExp->is_LHS){
+      llvm::errs() << "! not allowed in LHS";
+      assert(false);
     }
-    else if (L->getType()->isIntegerTy())
-    {
-      return builder->CreateICmpEQ(L, llvm::ConstantInt::get(L->getType(), 0, false));
+    if (get_value_type(L)->isIntegerTy()){
+      return builder->CreateICmpEQ(L, llvm::ConstantInt::get(get_value_type(L), 0));
     }
+    else if (get_value_type(L)->isFloatTy()){
+      return builder->CreateFCmpOEQ(L, llvm::ConstantFP::get(get_value_type(L), 0.0));
+    }
+    return nullptr;
   }
+  return nullptr;
 }
-
-llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
-{
+llvm::Value *Codegen::visit_assignment(ASTExpr *expr){
   assert(expr->operands.size() == 2);
 
+  assert(expr->operands[0]->is_LHS);
+  assert(!expr->operands[1]->is_LHS);
   llvm::Value *L = expr->operands[0]->accept(this);
   llvm::Value *R = expr->operands[1]->accept(this);
 
-  if (!L || !R)
-  {
+  if (!L || !R){
+    llvm::errs() << "Error generating code for assignment\n";
+    assert(false);
+  }
+
+  // llvm::Type *typeL = get_value_type(L);
+  //llvm::Type *typeR = get_value_type(R);
+
+  /*if(!typeL->isPointerTy()){
+    if (typeL != typeR) {
+      llvm::errs() << "Type mismatch in assignment\n";
+      assert(false);
+    }
+  }*/
+
+  return builder->CreateStore(R, L);
+}
+/*llvm::Value *Codegen::visit_assignment(ASTExpr *expr){
+  assert(expr->operands.size() == 2);
+
+  llvm::Value *L = expr->operands[0]->accept(this);
+  assert(expr->operands[0]->is_LHS);
+  llvm::Value *R = expr->operands[1]->accept(this);
+
+  if (!L || !R){
     llvm::errs() << "Error generating code for assignment\n";
     assert(false);
   }
 
   llvm::Type *typeL = get_value_type(L);
   llvm::Type *typeR = get_value_type(R);
-  // if typeL is ptr then check the 
+  // if typeL is ptr then check the
 
   if(!typeL->isPointerTy()){
     if (typeL != typeR) {
@@ -364,7 +430,7 @@ llvm::Value *Codegen::visit_assignment(ASTExpr *expr)
     break;
   }
   return builder->CreateStore(R, L);
-}
+}*/
 
 llvm::Value *Codegen::visit(ASTFunctionCall *fncall)
 {
@@ -387,10 +453,11 @@ llvm::Value *Codegen::visit(ASTFunctionCall *fncall)
       {
         return nullptr;
       }
-      if (llvm::isa<llvm::AllocaInst>(argVal))
-        argsV.push_back(builder->CreateLoad(get_value_type(argVal), argVal));
-      else
-        argsV.push_back(argVal);
+      argsV.push_back(argVal);
+      // if (llvm::isa<llvm::AllocaInst>(argVal))
+      //   argsV.push_back(builder->CreateLoad(get_value_type(argVal), argVal));
+      // else
+      //   argsV.push_back(argVal);
     }
   }
 
