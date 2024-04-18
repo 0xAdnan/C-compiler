@@ -23,6 +23,7 @@ WS  [ \t\v\n\f]
 
 %{
 #include <stdio.h>
+#include <string>
 #include "c.tab.hpp"
 
 extern void yyerror(const char *);  /* prints grammar violation message */
@@ -33,6 +34,7 @@ extern int sym_type(const char *);  /* returns type from symbol table */
 
 static void comment(void);
 static int check_type(void);
+std::string char2ascii(char*);
 #define YY_DECL extern "C" int yylex()
 %}
 
@@ -91,7 +93,7 @@ static int check_type(void);
 {HP}{H}+{IS}?				            { yylval.str = strdup(yytext); return I_CONSTANT; }
 {NZ}{D}*{IS}?				            { yylval.str = strdup(yytext); return I_CONSTANT; }
 "0"{O}*{IS}?				            { yylval.str = strdup(yytext); return I_CONSTANT; }
-{CP}?"'"([^'\\\n]|{ES})+"'"	          	{ yylval.str = strdup(yytext); return I_CONSTANT; }
+{CP}?"'"([^'\\\n]|{ES})+"'"             { yylval.str = strdup(char2ascii(yytext).c_str()); return I_CONSTANT; }
 
 {D}+{E}{FS}?				            {  yylval.str = strdup(yytext);return F_CONSTANT; }
 {D}*"."{D}+{E}?{FS}?		           	{ yylval.str = strdup(yytext);return F_CONSTANT; }
@@ -196,4 +198,10 @@ static int check_type(void)
     default:                          /* includes undefined */
         return IDENTIFIER;
     }
+}
+
+std::string char2ascii(char* ch){
+    char c = ch[1];
+    int ascii = static_cast<int>(c);
+    return std::to_string(ascii);
 }
