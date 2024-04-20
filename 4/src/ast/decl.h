@@ -36,8 +36,10 @@ public:
     }
 
     [[nodiscard]] string to_str() const override {
-      return "DeclarationSpecifier";
+      return "DeclarationSpecifier " + to_string(type) + ":";
     }
+
+    string accept(Printer *, int) override;
 };
 
 
@@ -65,6 +67,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "IdDeclarator: " + this->name;
     }
+
+    string accept(Printer *, int) override;
 };
 
 class ASTParamDecl : public ASTNode {
@@ -83,6 +87,8 @@ public:
         return to_string(type) + " " + name + " const " + to_string(num_ptr);
       return to_string(type) + " " + name + " " + to_string(num_ptr);
     }
+
+    string accept(Printer *, int) override;
 };
 
 class ASTParamList : public ASTNode {
@@ -97,6 +103,8 @@ public:
     [[nodiscard]] string to_str() const {
       return "Parameters";
     }
+
+    string accept(Printer *, int) override;
 };
 
 class ASTParamTypeList : public ASTNode {
@@ -106,12 +114,15 @@ public:
 
     explicit ASTParamTypeList(ASTParamList *params) : ASTNode() {
       this->paramList = params;
-      children.push_back(paramList);
     }
 
     [[nodiscard]] string to_str() const override {
+      if (is_variadic)
+        return "ParameterDecls (variadic)";
       return "ParameterDecls";
     }
+
+    string accept(Printer *, int) override;
 };
 
 /* Function Identifier "int __f(int, int, bool)__" */
@@ -128,12 +139,13 @@ public:
     ASTFnDecl(ASTIDDecl *id, ASTParamTypeList *params) : ASTDeclarator() {
       this->name = id->name;
       this->params = params;
-      children.push_back(params);
     }
 
     [[nodiscard]] string to_str() const override {
       return "FnDecl: " + this->name;
     }
+
+    string accept(Printer *, int) override;
 };
 
 /* Rhs of the initialization "int x = __1__;" */
@@ -153,6 +165,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "InitDecl: num_ptrs=" + to_string(num_ptr);
     }
+
+    string accept(Printer *, int) override;
 };
 
 class ASTInitDeclList : public ASTNode {
@@ -166,6 +180,8 @@ public:
     [[nodiscard]] string to_str() const override {
       return "InitDeclList";
     }
+
+    string accept(Printer *, int) override;
 };
 
 // CODEGEN VISIT
@@ -194,6 +210,10 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTDecl *accept(AlgebraSimplificationOpt *) override;
+
+    string accept(Printer *, int) override;
 };
 
 class ASTDeclList : public ASTNode {
@@ -207,6 +227,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *, int) override;
 };
 
 

@@ -160,3 +160,40 @@ string const_type_to_str(const_type ct) {
       return "BadType";
   }
 }
+
+//llvm::Type *get_llvm_type(ctype_ ct, llvm::LLVMContext* context) {
+//  switch (ct) {
+//    case t_void:
+//      return llvm::Type::getVoidTy(*context);
+//    case t_char:
+//      return llvm::Type::getIntNTy(*context, 1);
+//    case t_short:
+//      return llvm::Type::getInt16Ty(*context);
+//    case t_int:
+//      break;
+//    case t_long:
+//      break;
+//    case t_long_long:
+//      break;
+//    case t_float:
+//      break;
+//    case t_double:
+//      break;
+//    case t_signed:
+//      break;
+//    case t_unsigned:
+//      break;
+//    case t_bool:
+//      break;
+//    case t_complex:
+//      break;
+//    case t_imaginary:
+//      break;
+//  }
+//}
+
+/*
+llvm::Type *get_ctype(llvm::Type *ltype) {
+  return nullptr;
+}
+*/

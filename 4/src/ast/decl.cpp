@@ -4,6 +4,8 @@
 
 #include "decl.h"
 #include "codegen.h"
+#include "algebra_simplification_opt.h"
+#include "printer.h"
 
 
 ASTInitDecl::ASTInitDecl(ASTIDDecl *id) : ASTNode() {
@@ -15,9 +17,6 @@ ASTInitDecl::ASTInitDecl(ASTIDDecl *id, ASTExpr *expr) : ASTNode() {
   this->name = id->name;
   this->value = expr;
   this->num_ptr = id->num_ptrs;
-
-  if (this->value != nullptr)
-    children.push_back(this->value);
 }
 
 ASTInitDecl::ASTInitDecl(ASTFnDecl *fnDecl) {
@@ -27,7 +26,6 @@ ASTInitDecl::ASTInitDecl(ASTFnDecl *fnDecl) {
 
   this->num_ptr = fnDecl->num_ptrs;
 }
-
 
 ASTInitDeclList::ASTInitDeclList(ASTInitDecl *n) : ASTNode() {
   initializations.push_back(n);
@@ -46,18 +44,9 @@ ASTDeclList::ASTDeclList(ASTDeclSpec *n1, ASTInitDeclList *n2) : ASTNode() {
     decl->is_const = n1->is_const;
     decl->num_ptr = init->num_ptr;
     decl->fnDecl = init->fnDecl;
-    if (decl->fnDecl)
-      decl->children.push_back(decl->fnDecl);
-    if (decl->value)
-      decl->children.push_back(decl->value);
 
     declarations.push_back(decl);
-    children.push_back(decl);
   }
-}
-
-llvm::Value *ASTDeclList::accept(Codegen *codegen) {
-  return codegen->visit(this);
 }
 
 ASTParamDecl::ASTParamDecl(ASTDeclSpec *declSpec, ASTIDDecl *id) {
@@ -77,18 +66,75 @@ ASTParamList::ASTParamList(ASTParamList *paramList, ASTParamDecl *paramDecl) {
   for (auto x: paramList->params)
     params.push_back(x);
   params.push_back(paramDecl);
-
-  children.clear();
-  for (auto x: params)
-    children.push_back(x);
 }
 
 ASTParamList::ASTParamList(ASTParamDecl *x) {
   params.push_back(x);
+}
 
-  children.push_back(x);
+
+// ////////////////////////////////////////////////////
+// ////////////////// CODEGEN /////////////////////////
+// ////////////////////////////////////////////////////
+
+llvm::Value *ASTDeclList::accept(Codegen *codegen) {
+  return codegen->visit(this);
 }
 
 llvm::Value *ASTDecl::accept(Codegen *codegen) {
   return codegen->visit(this);
+}
+
+// ////////////////////////////////////////////////////
+// ///////////// ALGEBRA SIMPLIFICATION ///////////////
+// ////////////////////////////////////////////////////
+
+ASTDecl *ASTDecl::accept(AlgebraSimplificationOpt *aso) {
+  return aso->visit(this);
+}
+
+
+// ////////////////////////////////////////////////////
+// ///////////////////// PRINTER /////////////////////
+// ////////////////////////////////////////////////////
+
+string ASTInitDecl::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+string ASTInitDeclList::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+
+string ASTDeclList::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+string ASTParamDecl::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+string ASTParamList::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+string ASTDecl::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+string ASTDeclSpec::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+string ASTIDDecl::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+string ASTFnDecl::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
+}
+
+string ASTParamTypeList::accept(Printer *printer, int indent) {
+  return printer->visit(this, indent);
 }

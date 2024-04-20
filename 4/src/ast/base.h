@@ -14,23 +14,34 @@
 
 class Codegen;
 
+class AlgebraSimplificationOpt;
+
+class ConstPropagationOpt;
+
+class DeadCodeOpt;
+
+class Printer;
+
 using namespace std;
 
 
 class ASTNode {
 protected:
-    ASTNode() { children = vector<ASTNode *>(); }
-
-    void add_child(ASTNode *child);
+    ASTNode() {}
 
 public:
-    vector<ASTNode *> children;
 
     [[nodiscard]] virtual string to_str() const = 0;
 
-    void dump_ast(int indent);
+    virtual llvm::Value *accept(Codegen *);
 
-    virtual llvm::Value *accept(Codegen *codegen);
+    virtual ASTNode *accept(AlgebraSimplificationOpt *);
+
+    virtual ASTNode *accept(ConstPropagationOpt *);
+
+    virtual ASTNode *accept(DeadCodeOpt *);
+
+    virtual string accept(Printer *, int);
 };
 
 

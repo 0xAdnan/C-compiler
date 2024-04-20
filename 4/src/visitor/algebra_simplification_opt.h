@@ -41,7 +41,6 @@ public:
     }
 
 private:
-    static bool is_const_node(ASTNode*, const string&);
     static bool is_simplifiable(operators ot);
 };
 

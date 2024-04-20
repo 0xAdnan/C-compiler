@@ -39,6 +39,7 @@ using namespace llvm;
 class SymbolInfo{
 public:
     llvm::Value* value;
+    llvm::Constant *constValue = nullptr;
     llvm::Type* ty;
     int num_ptrs;
 
@@ -71,7 +72,7 @@ public:
     }
 
 
-    void dumpFile(const std::string &filename) const {
+    void dumpFile(string &filename) const {
       std::error_code EC;
       llvm::raw_fd_ostream file(filename, EC, llvm::sys::fs::OF_Text);
 

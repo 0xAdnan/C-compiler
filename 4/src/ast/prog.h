@@ -16,6 +16,12 @@ public:
     llvm::Value *accept(Codegen *codegen) override {
       return ASTNode::accept(codegen);
     }
+
+    ASTExternDecl *accept(AlgebraSimplificationOpt *aso) override = 0;
+
+    string accept(Printer *printer, int indent) override {
+      return ASTNode::accept(printer, indent);
+    }
 };
 
 class ASTFnDef : public ASTExternDecl {
@@ -28,10 +34,6 @@ public:
       this->declSpec = declSpec;
       this->fnDecl = astFnDecl;
       this->body = body;
-
-      children.push_back(declSpec);
-      children.push_back(fnDecl);
-      children.push_back(body);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -39,6 +41,12 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTFnDef *accept(AlgebraSimplificationOpt *aso) override;
+
+    ASTFnDef *accept(DeadCodeOpt *dco) override;
+
+    string accept(Printer *, int indent) override;
 };
 
 class ASTGlobalVar : public ASTExternDecl {
@@ -47,8 +55,6 @@ public:
 
     explicit ASTGlobalVar(ASTDeclList *decl) : ASTExternDecl() {
       declaration = decl;
-
-      children.push_back(decl);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -56,6 +62,10 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTGlobalVar *accept(AlgebraSimplificationOpt *aso) override;
+
+    string accept(Printer *, int indent) override;
 };
 
 class ASTProgram : public ASTNode {
@@ -64,8 +74,6 @@ public:
 
     explicit ASTProgram(ASTExternDecl *decl) {
       extDecls.push_back(decl);
-
-      children.push_back(decl);
     }
 
     ASTProgram(ASTProgram *program, ASTExternDecl *decl) {
@@ -73,16 +81,19 @@ public:
         extDecls.push_back(p);
       }
       extDecls.push_back(decl);
-
-      children.clear();
-      for (auto c: extDecls) {
-        children.push_back(c);
-      }
     }
 
     [[nodiscard]] string to_str() const override {
       return "Program";
     }
+
+    llvm::Value *accept(Codegen *codegen) override;
+
+    ASTProgram *accept(AlgebraSimplificationOpt *) override;
+
+    ASTProgram *accept(DeadCodeOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
 
 };
 

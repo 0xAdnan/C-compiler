@@ -3,6 +3,7 @@
 //
 
 #include "algebra_simplification_opt.h"
+#include "opt_utils.h"
 
 bool AlgebraSimplificationOpt::is_simplifiable(operators ot){
   switch (ot) {
@@ -51,12 +52,7 @@ bool AlgebraSimplificationOpt::is_simplifiable(operators ot){
   }
 }
 
-bool AlgebraSimplificationOpt::is_const_node(ASTNode* node, const string& value){
-  auto constNode = dynamic_cast<ASTConst*>(node);
-  if(constNode == nullptr)
-    return false;
-  return constNode->value == value;
-}
+
 
 ASTExpr* AlgebraSimplificationOpt::visit(ASTExpr * expr) {
   ASTExpr* left;
@@ -123,14 +119,11 @@ ASTExpr* AlgebraSimplificationOpt::visit(ASTExpr * expr) {
 ASTProgram *AlgebraSimplificationOpt::visit(ASTProgram * prog) {
   vector<ASTExternDecl*> newDecls;
 
-  prog->children.clear();
   for(auto* decl: prog->extDecls){
     auto new_decl = decl->accept(this);
-//    free(decl);
     newDecls.push_back(new_decl);
-    prog->children.push_back(new_decl);
   }
-
+  prog->extDecls = newDecls;
   return prog;
 }
 
@@ -142,28 +135,18 @@ ASTGlobalVar *AlgebraSimplificationOpt::visit(ASTGlobalVar * gv) {
 
 ASTFnDef *AlgebraSimplificationOpt::visit(ASTFnDef * fnDef) {
   auto newBody = this->visit(fnDef->body);
-//  free(fnDef->body);
-
   fnDef->body = newBody;
-
-  fnDef->children.clear();
-  fnDef->children.push_back(fnDef->declSpec);
-  fnDef->children.push_back(fnDef->fnDecl);
-  fnDef->children.push_back(newBody);
-
   return fnDef;
 }
 
 ASTDeclList* AlgebraSimplificationOpt::visit(ASTDeclList* declList){
   vector<ASTDecl*> newDeclList;
 
-  declList->children.clear();
   for(auto* decl: declList->declarations){
     auto new_decl = this->visit(decl);
-//    free(decl);
     newDeclList.push_back(new_decl);
-    declList->children.push_back(new_decl);
   }
+  declList->declarations = newDeclList;
 
   return declList;
 }
@@ -172,7 +155,6 @@ ASTDecl* AlgebraSimplificationOpt::visit(ASTDecl* decl){
   if(decl->value == nullptr)
     return decl;
   auto newExpr = this->visit(decl->value);
-//  free(decl->value);
 
   decl->value = newExpr;
   return decl;
@@ -181,27 +163,23 @@ ASTDecl* AlgebraSimplificationOpt::visit(ASTDecl* decl){
 ASTBlockList* AlgebraSimplificationOpt::visit(ASTBlockList* bl){
   vector<ASTBlock*> newBlocks;
 
-  bl->children.clear();
   for(auto block: bl->blocks){
     auto newBlock = this->visit(block);
-//    free(block);
     newBlocks.push_back(newBlock);
-    bl->children.push_back(newBlock);
   }
 
+  bl->blocks = newBlocks;
   return bl;
 }
 
 ASTBlock *AlgebraSimplificationOpt::visit(ASTBlock * block) {
-  block->children.clear();
-
   if(block->stmt){
     auto newStmt = this->visit(block->stmt);
-    block->children.push_back(newStmt);
+    block->stmt = newStmt;
   }
   if(block->declaration) {
     auto newDecl = this->visit(block->declaration);
-    block->children.push_back(newDecl);
+    block->declaration = newDecl;
   }
 
   return block;
@@ -210,10 +188,8 @@ ASTBlock *AlgebraSimplificationOpt::visit(ASTBlock * block) {
 ASTExprStmt *AlgebraSimplificationOpt::visit(ASTExprStmt * exprStmt) {
   auto newExprs = this->visit(exprStmt->exprs);
 //  free(exprStmt->exprs);
-  exprStmt->children.clear();
 
   exprStmt->exprs = newExprs;
-  exprStmt->children.push_back(newExprs);
 
   return exprStmt;
 }
@@ -221,57 +197,41 @@ ASTExprStmt *AlgebraSimplificationOpt::visit(ASTExprStmt * exprStmt) {
 ASTExprList *AlgebraSimplificationOpt::visit(ASTExprList * exprList) {
   vector<ASTExpr*> newExprs;
 
-  exprList->children.clear();
   for(auto expr: exprList->exprs){
     auto newexpr = this->visit(expr);
-//    free(expr);
     newExprs.push_back(newexpr);
-    exprList->children.push_back(newexpr);
   }
 
   return exprList;
 }
 
 ASTIfElseStmt *AlgebraSimplificationOpt::visit(ASTIfElseStmt *ifElseStmt) {
-  ifElseStmt->children.clear();
   ifElseStmt->stmt = this->visit(ifElseStmt->stmt);
 }
 
 ASTIfStmt *AlgebraSimplificationOpt::visit(ASTIfStmt *ifStmt) {
-  ifStmt->children.clear();
-
   auto newStmt = this->visit(ifStmt->stmt);
   auto newCond = this->visit(ifStmt->cond);
 
   ifStmt->stmt = newStmt;
   ifStmt->cond = newCond;
 
-  ifStmt->children.push_back(newStmt);
-  ifStmt->children.push_back(newCond);
-
   return ifStmt;
 }
 
 ASTWhileStmt *AlgebraSimplificationOpt::visit(ASTWhileStmt *whileStmt) {
-  whileStmt->children.clear();
-
   auto newStmt = this->visit(whileStmt->stmt);
   auto newCond = this->visit(whileStmt->cond);
 
   whileStmt->stmt = newStmt;
   whileStmt->cond = newCond;
 
-  whileStmt->children.push_back(newStmt);
-  whileStmt->children.push_back(newCond);
-
   return whileStmt;
 }
 
 ASTRetJmpStmt *AlgebraSimplificationOpt::visit(ASTRetJmpStmt *retJmpStmt) {
-  retJmpStmt->children.clear();
   auto expr = this->visit(retJmpStmt->expr);
   retJmpStmt->expr = expr;
-  retJmpStmt->children.push_back(expr);
 
   return retJmpStmt;
 }

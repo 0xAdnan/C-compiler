@@ -5,6 +5,7 @@
 #ifndef CCOMPILER_ENUMS_H
 #define CCOMPILER_ENUMS_H
 
+#include <llvm/IR/Type.h>
 #include "string"
 
 using namespace std;
@@ -98,5 +99,9 @@ op_type get_op_type(operators op);
 string op_to_str(operators op);
 
 string const_type_to_str(const_type ct);
+
+//llvm::Type* get_llvm_type(ctype_ ct);
+
+//llvm::Type* get_ctype(llvm::Type* ltype);
 
 #endif //CCOMPILER_ENUMS_H

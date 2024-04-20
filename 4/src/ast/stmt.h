@@ -12,6 +12,18 @@
 class ASTStmt : public ASTNode {
 public:
     ASTStmt() : ASTNode() {}
+
+    llvm::Value *accept(Codegen *cg) override {
+      return ASTNode::accept(cg);
+    };
+
+    ASTStmt *accept(AlgebraSimplificationOpt *aso) override;
+
+    ASTStmt *accept(DeadCodeOpt *deadCodeOpt) override{
+      return this;
+    }
+
+    string accept(Printer *printer, int indent) override;
 };
 
 
@@ -25,7 +37,6 @@ public:
 
     ASTExprStmt(ASTExprList *exprs) : ASTStmt() {
       this->exprs = exprs;
-      children.push_back(exprs);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -33,6 +44,10 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTExprStmt *accept(AlgebraSimplificationOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
 
 };
 
@@ -42,7 +57,6 @@ public:
 
     explicit ASTLabeledStmt(ASTStmt *stmt) : ASTStmt() {
       this->stmt = stmt;
-      children.push_back(stmt);
     }
 };
 
@@ -59,6 +73,10 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTGotoLabeledStmt *accept(AlgebraSimplificationOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTCaseLabeledStmt : public ASTLabeledStmt {
@@ -67,12 +85,13 @@ public:
 
     ASTCaseLabeledStmt(ASTExpr *cond, ASTStmt *stmt) : ASTLabeledStmt(stmt) {
       this->condition = cond;
-      children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
       return "Case";
     }
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTDefLabeledStmt : public ASTLabeledStmt {
@@ -82,17 +101,19 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Default";
     }
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTSelectStmt : public ASTStmt {
 public:
     ASTExpr *cond;
 
-    ASTSelectStmt(ASTExpr *cond) : ASTStmt() {
+    explicit ASTSelectStmt(ASTExpr *cond) : ASTStmt() {
       this->cond = cond;
-
-      children.push_back(cond);
     }
+
+    ASTSelectStmt *accept(AlgebraSimplificationOpt *) override;
 };
 
 class ASTIfStmt : public ASTSelectStmt {
@@ -101,8 +122,6 @@ public:
 
     ASTIfStmt(ASTExpr *cond, ASTStmt *stmt) : ASTSelectStmt(cond) {
       this->stmt = stmt;
-
-      children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -110,6 +129,12 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTIfStmt *accept(AlgebraSimplificationOpt *) override;
+
+    ASTStmt *accept(DeadCodeOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTIfElseStmt : public ASTSelectStmt {
@@ -120,9 +145,6 @@ public:
     ASTIfElseStmt(ASTExpr *cond, ASTStmt *stmt1, ASTStmt *stmt2) : ASTSelectStmt(cond) {
       this->stmt = stmt1;
       this->elseStmt = stmt2;
-
-      children.push_back(stmt1);
-      children.push_back(stmt2);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -130,6 +152,13 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTIfElseStmt *accept(AlgebraSimplificationOpt *) override;
+
+    ASTStmt *accept(DeadCodeOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
+
 };
 
 class ASTSwitchStmt : public ASTSelectStmt {
@@ -138,16 +167,17 @@ public:
 
     ASTSwitchStmt(ASTExpr *cond, ASTStmt *stmt) : ASTSelectStmt(cond) {
       this->stmt = stmt;
-
-      children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
       return "Switch Stmt";
     }
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTIterStmt : public ASTStmt {
+    ASTIterStmt *accept(AlgebraSimplificationOpt *) override;
 };
 
 class ASTWhileStmt : public ASTIterStmt {
@@ -158,9 +188,6 @@ public:
     ASTWhileStmt(ASTExpr *cond, ASTStmt *stmt) : ASTIterStmt() {
       this->cond = cond;
       this->stmt = stmt;
-
-      children.push_back(cond);
-      children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -168,6 +195,12 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTWhileStmt *accept(AlgebraSimplificationOpt *) override;
+
+    ASTWhileStmt *accept(DeadCodeOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
 
 };
 
@@ -179,14 +212,13 @@ public:
     ASTDoWhileStmt(ASTExpr *cond, ASTStmt *stmt) : ASTIterStmt() {
       this->cond = cond;
       this->stmt = stmt;
-
-      children.push_back(cond);
-      children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
       return "DoWhile Stmt";
     }
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTForStmt : public ASTIterStmt {
@@ -201,11 +233,6 @@ public:
       this->expr2 = expr2;
       this->expr3 = expr3;
       this->stmt = stmt;
-
-      children.push_back(expr1);
-      children.push_back(expr2);
-      children.push_back(expr3);
-      children.push_back(stmt);
     }
 
     ASTForStmt(ASTExprStmt *exprStmt, ASTExprStmt *expr2, ASTStmt *stmt) : ASTIterStmt() {
@@ -213,10 +240,6 @@ public:
       this->expr2 = expr2;
       this->expr3 = nullptr;
       this->stmt = stmt;
-
-      children.push_back(expr1);
-      children.push_back(expr2);
-      children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -224,6 +247,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTForStmt2 : public ASTIterStmt {
@@ -238,11 +263,6 @@ public:
       this->expr2 = expr2;
       this->expr3 = expr3;
       this->stmt = stmt;
-
-      children.push_back(declList);
-      children.push_back(expr2);
-      children.push_back(expr3);
-      children.push_back(stmt);
     }
 
     ASTForStmt2(ASTDeclList *declList, ASTExprStmt *expr2, ASTStmt *stmt) : ASTIterStmt() {
@@ -250,10 +270,6 @@ public:
       this->expr2 = expr2;
       this->expr3 = nullptr;
       this->stmt = stmt;
-
-      children.push_back(expr2);
-      children.push_back(expr3);
-      children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -261,11 +277,17 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTJmpStmt : public ASTStmt {
 public:
     ASTJmpStmt() : ASTStmt() {}
+
+    ASTJmpStmt *accept(AlgebraSimplificationOpt *) override {
+      return this;
+    }
 };
 
 class ASTGotoJmpStmt : public ASTJmpStmt {
@@ -281,6 +303,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTContJmpStmt : public ASTJmpStmt {
@@ -292,6 +316,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTBreakJmpStmt : public ASTJmpStmt {
@@ -303,6 +329,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTRetJmpStmt : public ASTJmpStmt {
@@ -313,8 +341,6 @@ public:
 
     explicit ASTRetJmpStmt(ASTExpr *expr) : ASTJmpStmt() {
       this->expr = expr;
-
-      children.push_back(expr);
     }
 
 
@@ -323,6 +349,10 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTRetJmpStmt *accept(AlgebraSimplificationOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
 
 };
 
@@ -333,14 +363,10 @@ public:
 
     explicit ASTBlock(ASTDeclList *declaration) : ASTNode() {
       this->declaration = declaration;
-
-      children.push_back(declaration);
     }
 
     explicit ASTBlock(ASTStmt *stmt) : ASTNode() {
       this->stmt = stmt;
-
-      children.push_back(stmt);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -348,6 +374,12 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTBlock *accept(AlgebraSimplificationOpt *) override;
+
+    ASTBlock *accept(DeadCodeOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 class ASTBlockList : public ASTStmt {
@@ -358,7 +390,6 @@ public:
 
     explicit ASTBlockList(ASTBlock *block) : ASTStmt() {
       blocks.push_back(block);
-      children.push_back(block->children[0]);
     }
 
     ASTBlockList(ASTBlockList *blocks, ASTBlock *block) : ASTStmt() {
@@ -368,10 +399,6 @@ public:
       this->blocks.push_back(block);
 
       delete blocks;
-
-      children.clear();
-      for (auto b: this->blocks)
-        children.push_back(b->children[0]);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -379,6 +406,12 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTBlockList *accept(AlgebraSimplificationOpt *) override;
+
+    ASTBlockList *accept(DeadCodeOpt *) override;
+
+    string accept(Printer *printer, int indent) override;
 };
 
 #endif //CCOMPILER_STMT_H

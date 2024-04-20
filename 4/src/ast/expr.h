@@ -14,7 +14,7 @@ public:
     operators operator_;
     op_type opType;
     vector<ASTExpr *> operands;
-    bool is_LHS=false;
+    bool is_LHS = false;
 
     ASTExpr() : ASTNode() {
       operator_ = noop;
@@ -28,7 +28,6 @@ public:
       this->opType = get_op_type(op);
 
       operands.push_back(expr1);
-      add_children();
     }
 
     ASTExpr(operators op, ASTExpr *expr1, ASTExpr *expr2) : ASTNode() {
@@ -37,13 +36,12 @@ public:
       this->operator_ = op;
       this->opType = get_op_type(op);
 
-      if(this->opType == assignment){
+      if (this->opType == assignment) {
         expr1->is_LHS = true;
       }
 
       operands.push_back(expr1);
       operands.push_back(expr2);
-      add_children();
     }
 
     ASTExpr(operators op, ASTExpr *expr1, ASTExpr *expr2, ASTExpr *expr3) : ASTNode() {
@@ -52,14 +50,13 @@ public:
       this->operator_ = op;
       this->opType = get_op_type(op);
 
-      if(this->opType == assignment){
+      if (this->opType == assignment) {
         expr1->is_LHS = true;
       }
 
       operands.push_back(expr1);
       operands.push_back(expr2);
       operands.push_back(expr3);
-      add_children();
     }
 
     [[nodiscard]] string to_str() const override {
@@ -68,12 +65,10 @@ public:
 
     llvm::Value *accept(Codegen *codegen) override;
 
-private:
-    void add_children() {
-      children.clear();
-      for (auto o: operands)
-        children.push_back(o);
-    }
+    ASTExpr *accept(AlgebraSimplificationOpt *opt) override;
+
+    string accept(Printer *printer, int indent) override;
+
 };
 
 class ASTIdExpr : public ASTExpr {
@@ -89,6 +84,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *, int) override;
 };
 
 class ASTConst : public ASTExpr {
@@ -106,6 +103,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *, int) override;
 };
 
 class ASTArrayAccess : public ASTExpr {
@@ -117,14 +116,13 @@ public:
       assert(array->operator_ == noop);
       this->array = array;
       this->index = index;
-
-      children.push_back(array);
-      children.push_back(index);
     }
 
     [[nodiscard]] string to_str() const override {
       return "ArrayAccess";
     }
+
+    string accept(Printer *, int) override;
 };
 
 class ASTExprList : public ASTExpr {
@@ -133,7 +131,6 @@ public:
 
     ASTExprList(ASTExpr *expr) : ASTExpr() {
       exprs.push_back(expr);
-      children.push_back(expr);
     }
 
     ASTExprList(ASTExprList *exprL, ASTExpr *expr) : ASTExpr() {
@@ -143,10 +140,6 @@ public:
       exprs.push_back(expr);
 
       delete exprL;
-
-      children.clear();
-      for (auto e: exprs)
-        children.push_back(e);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -154,6 +147,10 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTExprList *accept(AlgebraSimplificationOpt *) override;
+
+    string accept(Printer *, int) override;
 };
 
 
@@ -164,17 +161,11 @@ public:
 
     ASTFunctionCall(ASTIdExpr *fn) : ASTExpr() {
       this->fn = fn;
-
-      children.push_back(fn);
     }
 
     ASTFunctionCall(ASTIdExpr *fn, ASTExprList *args) {
       this->fn = fn;
       params = args;
-      children.push_back(fn);
-      if (args != nullptr) {
-        children.push_back(args);
-      }
     }
 
     [[nodiscard]] string to_str() const override {
@@ -182,6 +173,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *, int) override;
 };
 
 class ASTPostIncrement : public ASTExpr {
@@ -192,8 +185,6 @@ public:
     ASTPostIncrement(ASTExpr *expr, bool is_inc) : ASTExpr() {
       this->expr = expr;
       this->is_inc = is_inc;
-
-      children.push_back(expr);
     }
 
     [[nodiscard]] string to_str() const override {
@@ -203,6 +194,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    string accept(Printer *, int) override;
 };
 
 #endif // CCOMPILER_EXPR_H
