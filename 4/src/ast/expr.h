@@ -67,6 +67,9 @@ public:
 
     ASTExpr *accept(AlgebraSimplificationOpt *opt) override;
 
+    ASTExpr *accept(ConstPropagationOpt *opt)override;
+
+
     string accept(Printer *printer, int indent) override;
 
 };
@@ -84,6 +87,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTExpr *accept(ConstPropagationOpt *opt) override;
 
     string accept(Printer *, int) override;
 };
@@ -103,6 +108,9 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTConst *accept(ConstPropagationOpt *opt) override;
+
 
     string accept(Printer *, int) override;
 };
@@ -149,6 +157,9 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 
     ASTExprList *accept(AlgebraSimplificationOpt *) override;
+
+    ASTExpr *accept(ConstPropagationOpt *opt) override;
+
 
     string accept(Printer *, int) override;
 };

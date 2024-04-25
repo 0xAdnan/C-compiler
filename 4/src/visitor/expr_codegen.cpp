@@ -234,16 +234,14 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
     }
 
   case u_op_and:
-    if(unaryExp->is_LHS){
-      return L;
-    }
-  // if (!L->getType()->isPointerTy()) {
-  //   llvm::errs() << "Attempting to take the address of a non-pointer type";
-  //   assert(false);
-  // }
-    else{
-      return L;
-    }
+if (!L->getType()->isPointerTy()) {
+  llvm::AllocaInst* alloc = builder->CreateAlloca(L->getType(), nullptr, "addr_of_temp");
+  builder->CreateStore(L, alloc);
+  return alloc;
+} else {
+  return L;
+}
+
 
   case u_op_star:
     if(unaryExp->is_LHS)
