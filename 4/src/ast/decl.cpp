@@ -6,6 +6,7 @@
 #include "codegen.h"
 #include "algebra_simplification_opt.h"
 #include "printer.h"
+#include "const_prop_opt.h" 
 
 
 ASTInitDecl::ASTInitDecl(ASTIDDecl *id) : ASTNode() {
@@ -138,3 +139,12 @@ string ASTFnDecl::accept(Printer *printer, int indent) {
 string ASTParamTypeList::accept(Printer *printer, int indent) {
   return printer->visit(this, indent);
 }
+
+// /////////////////////////////////////////////////////////////////
+// ////////////////// CONSTANT PROPAGATION /////////////////////////
+// /////////////////////////////////////////////////////////////////
+
+ASTDecl *ASTDecl::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
