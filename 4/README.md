@@ -2,7 +2,47 @@
 C compiler
 
 To compile:
-`make`
+1. `mkdir build && cd build`
+2. `cmake ..`
 
 To generate the AST:
-`c examples/test1.c`
+`./cc examples/test1.c`
+
+TODO:
+1. ~~goTo~~
+2. for statements
+3. Arrays handle
+4. Constant Propagation
+5. DeadCode Removal
+6. Pointer Handle
+7. Address handling
+~~8. Different Assignment Handle - Adnan~~
+9. Create Test for If and while statements
+10. Ternary Condition handle
+11. 
+
+
+
+Compile LLVM IR to Executable
+1. `llc -relocation-model=pic output.ll -filetype=obj -o output.o`
+2. `clang -pie output.o -o output`
+3. `./output`
+
+TODO cases:-
+1. Pointer(4, 25)
+2. Fix minus minus for post and pre
+
+
+<!-- Failing cases:-
+1. Pointers(4, 5, 13, 14, 20)
+2. Do while(8)
+3. goTo (10)
+4. Array (15, 26)
+5. Assignment Chaining (11)
+6. struct (17, 18, 19, 24)
+7. typedef (22) -->
+
+25, 30, 31, 33, 38, 39, 42, 54, 57, 58, 59, 76, 88, 95, 98, 113, 124, 164, 166(check answer), 167, 177, 
+
+check void, long, char, double, short support?
+static variable support?
