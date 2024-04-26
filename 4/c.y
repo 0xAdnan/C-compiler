@@ -445,7 +445,14 @@ iteration_statement
 	| FOR '(' expression_statement expression_statement ')' statement                   { $$ = new ASTForStmt($3, $4, $6); }
 	| FOR '(' expression_statement expression_statement expression ')' statement        { $$ = new ASTForStmt($3, $4, $5, $7); }
 	| FOR '(' declaration expression_statement ')' statement                            { $$ = new ASTForStmt2($3, $4, $6); }
-	| FOR '(' declaration expression_statement expression ')' statement                 { $$ = new ASTForStmt2($3, $4, $5, $7); }
+	| FOR '(' declaration expression_statement expression ')' statement                 
+	{
+		auto blocks = new ASTBlockList(declaration);
+		auto while = new ASTWhileStmt(new ASTConst(i_const, "1"), statement);
+		while->add_end_condition($4);
+		while->add_end_expression($5);
+	 	$$ = while;
+	}
 	;
 
 jump_statement

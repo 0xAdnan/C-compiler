@@ -211,7 +211,7 @@ ASTStmt *ASTIfElseStmt::accept(DeadCodeOpt *dco) {
 }
 
 ASTWhileStmt *ASTWhileStmt::accept(DeadCodeOpt *dco) {
-  dco->visit(this);
+  return dco->visit(this);
 }
 
 
