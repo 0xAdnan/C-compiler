@@ -152,6 +152,8 @@ private:
           return llvm::Type::getInt8Ty(*context);
         case ctype_::t_float:
           return llvm::Type::getFloatTy(*context);
+        case ctype_::t_void:
+          return llvm::Type::getVoidTy(*context);
         default:
           cout << "Doesn't Support DataType " << ctype << endl;
           exit(1);

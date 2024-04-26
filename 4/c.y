@@ -72,7 +72,7 @@ void todo(int);
   ASTStmt* stmt;
   ASTLabeledStmt* lab_stmt;
   ASTSelectStmt* sel_stmt;
-  ASTIterStmt* iter_stmt;
+  ASTStmt* iter_stmt;
   ASTJmpStmt* jmp_stmt;
   ASTExprStmt* expr_stmt;
   ASTBlockList* blk_ilist;
@@ -447,11 +447,18 @@ iteration_statement
 	| FOR '(' declaration expression_statement ')' statement                            { $$ = new ASTForStmt2($3, $4, $6); }
 	| FOR '(' declaration expression_statement expression ')' statement                 
 	{
-		auto blocks = new ASTBlockList(declaration);
-		auto while = new ASTWhileStmt(new ASTConst(i_const, "1"), statement);
-		while->add_end_condition($4);
-		while->add_end_expression($5);
-	 	$$ = while;
+		auto blocks = new ASTBlockList(new ASTBlock($3));
+		ASTWhileStmt* _while;
+		if(auto stmt  = dynamic_cast<ASTBlockList*>($7))
+		    _while = new ASTWhileStmt(new ASTConst(i_const, "1"), stmt);
+        else
+		    _while = new ASTWhileStmt(new ASTConst(i_const, "1"), new ASTBlockList(new ASTBlockList(), new ASTBlock($7)));
+		_while->add_start_condition($4);
+		_while->add_end_expression($5);
+
+		blocks = new ASTBlockList(blocks, new ASTBlock(_while));
+
+	 	$$ = blocks;
 	}
 	;
 

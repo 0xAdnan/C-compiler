@@ -60,8 +60,12 @@ llvm::Value *Codegen::visit(ASTFnDef *fnDef) {
 
 if (!builder->GetInsertBlock()->getTerminator()) {
   llvm::Type *retType = ctype_2_llvmtype(fnDef->declSpec->type, fnDef->fnDecl->num_ptrs > 0);
-  llvm::Constant *defValue = llvm::Constant::getNullValue(retType);
-  builder->CreateRet(defValue);
+  if(retType->isVoidTy())
+    builder->CreateRetVoid();
+  else {
+    llvm::Constant *defValue = llvm::Constant::getNullValue(retType);
+    builder->CreateRet(defValue);
+  }
 }
 
   verifyFunction(*fn);

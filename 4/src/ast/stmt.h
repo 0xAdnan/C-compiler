@@ -219,6 +219,9 @@ public:
       return "While Stmt";
     }
 
+    void add_start_condition(ASTExprStmt*);
+    void add_end_expression(ASTExpr*);
+
     llvm::Value *accept(Codegen *codegen) override;
 
     ASTWhileStmt *accept(AlgebraSimplificationOpt *) override;
