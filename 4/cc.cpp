@@ -131,7 +131,8 @@ int main(int argc, char **argv) {
       cout << str << endl;
     }
   }
-  /*if(options.opt_const_prop){
+  
+  if(options.opt_const_prop){
     auto *constPropagation = new ConstPropagationOpt();
     program_ast = dynamic_cast<ASTProgram *>(program_ast->accept(constPropagation));
 
@@ -139,7 +140,8 @@ int main(int argc, char **argv) {
       auto str = printer->visit(program_ast);
       cout << str << endl;
     }
-  }*/
+  }
+
   if(options.opt_deadcode){
     auto *deadCodeOpt = new DeadCodeOpt();
     program_ast = dynamic_cast<ASTProgram *>(program_ast->accept(deadCodeOpt));

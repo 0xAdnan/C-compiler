@@ -7,6 +7,8 @@
 
 #include "base.h"
 #include "decl.h"
+#include "llvm/Support/raw_ostream.h"
+
 
 
 class ASTStmt : public ASTNode {
@@ -18,6 +20,10 @@ public:
     };
 
     ASTStmt *accept(AlgebraSimplificationOpt *aso) override;
+
+    ASTStmt *accept(ConstPropagationOpt *cpo) override;
+      // return (ASTStmt*)ASTNode::accept(cpo);
+    
 
     ASTStmt *accept(DeadCodeOpt *deadCodeOpt) override{
       return this;
@@ -47,6 +53,8 @@ public:
 
     ASTExprStmt *accept(AlgebraSimplificationOpt *) override;
 
+    ASTExprStmt *accept(ConstPropagationOpt *) override;
+
     string accept(Printer *printer, int indent) override;
 
 };
@@ -57,6 +65,10 @@ public:
 
     explicit ASTLabeledStmt(ASTStmt *stmt) : ASTStmt() {
       this->stmt = stmt;
+    }
+
+    ASTLabeledStmt *accept(ConstPropagationOpt *cpo) override{
+      return this;
     }
 };
 
@@ -75,6 +87,10 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 
     ASTGotoLabeledStmt *accept(AlgebraSimplificationOpt *) override;
+    
+    ASTGotoLabeledStmt *accept(ConstPropagationOpt *cpo) override{
+      return this;
+    }
 
     string accept(Printer *printer, int indent) override;
 };
@@ -90,6 +106,9 @@ public:
     [[nodiscard]] string to_str() const override {
       return "Case";
     }
+
+
+
 
     string accept(Printer *printer, int indent) override;
 };
@@ -132,7 +151,11 @@ public:
 
     ASTIfStmt *accept(AlgebraSimplificationOpt *) override;
 
+    ASTIfStmt *accept(ConstPropagationOpt *) override;
+
     ASTStmt *accept(DeadCodeOpt *) override;
+
+    
 
     string accept(Printer *printer, int indent) override;
 };
@@ -154,6 +177,8 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 
     ASTIfElseStmt *accept(AlgebraSimplificationOpt *) override;
+
+    ASTIfElseStmt *accept(ConstPropagationOpt *) override;
 
     ASTStmt *accept(DeadCodeOpt *) override;
 
@@ -198,7 +223,11 @@ public:
 
     ASTWhileStmt *accept(AlgebraSimplificationOpt *) override;
 
+    ASTWhileStmt *accept(ConstPropagationOpt *cpo) override;
+
     ASTWhileStmt *accept(DeadCodeOpt *) override;
+
+
 
     string accept(Printer *printer, int indent) override;
 
@@ -351,6 +380,16 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 
     ASTRetJmpStmt *accept(AlgebraSimplificationOpt *) override;
+    
+    ASTRetJmpStmt *accept(ConstPropagationOpt *cpo) {
+    if (expr) {  
+        ASTExpr *optimizedExpr = expr->accept(cpo);  
+        if (optimizedExpr != expr) {
+            expr = optimizedExpr;
+        }
+    }
+    return this;  
+}
 
     string accept(Printer *printer, int indent) override;
 
@@ -376,6 +415,8 @@ public:
     llvm::Value *accept(Codegen *codegen) override;
 
     ASTBlock *accept(AlgebraSimplificationOpt *) override;
+
+     ASTBlock* accept(ConstPropagationOpt* cpo);
 
     ASTBlock *accept(DeadCodeOpt *) override;
 
@@ -409,7 +450,11 @@ public:
 
     ASTBlockList *accept(AlgebraSimplificationOpt *) override;
 
+    ASTBlockList *accept(ConstPropagationOpt *) override;
+
     ASTBlockList *accept(DeadCodeOpt *) override;
+
+
 
     string accept(Printer *printer, int indent) override;
 };

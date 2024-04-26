@@ -67,6 +67,9 @@ public:
 
     ASTExpr *accept(AlgebraSimplificationOpt *opt) override;
 
+    ASTExpr *accept(ConstPropagationOpt *opt)override;
+
+
     string accept(Printer *printer, int indent) override;
 
 };
@@ -84,6 +87,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTExpr *accept(ConstPropagationOpt *opt) override;
 
     string accept(Printer *, int) override;
 };
@@ -103,6 +108,9 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTConst *accept(ConstPropagationOpt *opt) override;
+
 
     string accept(Printer *, int) override;
 };
@@ -150,6 +158,8 @@ public:
 
     ASTExprList *accept(AlgebraSimplificationOpt *) override;
 
+    ASTExpr *accept(ConstPropagationOpt *opt) override;
+
     string accept(Printer *, int) override;
 };
 
@@ -174,15 +184,17 @@ public:
 
     llvm::Value *accept(Codegen *codegen) override;
 
+    ASTFunctionCall *accept(ConstPropagationOpt *opt) override;
+
     string accept(Printer *, int) override;
 };
 
 class ASTPostIncrement : public ASTExpr {
 public:
-    ASTExpr *expr;
+    ASTIdExpr *expr;
     bool is_inc;
 
-    ASTPostIncrement(ASTExpr *expr, bool is_inc) : ASTExpr() {
+    ASTPostIncrement(ASTIdExpr *expr, bool is_inc) : ASTExpr() {
       this->expr = expr;
       this->is_inc = is_inc;
     }
@@ -194,6 +206,8 @@ public:
     }
 
     llvm::Value *accept(Codegen *codegen) override;
+
+    ASTExpr *accept(ConstPropagationOpt *opt) override;
 
     string accept(Printer *, int) override;
 };

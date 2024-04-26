@@ -5,6 +5,7 @@
 #include "codegen.h"
 #include "dead_code_opt.h"
 #include "algebra_simplification_opt.h"
+#include "const_prop_opt.h"
 #include "printer.h"
 
 
@@ -211,4 +212,37 @@ ASTStmt *ASTIfElseStmt::accept(DeadCodeOpt *dco) {
 
 ASTWhileStmt *ASTWhileStmt::accept(DeadCodeOpt *dco) {
   dco->visit(this);
+}
+
+
+// /////////////////////////////////////////////////////////////////
+// ////////////////// CONSTANT PROPAGATION /////////////////////////
+// /////////////////////////////////////////////////////////////////
+
+ASTStmt *ASTStmt::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTExprStmt *ASTExprStmt::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTIfStmt *ASTIfStmt::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTIfElseStmt *ASTIfElseStmt::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTWhileStmt *ASTWhileStmt::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTBlock *ASTBlock::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTBlockList *ASTBlockList::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
 }

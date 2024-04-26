@@ -213,6 +213,9 @@ public:
 
     ASTDecl *accept(AlgebraSimplificationOpt *) override;
 
+    ASTDecl *accept(ConstPropagationOpt *) override;
+
+
     string accept(Printer *, int) override;
 };
 

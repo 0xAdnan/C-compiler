@@ -44,7 +44,10 @@ public:
 
     ASTFnDef *accept(AlgebraSimplificationOpt *aso) override;
 
+    ASTFnDef *accept(ConstPropagationOpt *cpo) override;
+
     ASTFnDef *accept(DeadCodeOpt *dco) override;
+
 
     string accept(Printer *, int indent) override;
 };
@@ -92,6 +95,8 @@ public:
     ASTProgram *accept(AlgebraSimplificationOpt *) override;
 
     ASTProgram *accept(DeadCodeOpt *) override;
+
+    ASTProgram *accept(ConstPropagationOpt *) override;
 
     string accept(Printer *printer, int indent) override;
 

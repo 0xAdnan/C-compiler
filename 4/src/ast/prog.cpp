@@ -6,6 +6,7 @@
 #include "algebra_simplification_opt.h"
 #include "dead_code_opt.h"
 #include "printer.h"
+#include "const_prop_opt.h"
 
 
 // ////////////////////////////////////////////////////
@@ -64,4 +65,17 @@ string ASTProgram::accept(Printer *printer, int indent) {
 
 ASTProgram *ASTProgram::accept(DeadCodeOpt *deadCodeOpt) {
   return deadCodeOpt->visit(this);
+}
+
+
+// /////////////////////////////////////////////////////////////////
+// ////////////////// CONSTANT PROPAGATION /////////////////////////
+// /////////////////////////////////////////////////////////////////
+
+ASTProgram *ASTProgram::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTFnDef *ASTFnDef::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
 }

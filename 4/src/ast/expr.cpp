@@ -1,6 +1,7 @@
 #include "expr.h"
 #include "codegen.h"
 #include "algebra_simplification_opt.h"
+#include "const_prop_opt.h"
 #include "printer.h"
 
 
@@ -78,4 +79,32 @@ string ASTPostIncrement::accept(Printer *printer, int indent) {
 
 string ASTArrayAccess::accept(Printer *printer, int indent) {
   return printer->visit(this, indent);
+}
+
+// /////////////////////////////////////////////////////////////////
+// ////////////////// CONSTANT PROPAGATION /////////////////////////
+// /////////////////////////////////////////////////////////////////
+
+ASTExpr *ASTExpr::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTExpr *ASTIdExpr::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTExpr *ASTExprList::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTConst *ASTConst::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTFunctionCall *ASTFunctionCall::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTExpr *ASTPostIncrement::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
 }
