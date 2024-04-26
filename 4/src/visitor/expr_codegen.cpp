@@ -82,6 +82,11 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
   llvm::Type *typeL = get_value_type(L);
   llvm::Type *typeR = get_value_type(R);
 
+  if(typeL != typeR){
+    llvm::errs() << "Doesn't support type casting\n";
+    assert(false);
+  }
+
   /*if (L->getType()->isPointerTy())
   {
     L = builder->CreateLoad(typeL, L);
@@ -234,16 +239,14 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
     }
 
   case u_op_and:
-    if(unaryExp->is_LHS){
-      return L;
-    }
-  // if (!L->getType()->isPointerTy()) {
-  //   llvm::errs() << "Attempting to take the address of a non-pointer type";
-  //   assert(false);
-  // }
-    else{
-      return L;
-    }
+if (!L->getType()->isPointerTy()) {
+  llvm::AllocaInst* alloc = builder->CreateAlloca(L->getType(), nullptr, "addr_of_temp");
+  builder->CreateStore(L, alloc);
+  return alloc;
+} else {
+  return L;
+}
+
 
   case u_op_star:
     if(unaryExp->is_LHS)
@@ -305,6 +308,7 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
   }
   return nullptr;
 }
+
 llvm::Value *Codegen::visit_assignment(ASTExpr *expr){
   assert(expr->operands.size() == 2);
 
@@ -318,15 +322,44 @@ llvm::Value *Codegen::visit_assignment(ASTExpr *expr){
     assert(false);
   }
 
-  // llvm::Type *typeL = get_value_type(L);
-  //llvm::Type *typeR = get_value_type(R);
+  llvm::Type *typeL = get_value_type(L);
+  llvm::Type *typeR = get_value_type(R);
 
-  /*if(!typeL->isPointerTy()){
-    if (typeL != typeR) {
-      llvm::errs() << "Type mismatch in assignment\n";
-      assert(false);
+  switch (expr->operator_)
+    {
+    case mul_assign:
+      R = builder->CreateMul(builder->CreateLoad(typeL, L), R);
+      break;
+    case div_assign:
+      R = builder->CreateSDiv(builder->CreateLoad(typeL, L), R);
+      break;
+    case mod_assign:
+      R = builder->CreateSRem(builder->CreateLoad(typeL, L), R);
+      break;
+    case add_assign:
+      R = builder->CreateAdd(builder->CreateLoad(typeL, L), R);
+      break;
+    case sub_assign:
+      R = builder->CreateSub(builder->CreateLoad(typeL, L), R);
+      break;
+    case left_assign:
+      R = builder->CreateShl(builder->CreateLoad(typeL, L), R);
+      break;
+    case right_assign:
+      R = builder->CreateLShr(builder->CreateLoad(typeL, L), R);
+      break;
+    case and_assign:
+      R = builder->CreateAnd(builder->CreateLoad(typeL, L), R);
+      break;
+    case xor_assign:
+      R = builder->CreateXor(builder->CreateLoad(typeL, L), R);
+      break;
+    case or_assign:
+      R = builder->CreateOr(builder->CreateLoad(typeL, L), R);
+      break;
+    default:
+      break;
     }
-  }*/
 
   return builder->CreateStore(R, L);
 }
@@ -481,7 +514,8 @@ Value *Codegen::visit(ASTPostIncrement * postIncrement) {
     inc = builder->CreateSub(v, ConstantInt::get(*context, APInt(32, 1)), "dec");
 
   if (auto* li = dyn_cast<llvm::LoadInst>(v)){
-    return builder->CreateStore(inc, li->getPointerOperand());
+    builder->CreateStore(inc, li->getPointerOperand());
+    return v;
   }
   else{
     llvm::errs() << "Something Wrong happened in postfix++";

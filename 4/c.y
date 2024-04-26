@@ -160,8 +160,18 @@ postfix_expression
 		assert(idExpr !=nullptr);
     	$$ = new ASTFunctionCall(idExpr, $3);
 	}
-	| postfix_expression INC_OP                                                      { $$ = new ASTPostIncrement($1, true); }
-	| postfix_expression DEC_OP                                                      { $$ = new ASTPostIncrement($1, false); }
+	| postfix_expression INC_OP                                                      
+	{
+		ASTIdExpr* idExpr = dynamic_cast<ASTIdExpr*>($1);
+		assert(idExpr !=nullptr);
+		$$ = new ASTPostIncrement(idExpr, true);
+	}
+	| postfix_expression DEC_OP
+	{
+		ASTIdExpr* idExpr = dynamic_cast<ASTIdExpr*>($1);
+		assert(idExpr !=nullptr);
+		$$ = new ASTPostIncrement(idExpr, false);
+	}
 	;
 
 unary_expression
