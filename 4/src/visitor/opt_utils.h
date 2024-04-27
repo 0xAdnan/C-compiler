@@ -134,6 +134,12 @@ static ASTConst *performOperationI(const ASTConst *left, const ASTConst *right, 
         }
         result = leftValue / rightValue;
         break;
+    case operators::b_remainder:
+      if (rightValue == 0){
+        throw runtime_error("Division by zero");
+      }
+      result = leftValue % rightValue;
+      break;
     case operators::b_left_shift:
         result = leftValue << rightValue;
         break;
@@ -178,6 +184,16 @@ static ASTConst *performOperationI(const ASTConst *left, const ASTConst *right, 
     }
 
     return new ASTConst(i_const, std::to_string(result));
+}
+
+static bool is_compatible(const_type ct, ctype_ t){
+  if(ct == i_const){
+    return t == t_int || t == t_long || t == t_long_long;
+  }
+  if(ct == f_const){
+    return t == t_float || t == t_double;
+  }
+  return false;
 }
 
 #endif // CCOMPILER_OPT_UTILS_H
