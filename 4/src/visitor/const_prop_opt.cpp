@@ -72,28 +72,29 @@ ASTBlockList *ConstPropagationOpt::visit(ASTBlockList *bl)
 
 ASTDecl *ConstPropagationOpt::visit(ASTDecl *Decl)
 {
-    if (Decl && Decl->value)
-    {
-        ASTConst *constNode = check_const(Decl->value);
-        if (constNode)
-        {
-            if (!constValues.empty())
-            {
+    if (Decl && Decl->value){
+      ASTConst *constNode = check_const(Decl->value);
+      if (constNode){
+        if(constNode->ct == s_const)
+          return Decl;
+
+        if(is_compatible(constNode->ct, Decl->type)){
+          llvm::errs() << "Type mismatch in declaration\n";
+          assert(false);
+        }
+        if (!constValues.empty()){
+          constValues.back()[Decl->name] = constNode;
+        }
+      }
+      else{
+        Decl->value = Decl->value->accept(this);
+        constNode = check_const(Decl->value);
+        if (constNode){
+            if (!constValues.empty()){
                 constValues.back()[Decl->name] = constNode;
             }
         }
-        else
-        {
-            Decl->value = Decl->value->accept(this);
-            constNode = check_const(Decl->value);
-            if (constNode)
-            {
-                if (!constValues.empty())
-                {
-                    constValues.back()[Decl->name] = constNode;
-                }
-            }
-        }
+      }
     }
     return Decl;
 }

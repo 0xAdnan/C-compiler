@@ -126,6 +126,7 @@ int main(int argc, char **argv) {
     auto *algebraSimplificationOpt = new AlgebraSimplificationOpt();
     program_ast = dynamic_cast<ASTProgram *>(program_ast->accept(algebraSimplificationOpt));
 
+    cout << "AST After Algebraic Simplification" << endl;
     if(options.print_ast){
       auto str = printer->visit(program_ast);
       cout << str << endl;
@@ -136,6 +137,7 @@ int main(int argc, char **argv) {
     auto *constPropagation = new ConstPropagationOpt();
     program_ast = dynamic_cast<ASTProgram *>(program_ast->accept(constPropagation));
 
+    cout << "AST After Constant Propagation" << endl;
     if(options.print_ast){
       auto str = printer->visit(program_ast);
       cout << str << endl;
@@ -146,6 +148,7 @@ int main(int argc, char **argv) {
     auto *deadCodeOpt = new DeadCodeOpt();
     program_ast = dynamic_cast<ASTProgram *>(program_ast->accept(deadCodeOpt));
 
+    cout << "AST After Dead Code Removal" << endl;
     if(options.print_ast){
       auto str = printer->visit(program_ast);
       cout << str << endl;

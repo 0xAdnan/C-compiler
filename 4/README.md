@@ -48,16 +48,12 @@ check void, long, char, double, short support?
 static variable support?
 
 
-199 Goto
-194
+// 194
 192, 7 For
-190
-167
-164
-135, 134, 133, 128, 82, 81 unsigned long long
-127
-125
-113 mismatch type
-111 short
-100
-35 !!
+//167
+// 164
+// 135, 134, 133, 128, 82, 81 unsigned long long
+// 127
+// 113 mismatch type
+100, 125, 190 Not fixing
+// 35 !!
