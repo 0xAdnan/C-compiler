@@ -257,9 +257,9 @@ ASTExpr *ConstPropagationOpt::visit(ASTExpr *expr)
 
     case operators::u_op_plus_plus:
     case operators::u_op_minus_minus:
-        break;
     default:
-        break;
+        return expr;
+
     
     return expr;
     }
@@ -299,6 +299,8 @@ ASTExpr *ConstPropagationOpt::visit(ASTExprList *exprList)
 }
 
 ASTFunctionCall *ConstPropagationOpt::visit(ASTFunctionCall* fn){
+    if(!fn->params)
+        return fn;
     auto newParams = fn->params->accept(this);
     // If ASTExpr instead of ASTExprList, create a nwe ASTExprList with one element.
     ASTExprList* newParams2;
