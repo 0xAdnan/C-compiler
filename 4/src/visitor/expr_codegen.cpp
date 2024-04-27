@@ -82,7 +82,7 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
   llvm::Type *typeL = get_value_type(L);
   llvm::Type *typeR = get_value_type(R);
 
-  if(typeL != typeR){
+  if(typeL->getTypeID() != typeR->getTypeID()){
     llvm::errs() << "Doesn't support type casting\n";
     assert(false);
   }
@@ -214,7 +214,8 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
     if (get_value_type(L)->isIntegerTy()){
       auto l = builder->CreateAdd(L, llvm::ConstantInt::get(*context, APInt(32, 1)));
       if (auto* li = dyn_cast<llvm::LoadInst>(L)){
-        return builder->CreateStore(l, li->getPointerOperand());
+        builder->CreateStore(l, li->getPointerOperand());
+        return builder->CreateLoad(get_value_type(L), l);
       }else{
         llvm::errs() << "Something Wrong happened in ++";
         assert(false);
@@ -230,9 +231,14 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
       assert(false);
     }
     if(get_value_type(L)->isIntegerTy()){
-      llvm::Value* l = builder->CreateLoad(get_value_type(L), L);
-      l = builder->CreateSub(l, llvm::ConstantInt::get(*context, APInt(32, 1)));
-      return builder->CreateStore(l, L);
+      auto l = builder->CreateSub(L, llvm::ConstantInt::get(*context, APInt(32, 1)));
+      if (auto* li = dyn_cast<llvm::LoadInst>(L)){
+        builder->CreateStore(l, li->getPointerOperand());
+        return builder->CreateLoad(get_value_type(L), l);
+      }else{
+        llvm::errs() << "Something Wrong happened in ++";
+        assert(false);
+      }
     }
     else if(get_value_type(L)->isFloatingPointTy()){
       return builder->CreateFSub(L, llvm::ConstantFP::get(typeL, 1.0));
