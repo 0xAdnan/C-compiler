@@ -1,4 +1,4 @@
-int strlen(char *);
+int strlen(char *c);
 
 int
 main()
