@@ -43,8 +43,8 @@ def run_tests():
         sys.exit(1)
 
     with open(results_file_path, "w") as file:
-        file.write(f"|{'Filename'.center(20)}|{'Result'.center(15)}|{'Optimized Result'.center(20)}|\n")
-        file.write(f"|{'-'*20}|{'-'*15}|{'-'*20}|\n")
+        file.write(f"|{'Filename'.center(20)}|{'Result'.center(15)}|{'Optimized Result'.center(20)}|{'Execution Result'.center(20)}|{'Optimized Execution Result'.center(25)}|\n")
+        file.write(f"|{'-'*20}|{'-'*15}|{'-'*20}|{'-'*20}|{'-'*25}|\n")
 
         files = [f for f in os.listdir(test_directory) if f.endswith(".c")]
         sorted_files = sorted(files)
@@ -63,24 +63,34 @@ def run_tests():
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
                 result = "Error"
 
+            execution_result = "Error"
+            if result == "Passed":
+                try:
+                    subprocess.check_call(["lli-17", output_path], timeout=timeout_duration)
+                    execution_result = "Passed"
+                except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+                    execution_result = "Error"
+
             try:
                 subprocess.check_call([cc_path, "--in", file_path, "--opt-const-prop", "--opt-deadcode", "--opt-al-sim", output_path], timeout=timeout_duration)
                 optimized_result = "Passed"
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
                 optimized_result = "Error"
 
-            results[filename] = (result, optimized_result)
+            optimized_execution_result = "Error"
+            if optimized_result == "Passed":
+                try:
+                    subprocess.check_call(["lli-17", output_path], timeout=timeout_duration)
+                    optimized_execution_result = "Passed"
+                except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+                    optimized_execution_result = "Error"
 
-            file.write(f"|{filename.center(20)}|{result.center(15)}|{optimized_result.center(20)}|\n")
+            results[filename] = (result, optimized_result, execution_result, optimized_execution_result)
+
+            file.write(f"|{filename.center(20)}|{result.center(15)}|{optimized_result.center(20)}|{execution_result.center(20)}|{optimized_execution_result.center(25)}|\n")
             restore_file(file_path, includes, had_print)
 
-        file.write(f"|{'-'*20}|{'-'*15}|{'-'*20}|\n")
-
-        regressions = {k: v for k, v in results.items() if v[0] == "Passed" and v[1] == "Error"}
-        if regressions:
-            file.write("\nRegressions detected in the following tests:\n")
-            for test, result in regressions.items():
-                file.write(f"{test}: Passed -> Error\n")
+        file.write(f"|{'-'*20}|{'-'*15}|{'-'*20}|{'-'*20}|{'-'*25}|\n")
 
 if __name__ == "__main__":
     run_tests()

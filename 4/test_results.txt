@@ -1,0 +1,48 @@
+|      Filename      |     Result    |  Optimized Result  |  Execution Result  |Optimized Execution Result|
+|--------------------|---------------|--------------------|--------------------|-------------------------|
+|      00001.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00002.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00003.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00004.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00006.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00009.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00010.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00012.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00021.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00023.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00025.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00027.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00028.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00029.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00030.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00033.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00036.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00041.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00056.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00059.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00060.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00080.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00096.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00098.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00102.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00105.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00114.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00116.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00121.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00126.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00131.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00132.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00156.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00160.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00166.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00168.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00169.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00172.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00174.c       |     Passed    |       Passed       |       Error        |          Passed         |
+|      00175.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00177.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00191.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|      00196.c       |     Passed    |       Passed       |       Passed       |          Passed         |
+|--------------------|---------------|--------------------|--------------------|-------------------------|
+
+All tests processed!
