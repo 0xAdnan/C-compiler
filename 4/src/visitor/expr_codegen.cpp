@@ -115,28 +115,16 @@ llvm::Value *Codegen::visit_binary(ASTExpr *expr)
     case b_right_shift:
       return builder->CreateLShr(L, R);
     case b_less:
-      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
-      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateICmpSLT(L, R);
     case b_greater:
-      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
-      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateICmpSGT(L, R);
     case b_less_eq:
-      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
-      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateICmpSLE(L, R);
     case b_greater_eq:
-      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
-      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateICmpSGE(L, R);
     case b_eq:
-      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
-      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateICmpEQ(L, R);
     case b_neq:
-      L = builder->CreateICmpNE(L, ConstantInt::get(L->getType(), 0));
-      R = builder->CreateICmpNE(R, ConstantInt::get(R->getType(), 0));
       return builder->CreateICmpNE(L, R);
     case b_bitand:
       return builder->CreateAnd(L, R);
@@ -223,7 +211,7 @@ llvm::Value *Codegen::visit_unary(ASTExpr *unaryExp)
       auto l = builder->CreateAdd(L, llvm::ConstantInt::get(*context, APInt(32, 1)));
       if (auto* li = dyn_cast<llvm::LoadInst>(L)){
         builder->CreateStore(l, li->getPointerOperand());
-        return builder->CreateLoad(get_value_type(L), l);
+        return li;
       }else{
         llvm::errs() << "Something Wrong happened in ++";
         assert(false);

@@ -242,8 +242,10 @@ ASTWhileStmt *ASTWhileStmt::accept(ConstPropagationOpt *cpo) {
 void ASTWhileStmt::add_start_condition(ASTExprStmt *cond) {
   auto body = dynamic_cast<ASTBlockList *>(stmt);
   assert(body != nullptr && "While statement body is not a block list");
-  auto ifStmt = new ASTIfElseStmt(cond->exprs->exprs[0], new ASTBlockList(), new ASTBreakJmpStmt());
-  body->blocks.insert(body->blocks.begin(), new ASTBlock(ifStmt));
+  if(cond->exprs) {
+    auto ifStmt = new ASTIfElseStmt(cond->exprs->exprs[0], new ASTBlockList(), new ASTBreakJmpStmt());
+    body->blocks.insert(body->blocks.begin(), new ASTBlock(ifStmt));
+  }
 }
 
 void ASTWhileStmt::add_end_expression(ASTExpr *expr) {

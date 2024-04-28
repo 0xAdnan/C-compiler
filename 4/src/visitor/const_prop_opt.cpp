@@ -78,7 +78,7 @@ ASTDecl *ConstPropagationOpt::visit(ASTDecl *Decl)
         if(constNode->ct == s_const)
           return Decl;
 
-        if(is_compatible(constNode->ct, Decl->type)){
+        if(!is_compatible(constNode->ct, Decl->type)){
           llvm::errs() << "Type mismatch in declaration\n";
           assert(false);
         }
@@ -90,9 +90,16 @@ ASTDecl *ConstPropagationOpt::visit(ASTDecl *Decl)
         Decl->value = Decl->value->accept(this);
         constNode = check_const(Decl->value);
         if (constNode){
-            if (!constValues.empty()){
-                constValues.back()[Decl->name] = constNode;
-            }
+          if(constNode->ct == s_const)
+            return Decl;
+
+          if(!is_compatible(constNode->ct, Decl->type)){
+            llvm::errs() << "Type mismatch in declaration\n";
+            assert(false);
+          }
+          if (!constValues.empty()){
+              constValues.back()[Decl->name] = constNode;
+          }
         }
       }
     }
@@ -116,6 +123,9 @@ ASTExprStmt *ConstPropagationOpt::visit(ASTExprStmt *expStmt)
 
 ASTExpr *ConstPropagationOpt::visit(ASTIdExpr *idExpr)
 {
+    if(idExpr->is_LHS)
+      return idExpr;
+
     auto found = constValues.back().find(idExpr->name);
     if (found != constValues.back().end())
     {
@@ -142,6 +152,7 @@ ASTExpr *ConstPropagationOpt::visit(ASTExpr *expr)
     case operators::b_minus:
     case operators::b_mul:
     case operators::b_div:
+    case operators::b_remainder:
     case operators::b_left_shift:
     case operators::b_right_shift:
     case operators::b_less:
@@ -259,7 +270,10 @@ ASTExpr *ConstPropagationOpt::visit(ASTExpr *expr)
     case operators::u_op_plus_plus:
     case operators::u_op_minus_minus:
     default:
-        return expr;
+      if(auto idExpr = dynamic_cast<ASTIdExpr*>(expr->operands[0])){
+        constValues.back().erase(idExpr->name);
+      }
+      return expr;
 
     
     return expr;
@@ -337,14 +351,6 @@ ASTIfStmt *ConstPropagationOpt::visit(ASTIfStmt *ifStmt)
 
 ASTWhileStmt *ConstPropagationOpt::visit(ASTWhileStmt *whileStmt)
 {
-    if (whileStmt->cond)
-    {
-        ASTExpr *optimizedCond = whileStmt->cond->accept(this);
-        if (optimizedCond != whileStmt->cond)
-        {
-            whileStmt->cond = optimizedCond;
-        }
-    }
     if (whileStmt->stmt)
     {
         ASTStmt *optimizedStmt = whileStmt->stmt->accept(this);

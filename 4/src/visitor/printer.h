@@ -218,7 +218,8 @@ public:
 
     std::string visit(ASTExprStmt *exprStmt, int indent){
       std::string result = common(exprStmt, indent, 1);
-      result += exprStmt->exprs->accept(this, indent+1);
+      if(exprStmt->exprs != nullptr)
+        result += exprStmt->exprs->accept(this, indent+1);
       result += end(indent);
       return result;
     }
@@ -304,7 +305,7 @@ private:
     static std::string end(int indent) {
       std::string result;
       for (int i = 0; i < indent; ++i) {
-        result += "\t";
+        result += "    ";
       }
       result += "}\n";
       return result;

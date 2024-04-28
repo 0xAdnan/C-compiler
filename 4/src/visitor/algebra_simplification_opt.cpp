@@ -77,40 +77,46 @@ ASTExpr* AlgebraSimplificationOpt::visit(ASTExpr * expr) {
         return right;
       if(is_const_node(right, "1"))
         return left;
+      return expr;
 
     case b_div:
       if(is_const_node(right, "0"))
         return new ASTConst(i_const, "0");
       if(is_const_node(right, "1"))
         return left;
-
+      return expr;
     case b_remainder:
       if(is_const_node(right, "1"))
         return new ASTConst(i_const, "0");
-
+      return expr;
     case b_minus:
     case b_add:
       if(is_const_node(left, "0"))
         return right;
       if(is_const_node(right, "0"))
         return left;
+      return expr;
 
     case b_bitand:
       if(is_const_node(left, "0") || is_const_node(right, "0"))
         return new ASTConst(i_const, "0");
+      return expr;
     case b_bitor:
       if(is_const_node(left, "1"))
         return right;
       if(is_const_node(right, "1"))
         return left;
+      return expr;
     case b_and:
       if(is_const_node(left, "0") || is_const_node(right, "0"))
         return new ASTConst(i_const, "0");
+      return expr;
     case b_or:
       if(is_const_node(left, "1"))
         return right;
       if(is_const_node(right, "1"))
         return left;
+      return expr;
     default:
       return expr;
   }

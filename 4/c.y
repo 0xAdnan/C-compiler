@@ -442,9 +442,47 @@ iteration_statement
 	  $$ = new ASTWhileStmt($3->exprs[0], $5);
 	}
 	| DO statement WHILE '(' expression ')' ';'                                         { $$ = new ASTDoWhileStmt($5, $2); }
-	| FOR '(' expression_statement expression_statement ')' statement                   { $$ = new ASTForStmt($3, $4, $6); }
-	| FOR '(' expression_statement expression_statement expression ')' statement        { $$ = new ASTForStmt($3, $4, $5, $7); }
-	| FOR '(' declaration expression_statement ')' statement                            { $$ = new ASTForStmt2($3, $4, $6); }
+	| FOR '(' expression_statement expression_statement ')' statement
+	{
+	 auto blocks = new ASTBlockList(new ASTBlock($3));
+        	ASTWhileStmt* _while;
+        	if(auto stmt  = dynamic_cast<ASTBlockList*>($6))
+        	    _while = new ASTWhileStmt(new ASTConst(i_const, "1"), stmt);
+            else
+        	   _while = new ASTWhileStmt(new ASTConst(i_const, "1"), new ASTBlockList(new ASTBlockList(), new ASTBlock($6)));
+        	_while->add_start_condition($4);
+
+        	blocks = new ASTBlockList(blocks, new ASTBlock(_while));
+        	$$ = blocks;
+	}
+	| FOR '(' expression_statement expression_statement expression ')' statement
+	{
+		auto blocks = new ASTBlockList(new ASTBlock($3));
+        ASTWhileStmt* _while;
+        if(auto stmt  = dynamic_cast<ASTBlockList*>($7))
+            _while = new ASTWhileStmt(new ASTConst(i_const, "1"), stmt);
+        else
+            _while = new ASTWhileStmt(new ASTConst(i_const, "1"), new ASTBlockList(new ASTBlockList(), new ASTBlock($7)));
+        _while->add_start_condition($4);
+        _while->add_end_expression($5);
+
+        blocks = new ASTBlockList(blocks, new ASTBlock(_while));
+
+        $$ = blocks;
+	}
+	| FOR '(' declaration expression_statement ')' statement
+	{
+	    auto blocks = new ASTBlockList(new ASTBlock($3));
+    	ASTWhileStmt* _while;
+    	if(auto stmt  = dynamic_cast<ASTBlockList*>($6))
+    	    _while = new ASTWhileStmt(new ASTConst(i_const, "1"), stmt);
+        else
+    	   _while = new ASTWhileStmt(new ASTConst(i_const, "1"), new ASTBlockList(new ASTBlockList(), new ASTBlock($6)));
+    	_while->add_start_condition($4);
+
+    	blocks = new ASTBlockList(blocks, new ASTBlock(_while));
+    	$$ = blocks;
+	}
 	| FOR '(' declaration expression_statement expression ')' statement                 
 	{
 		auto blocks = new ASTBlockList(new ASTBlock($3));

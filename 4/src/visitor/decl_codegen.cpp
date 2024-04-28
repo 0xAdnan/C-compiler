@@ -81,6 +81,9 @@ llvm::Value *Codegen::visit(ASTBlockList *blockList) {
   llvm::Value *v;
   enter_scope();
   for (auto block: blockList->blocks) {
+    // If already have a terminator, no need to generate more instructions.
+    if(builder->GetInsertBlock()->getTerminator())
+      break;
     v = block->accept(this);
   }
   exit_scope();

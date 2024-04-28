@@ -53,6 +53,14 @@ public:
         print_ast = vm["print-ast"].as<bool>();
       }
 
+      if(vm.count("all-opt")) {
+        if (vm["all-opt"].as<bool>()) {
+          opt_al_sim = true;
+          opt_deadcode = true;
+          opt_const_prop = true;
+        }
+      }
+
     }
 };
 
@@ -71,6 +79,7 @@ CmdOptions parse(int argc, char **argv) {
 
     options_description opt("Optimization options");
     opt.add_options()
+            ("all-opt", bool_switch(), "Enable All Optimizations")
             ("opt-al-sim", bool_switch(), "Enable Algebraic Simplification")
             ("opt-const-prop", bool_switch(), "Enable Constant Propagation")
             ("opt-deadcode", bool_switch(), "Enable Deadcode elimination")
