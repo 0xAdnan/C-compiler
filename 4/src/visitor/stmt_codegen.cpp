@@ -48,6 +48,7 @@ Value *Codegen::visit(ASTIfElseStmt *ifStmt) {
     condV = builder->CreateICmpNE(condV, ConstantInt::get(Type::getInt32Ty(*context), 0));
   }
   else{
+    condV = builder->CreateZExt(condV, llvm::Type::getInt32Ty(*context));
     condV = builder->CreateICmpNE(condV, ConstantInt::get(Type::getInt32Ty(*context), 0));
   }
   condV = builder->CreateICmpNE(condV, ConstantInt::get(*context, APInt(1, 0, false)));

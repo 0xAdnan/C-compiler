@@ -1,59 +1,31 @@
-# cc
-C compiler
+# cc - A C compiler for COL728
 
-To compile:
+#### Tested on:
+1. `CMake v3.16.3`
+2. `Boost v1.71.0`
+3. `llvm-19 / llvm-17`
+
+##### Build Instructions:
 1. `mkdir build && cd build`
 2. `cmake ..`
+3. `make`
 
-To generate the AST:
-`./cc examples/test1.c`
+Compile from source to LLVM IR
+1. `./cc --in input.c`            Run with default options no optimization, input file is "input.c"
+3. `./cc --in input.c --all-opt`   Enable all optimizations, input file is "input.c"
+3. `./cc --help` to see all options
 
-TODO:
-1. ~~goTo~~
-2. for statements
-3. Arrays handle
-4. Constant Propagation
-5. DeadCode Removal
-6. Pointer Handle
-7. Address handling
-~~8. Different Assignment Handle - Adnan~~
-9. Create Test for If and while statements
-10. Ternary Condition handle
-11. 
+Run LLVM IR:
+1. `lli-17 input.c.ll`
 
+##### Supported Constructs
+1. Declaration: `int i; int i=0; int i=0, j;`
+2. Binary/Unary/Assignment Expressions on int/float; Strict typing, can't add int and float.
+3. Statements: `if, if else, while, for, goto`
+4. Non-void Functions & Global variables
 
-
-Compile LLVM IR to Executable
-1. `llc -relocation-model=pic output.ll -filetype=obj -o output.o`
-2. `clang -pie output.o -o output`
-3. `./output`
-
-TODO cases:-
-1. Pointer(4, 25)
-2. Fix minus minus for post and pre
-
-
-<!-- Failing cases:-
-1. Pointers(4, 5, 13, 14, 20)
-2. Do while(8)
-3. goTo (10)
-4. Array (15, 26)
-5. Assignment Chaining (11)
-6. struct (17, 18, 19, 24)
-7. typedef (22) -->
-
-25, 30, 31, 33, 38, 39, 42, 54, 57, 58, 59, 76, 88, 95, 98, 113, 124, 164, 166(check answer), 167, 177, 
-
-check void, long, char, double, short support?
-static variable support?
-
-
-// 194
-192, 7 For
-//167
-// 164
-// 135, 134, 133, 128, 82, 81 unsigned long long
-// 127
-// 113 mismatch type
-100, 125, 190 Not fixing
-// 35 !!
+##### Optimizations Performed
+1. Algebraic Simplification. `Adding 0, Multiplying 0/1...`
+2. DeadCode Removal. `if(1) then remove else. if(0) then remove if. while(0) remove while.`
+3. Constant Propagation.
+ `Only supported propagation in the same block. x=1; y=x+1; => y=2`

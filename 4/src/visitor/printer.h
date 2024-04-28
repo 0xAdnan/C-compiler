@@ -305,7 +305,7 @@ private:
     static std::string end(int indent) {
       std::string result;
       for (int i = 0; i < indent; ++i) {
-        result += "    ";
+        result += "\t";
       }
       result += "}\n";
       return result;

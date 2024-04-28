@@ -126,10 +126,12 @@ ASTExpr *ConstPropagationOpt::visit(ASTIdExpr *idExpr)
     if(idExpr->is_LHS)
       return idExpr;
 
-    auto found = constValues.back().find(idExpr->name);
-    if (found != constValues.back().end())
-    {
-        return new ASTConst(*(found->second));
+    if(constValues.size() >= 1){
+        auto found = constValues.back().find(idExpr->name);
+        if (found != constValues.back().end())
+        {
+            return new ASTConst(*(found->second));
+        }
     }
     return idExpr;
 }
@@ -351,15 +353,10 @@ ASTIfStmt *ConstPropagationOpt::visit(ASTIfStmt *ifStmt)
 
 ASTWhileStmt *ConstPropagationOpt::visit(ASTWhileStmt *whileStmt)
 {
-    if (whileStmt->stmt)
-    {
-        ASTStmt *optimizedStmt = whileStmt->stmt->accept(this);
-        if (optimizedStmt != whileStmt->stmt)
-        {
-            whileStmt->stmt = optimizedStmt;
-        }
+    for (auto& map : constValues) {
+        map.clear();
     }
-    return whileStmt;
+   return whileStmt;
 }
 
 ASTIfElseStmt *ConstPropagationOpt::visit(ASTIfElseStmt *ifElseStmt) {
