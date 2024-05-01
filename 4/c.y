@@ -72,7 +72,7 @@ void todo(int);
   ASTStmt* stmt;
   ASTLabeledStmt* lab_stmt;
   ASTSelectStmt* sel_stmt;
-  ASTIterStmt* iter_stmt;
+  ASTStmt* iter_stmt;
   ASTJmpStmt* jmp_stmt;
   ASTExprStmt* expr_stmt;
   ASTBlockList* blk_ilist;
@@ -160,8 +160,18 @@ postfix_expression
 		assert(idExpr !=nullptr);
     	$$ = new ASTFunctionCall(idExpr, $3);
 	}
-	| postfix_expression INC_OP                                                      { $$ = new ASTPostIncrement($1, true); }
-	| postfix_expression DEC_OP                                                      { $$ = new ASTPostIncrement($1, false); }
+	| postfix_expression INC_OP                                                      
+	{
+		ASTIdExpr* idExpr = dynamic_cast<ASTIdExpr*>($1);
+		assert(idExpr !=nullptr);
+		$$ = new ASTPostIncrement(idExpr, true);
+	}
+	| postfix_expression DEC_OP
+	{
+		ASTIdExpr* idExpr = dynamic_cast<ASTIdExpr*>($1);
+		assert(idExpr !=nullptr);
+		$$ = new ASTPostIncrement(idExpr, false);
+	}
 	;
 
 unary_expression
@@ -432,10 +442,62 @@ iteration_statement
 	  $$ = new ASTWhileStmt($3->exprs[0], $5);
 	}
 	| DO statement WHILE '(' expression ')' ';'                                         { $$ = new ASTDoWhileStmt($5, $2); }
-	| FOR '(' expression_statement expression_statement ')' statement                   { $$ = new ASTForStmt($3, $4, $6); }
-	| FOR '(' expression_statement expression_statement expression ')' statement        { $$ = new ASTForStmt($3, $4, $5, $7); }
-	| FOR '(' declaration expression_statement ')' statement                            { $$ = new ASTForStmt2($3, $4, $6); }
-	| FOR '(' declaration expression_statement expression ')' statement                 { $$ = new ASTForStmt2($3, $4, $5, $7); }
+	| FOR '(' expression_statement expression_statement ')' statement
+	{
+	 auto blocks = new ASTBlockList(new ASTBlock($3));
+        	ASTWhileStmt* _while;
+        	if(auto stmt  = dynamic_cast<ASTBlockList*>($6))
+        	    _while = new ASTWhileStmt(new ASTConst(i_const, "1"), stmt);
+            else
+        	   _while = new ASTWhileStmt(new ASTConst(i_const, "1"), new ASTBlockList(new ASTBlockList(), new ASTBlock($6)));
+        	_while->add_start_condition($4);
+
+        	blocks = new ASTBlockList(blocks, new ASTBlock(_while));
+        	$$ = blocks;
+	}
+	| FOR '(' expression_statement expression_statement expression ')' statement
+	{
+		auto blocks = new ASTBlockList(new ASTBlock($3));
+        ASTWhileStmt* _while;
+        if(auto stmt  = dynamic_cast<ASTBlockList*>($7))
+            _while = new ASTWhileStmt(new ASTConst(i_const, "1"), stmt);
+        else
+            _while = new ASTWhileStmt(new ASTConst(i_const, "1"), new ASTBlockList(new ASTBlockList(), new ASTBlock($7)));
+        _while->add_start_condition($4);
+        _while->add_end_expression($5);
+
+        blocks = new ASTBlockList(blocks, new ASTBlock(_while));
+
+        $$ = blocks;
+	}
+	| FOR '(' declaration expression_statement ')' statement
+	{
+	    auto blocks = new ASTBlockList(new ASTBlock($3));
+    	ASTWhileStmt* _while;
+    	if(auto stmt  = dynamic_cast<ASTBlockList*>($6))
+    	    _while = new ASTWhileStmt(new ASTConst(i_const, "1"), stmt);
+        else
+    	   _while = new ASTWhileStmt(new ASTConst(i_const, "1"), new ASTBlockList(new ASTBlockList(), new ASTBlock($6)));
+    	_while->add_start_condition($4);
+
+    	blocks = new ASTBlockList(blocks, new ASTBlock(_while));
+    	$$ = blocks;
+	}
+	| FOR '(' declaration expression_statement expression ')' statement                 
+	{
+		auto blocks = new ASTBlockList(new ASTBlock($3));
+		ASTWhileStmt* _while;
+		if(auto stmt  = dynamic_cast<ASTBlockList*>($7))
+		    _while = new ASTWhileStmt(new ASTConst(i_const, "1"), stmt);
+        else
+		    _while = new ASTWhileStmt(new ASTConst(i_const, "1"), new ASTBlockList(new ASTBlockList(), new ASTBlock($7)));
+		_while->add_start_condition($4);
+		_while->add_end_expression($5);
+
+		blocks = new ASTBlockList(blocks, new ASTBlock(_while));
+
+	 	$$ = blocks;
+	}
 	;
 
 jump_statement

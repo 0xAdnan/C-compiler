@@ -101,3 +101,10 @@ ASTConst *ASTConst::accept(ConstPropagationOpt *cpo) {
   return cpo->visit(this);
 }
 
+ASTFunctionCall *ASTFunctionCall::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}
+
+ASTExpr *ASTPostIncrement::accept(ConstPropagationOpt *cpo) {
+  return cpo->visit(this);
+}

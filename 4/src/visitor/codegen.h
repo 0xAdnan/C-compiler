@@ -149,9 +149,11 @@ private:
         case ctype_::t_bool:
           return llvm::Type::getInt1Ty(*context);
         case ctype_::t_char:
-          return llvm::Type::getInt8Ty(*context);
+          return llvm::Type::getInt32Ty(*context);
         case ctype_::t_float:
           return llvm::Type::getFloatTy(*context);
+        case ctype_::t_void:
+          return llvm::Type::getVoidTy(*context);
         default:
           cout << "Doesn't Support DataType " << ctype << endl;
           exit(1);
@@ -211,9 +213,7 @@ private:
           llvm::errs() << "Cannot be void" << "\n";
           assert(false);
         case t_char:
-          return builder->CreateAlloca(Type::getInt8Ty(*context), nullptr, name);
         case t_short:
-          return builder->CreateAlloca(Type::getInt16Ty(*context), nullptr, name);
         case t_int:
         case t_long:
           return builder->CreateAlloca(Type::getInt32Ty(*context), nullptr, name);
@@ -230,7 +230,7 @@ private:
           llvm::errs() << "Doesn't support unsigned" << "\n";
           assert(false);
         case t_bool:
-          return builder->CreateAlloca(Type::getInt8Ty(*context), nullptr, name);
+          return builder->CreateAlloca(Type::getInt1Ty(*context), nullptr, name);
         case t_complex:
           llvm::errs() << "Doesn't support complex" << "\n";
           assert(false);

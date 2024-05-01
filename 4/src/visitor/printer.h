@@ -205,9 +205,9 @@ public:
 
     std::string visit(ASTIfElseStmt *ifElseStmt, int indent){
       std::string result = common(ifElseStmt, indent, 3);
-      ifElseStmt->cond->accept(this, indent+1);
-      ifElseStmt->stmt->accept(this, indent+1);
-      ifElseStmt->elseStmt->accept(this, indent+1);
+      result += ifElseStmt->cond->accept(this, indent+1);
+      result += ifElseStmt->stmt->accept(this, indent+1);
+      result += ifElseStmt->elseStmt->accept(this, indent+1);
       result += end(indent);
       return result;
     }
@@ -218,7 +218,8 @@ public:
 
     std::string visit(ASTExprStmt *exprStmt, int indent){
       std::string result = common(exprStmt, indent, 1);
-      result += exprStmt->exprs->accept(this, indent+1);
+      if(exprStmt->exprs != nullptr)
+        result += exprStmt->exprs->accept(this, indent+1);
       result += end(indent);
       return result;
     }

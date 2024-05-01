@@ -53,6 +53,14 @@ public:
         print_ast = vm["print-ast"].as<bool>();
       }
 
+      if(vm.count("all-opt")) {
+        if (vm["all-opt"].as<bool>()) {
+          opt_al_sim = true;
+          opt_deadcode = true;
+          opt_const_prop = true;
+        }
+      }
+
     }
 };
 
@@ -71,6 +79,7 @@ CmdOptions parse(int argc, char **argv) {
 
     options_description opt("Optimization options");
     opt.add_options()
+            ("all-opt", bool_switch(), "Enable All Optimizations")
             ("opt-al-sim", bool_switch(), "Enable Algebraic Simplification")
             ("opt-const-prop", bool_switch(), "Enable Constant Propagation")
             ("opt-deadcode", bool_switch(), "Enable Deadcode elimination")
@@ -126,24 +135,29 @@ int main(int argc, char **argv) {
     auto *algebraSimplificationOpt = new AlgebraSimplificationOpt();
     program_ast = dynamic_cast<ASTProgram *>(program_ast->accept(algebraSimplificationOpt));
 
+    cout << "AST After Algebraic Simplification" << endl;
     if(options.print_ast){
       auto str = printer->visit(program_ast);
       cout << str << endl;
     }
   }
-  /*if(options.opt_const_prop){
+  
+  if(options.opt_const_prop){
     auto *constPropagation = new ConstPropagationOpt();
     program_ast = dynamic_cast<ASTProgram *>(program_ast->accept(constPropagation));
 
+    cout << "AST After Constant Propagation" << endl;
     if(options.print_ast){
       auto str = printer->visit(program_ast);
       cout << str << endl;
     }
-  }*/
+  }
+
   if(options.opt_deadcode){
     auto *deadCodeOpt = new DeadCodeOpt();
     program_ast = dynamic_cast<ASTProgram *>(program_ast->accept(deadCodeOpt));
 
+    cout << "AST After Dead Code Removal" << endl;
     if(options.print_ast){
       auto str = printer->visit(program_ast);
       cout << str << endl;

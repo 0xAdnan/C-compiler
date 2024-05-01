@@ -1,0 +1,23 @@
+|      Filename      |     Result    |  Optimized Result  |  Execution Result  |Optimized Execution Result|
+|--------------------|---------------|--------------------|--------------------|-------------------------|
+|      00006.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00007.c       |     Error     |       Error        |       Error        |          Error          |
+|      00009.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00030.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00031.c       |     Error     |       Error        |       Error        |          Error          |
+|      00033.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00035.c       |     Error     |       Error        |       Error        |          Error          |
+|      00041.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00098.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00105.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00113.c       |     Error     |       Passed       |       Error        |          Error          |
+|      00114.c       |     Passed    |       Passed       |       Error        |          Error          |
+|      00126.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00127.c       |     Error     |       Error        |       Error        |          Error          |
+|      00160.c       |     Passed    |       Passed       |       Passed       |          Error          |
+|      00164.c       |     Error     |       Passed       |       Error        |          Error          |
+|      00192.c       |     Error     |       Error        |       Error        |          Error          |
+|      00194.c       |     Error     |       Passed       |       Error        |          Error          |
+|--------------------|---------------|--------------------|--------------------|-------------------------|
+
+All tests processed!

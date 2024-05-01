@@ -35,6 +35,8 @@ extern int sym_type(const char *);  /* returns type from symbol table */
 static void comment(void);
 static int check_type(void);
 std::string char2ascii(char*);
+void replaceWordWithChar(std::string&, const std::string&, char);
+
 #define YY_DECL extern "C" int yylex()
 %}
 
@@ -102,7 +104,14 @@ std::string char2ascii(char*);
 {HP}{H}*"."{H}+{P}{FS}?		           	{ yylval.str = strdup(yytext);return F_CONSTANT; }
 {HP}{H}+"."{P}{FS}?			            { yylval.str = strdup(yytext);return F_CONSTANT; }
 
-({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+	     { yylval.str = strdup(yytext + 1); yylval.str[strlen(yylval.str) - 1] = '\0'; return STRING_LITERAL; }
+({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+	    {
+    yylval.str = strdup(yytext + 1); yylval.str[strlen(yylval.str) - 1] = '\0';
+    std::string str = yylval.str;
+    replaceWordWithChar(str, "\\n", 10);
+    replaceWordWithChar(str, "\\t", 9);
+    yylval.str = strdup(str.c_str());
+    return STRING_LITERAL;
+}
 
 "..."					                { return ELLIPSIS; }
 ">>="					                { return RIGHT_ASSIGN; }
@@ -204,4 +213,12 @@ std::string char2ascii(char* ch){
     char c = ch[1];
     int ascii = static_cast<int>(c);
     return std::to_string(ascii);
+}
+
+void replaceWordWithChar(std::string& str, const std::string& word, char replacement) {
+    size_t startPos = 0;
+    while ((startPos = str.find(word, startPos)) != std::string::npos) {
+        str.replace(startPos, word.length(), 1, replacement);
+        startPos += 1; // Move startPos past the replacement character
+    }
 }
