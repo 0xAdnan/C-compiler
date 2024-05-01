@@ -53,6 +53,7 @@ ASTStmt *ConstPropagationOpt::visit(ASTStmt *stmt)
 
 ASTBlockList *ConstPropagationOpt::visit(ASTBlockList *bl)
 {
+    enterScope();
     vector<ASTBlock *> newBlockList;
     for (auto block : bl->blocks)
     {
@@ -63,55 +64,44 @@ ASTBlockList *ConstPropagationOpt::visit(ASTBlockList *bl)
         }
     }
     bl->blocks = newBlockList;
+    exitScope();
     return bl;
 }
 
-// ASTDecl *ConstPropagationOpt::visit(ASTDecl *Decl)
-// {
-//     if (Decl && Decl->value)
-//     {
-//         ASTConst *constNode = check_const(Decl->value);
-//         if (constNode)
-//         {
-//             constValues[Decl->name] = constNode;
-//         }
-//         else
-//         {
-//             Decl->value = Decl->value->accept(this);
-//             constNode = check_const(Decl->value);
-//             if (constNode)
-//             {
-//                 constValues[Decl->name] = constNode;
-//             }
-//         }
-//     }
-//     return Decl;
-// }
+
 
 ASTDecl *ConstPropagationOpt::visit(ASTDecl *Decl)
 {
-    if (Decl && Decl->value)
-    {
-        ASTConst *constNode = check_const(Decl->value);
-        if (constNode)
-        {
-            if (!constValues.empty())
-            {
-                constValues.back()[Decl->name] = constNode;
-            }
+    if (Decl && Decl->value){
+      ASTConst *constNode = check_const(Decl->value);
+      if (constNode){
+        if(constNode->ct == s_const)
+          return Decl;
+
+        if(!is_compatible(constNode->ct, Decl->type)){
+          llvm::errs() << "Type mismatch in declaration\n";
+          assert(false);
         }
-        else
-        {
-            Decl->value = Decl->value->accept(this);
-            constNode = check_const(Decl->value);
-            if (constNode)
-            {
-                if (!constValues.empty())
-                {
-                    constValues.back()[Decl->name] = constNode;
-                }
-            }
+        if (!constValues.empty()){
+          constValues.back()[Decl->name] = constNode;
         }
+      }
+      else{
+        Decl->value = Decl->value->accept(this);
+        constNode = check_const(Decl->value);
+        if (constNode){
+          if(constNode->ct == s_const)
+            return Decl;
+
+          if(!is_compatible(constNode->ct, Decl->type)){
+            llvm::errs() << "Type mismatch in declaration\n";
+            assert(false);
+          }
+          if (!constValues.empty()){
+              constValues.back()[Decl->name] = constNode;
+          }
+        }
+      }
     }
     return Decl;
 }
@@ -133,10 +123,12 @@ ASTExprStmt *ConstPropagationOpt::visit(ASTExprStmt *expStmt)
 
 ASTExpr *ConstPropagationOpt::visit(ASTIdExpr *idExpr)
 {
-    for (auto it = constValues.rbegin(); it != constValues.rend(); ++it)
-    {
-        auto found = it->find(idExpr->name);
-        if (found != it->end())
+    if(idExpr->is_LHS)
+      return idExpr;
+
+    if(constValues.size() >= 1){
+        auto found = constValues.back().find(idExpr->name);
+        if (found != constValues.back().end())
         {
             return new ASTConst(*(found->second));
         }
@@ -144,14 +136,7 @@ ASTExpr *ConstPropagationOpt::visit(ASTIdExpr *idExpr)
     return idExpr;
 }
 
-// ASTExpr *ConstPropagationOpt::visit(ASTIdExpr *idExpr)
-// {
-//     if (constValues.find(idExpr->name) != constValues.end())
-//     {
-//         return new ASTConst(*constValues[idExpr->name]);
-//     }
-//     return idExpr;
-// }
+
 
 ASTExpr *ConstPropagationOpt::visit(ASTExpr *expr)
 {
@@ -169,6 +154,7 @@ ASTExpr *ConstPropagationOpt::visit(ASTExpr *expr)
     case operators::b_minus:
     case operators::b_mul:
     case operators::b_div:
+    case operators::b_remainder:
     case operators::b_left_shift:
     case operators::b_right_shift:
     case operators::b_less:
@@ -185,9 +171,13 @@ ASTExpr *ConstPropagationOpt::visit(ASTExpr *expr)
     {
         ASTConst *leftConst = check_const(L);
         ASTConst *rightConst = check_const(R);
-        if (leftConst && rightConst)
+
+        if (leftConst && rightConst && leftConst->ct == rightConst->ct && leftConst->ct != s_const)
         {
-            return performOperation(leftConst, rightConst, expr->operator_);
+            if(leftConst->ct == i_const)
+                return performOperationI(leftConst, rightConst, expr->operator_);
+            if(leftConst->ct == f_const)
+                return performOperationF(leftConst, rightConst, expr->operator_);
         }
         expr->operands[0] = L;
         expr->operands[1] = R;
@@ -204,15 +194,106 @@ ASTExpr *ConstPropagationOpt::visit(ASTExpr *expr)
             {
                 constValues.back()[idExpr->name] = rightConst;
             }
-            // constValues[static_cast<ASTIdExpr *>(expr->operands[0])->name] = rightConst;
         }
 
         return expr;
     }
-    default:
-        break;
+    case operators::add_assign:
+    case operators::sub_assign:
+    case operators::mul_assign:
+    case operators::div_assign:
+    case operators::mod_assign:
+    case operators::and_assign:
+    case operators::or_assign:
+    case operators::xor_assign:
+    case operators::left_assign:
+    case operators::right_assign:
+    {
+        auto idExpr = dynamic_cast<ASTIdExpr *>(expr->operands[0]);
+        if (idExpr){
+            if(constValues.back().find(idExpr->name) == constValues.back().end()){
+                return expr;
+            }
+        }
+        expr->operands[1] = expr->operands[1]->accept(this);
+
+        ASTConst *rightConst = check_const(expr->operands[1]);
+        if(!rightConst)
+            return expr;
+        
+        operators o;
+        switch (expr->operator_)
+        {
+            case operators::add_assign:
+                o = b_add;
+                break;
+            case operators::sub_assign:
+                o = b_minus;
+                break;
+            case operators::mul_assign:
+                o = b_mul;
+                break;
+            case operators::div_assign:
+                o = b_div;
+                break;
+            case operators::mod_assign:
+                o = b_remainder;
+                break;
+            case operators::and_assign:
+                o = b_and;
+                break;
+            case operators::or_assign:
+                o = b_or;
+                break;
+            case operators::xor_assign:
+                o = b_bitxor;
+                break;
+            case operators::left_assign:
+                o = b_left_shift;
+                break;
+            case operators::right_assign:
+                o = b_right_shift;
+                break;
+            default:
+                assert(false);
+                break;
+        }
+        auto leftConst = constValues.back()[idExpr->name];
+        if (leftConst && rightConst && leftConst->ct == rightConst->ct && leftConst->ct != s_const)
+        {
+            if(leftConst->ct == i_const)
+                return (new ASTExpr(assign, idExpr, performOperationI(leftConst, rightConst, o)))->accept(this);
+            if(leftConst->ct == f_const)
+                return (new ASTExpr(assign, idExpr, performOperationF(leftConst, rightConst, o)))->accept(this);
+        }
+        return expr;
     }
+
+    case operators::u_op_plus_plus:
+    case operators::u_op_minus_minus:
+    default:
+      if(auto idExpr = dynamic_cast<ASTIdExpr*>(expr->operands[0])){
+        constValues.back().erase(idExpr->name);
+      }
+      return expr;
+
+    
     return expr;
+    }
+}
+
+ASTExpr *ConstPropagationOpt::visit(ASTPostIncrement* pi){
+    if(constValues.back().find(pi->expr->name) != constValues.back().end()){
+        auto c = constValues.back()[pi->expr->name];
+        if(pi->is_inc)
+            constValues.back()[pi->expr->name] = increase_by_1(c);
+        else
+            constValues.back()[pi->expr->name] = decrease_by_1(c);
+        return c;
+    }
+    else{
+        return pi;
+    }
 }
 
 ASTConst *ConstPropagationOpt::visit(ASTConst *constant)
@@ -234,6 +315,21 @@ ASTExpr *ConstPropagationOpt::visit(ASTExprList *exprList)
     return exprList;
 }
 
+ASTFunctionCall *ConstPropagationOpt::visit(ASTFunctionCall* fn){
+    if(!fn->params)
+        return fn;
+    auto newParams = fn->params->accept(this);
+    // If ASTExpr instead of ASTExprList, create a nwe ASTExprList with one element.
+    ASTExprList* newParams2;
+    if(newParams2 = dynamic_cast<ASTExprList*>(newParams)){
+        fn->params = newParams2;
+    }else{
+        newParams2 = new ASTExprList(newParams);
+        fn->params = newParams2;
+    }
+    return fn;
+}
+
 ASTIfStmt *ConstPropagationOpt::visit(ASTIfStmt *ifStmt)
 {
     if (ifStmt->cond)
@@ -252,28 +348,28 @@ ASTIfStmt *ConstPropagationOpt::visit(ASTIfStmt *ifStmt)
             ifStmt->stmt = optimizedStmt;
         }
     }
-
     return ifStmt;
 }
 
 ASTWhileStmt *ConstPropagationOpt::visit(ASTWhileStmt *whileStmt)
 {
-    if (whileStmt->cond)
-    {
-        ASTExpr *optimizedCond = whileStmt->cond->accept(this);
-        if (optimizedCond != whileStmt->cond)
-        {
-            whileStmt->cond = optimizedCond;
-        }
+    for (auto& map : constValues) {
+        map.clear();
     }
-    if (whileStmt->stmt)
-    {
-        ASTStmt *optimizedStmt = whileStmt->stmt->accept(this);
-        if (optimizedStmt != whileStmt->stmt)
-        {
-            whileStmt->stmt = optimizedStmt;
-        }
+   return whileStmt;
+}
+
+ASTIfElseStmt *ConstPropagationOpt::visit(ASTIfElseStmt *ifElseStmt) {
+    if (ifElseStmt->cond) {
+        ifElseStmt->cond = ifElseStmt->cond->accept(this);
+    }
+    if (ifElseStmt->stmt) {
+        ifElseStmt->stmt = ifElseStmt->stmt->accept(this);
+    }
+    if (ifElseStmt->elseStmt) {
+        ifElseStmt->elseStmt = ifElseStmt->elseStmt->accept(this);
     }
 
-    return whileStmt;
+    return ifElseStmt;
 }
+

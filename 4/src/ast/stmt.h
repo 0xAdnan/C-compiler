@@ -178,6 +178,8 @@ public:
 
     ASTIfElseStmt *accept(AlgebraSimplificationOpt *) override;
 
+    ASTIfElseStmt *accept(ConstPropagationOpt *) override;
+
     ASTStmt *accept(DeadCodeOpt *) override;
 
     string accept(Printer *printer, int indent) override;
@@ -216,6 +218,9 @@ public:
     [[nodiscard]] string to_str() const override {
       return "While Stmt";
     }
+
+    void add_start_condition(ASTExprStmt*);
+    void add_end_expression(ASTExpr*);
 
     llvm::Value *accept(Codegen *codegen) override;
 

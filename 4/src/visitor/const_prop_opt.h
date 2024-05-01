@@ -25,42 +25,49 @@ public:
     ASTBlock *visit(ASTBlock *);
     ASTBlockList *visit(ASTBlockList *);
     ASTDecl *visit(ASTDecl *);
-    ASTStmt *visit(ASTStmt *);
-    ASTExprStmt *visit(ASTExprStmt *);
+
     ASTExpr *visit(ASTIdExpr *);
     ASTExpr *visit(ASTExpr *);
     ASTConst *visit(ASTConst *);
     ASTExpr *visit(ASTExprList *);
+    ASTFunctionCall *visit(ASTFunctionCall*);
+    ASTExpr *visit(ASTPostIncrement*);
+
+    ASTStmt *visit(ASTStmt *);
+    ASTExprStmt *visit(ASTExprStmt *);
     ASTIfStmt *visit(ASTIfStmt *);
+    ASTIfElseStmt *visit(ASTIfElseStmt *);
     ASTWhileStmt *visit(ASTWhileStmt *);
 
 void enterScope()
 {
+    unordered_map<string, ASTConst *> newScope;
     if (!constValues.empty()) {
-        constValues.push_back(unordered_map<string, ASTConst *>());
-        auto &previousScope = *(constValues.rbegin() - 1);
-        for (auto &entry : previousScope) {
-            constValues.back().insert(entry);
-        }
-    } else {
-        constValues.push_back(unordered_map<string, ASTConst *>());
+        const auto& prevScope = constValues.back();
+        newScope = prevScope;  
     }
+    constValues.push_back(move(newScope));  
 }
 
 
 void exitScope()
 {
     if (!constValues.empty()) {
-        auto &previousScope = *(constValues.rbegin() + 1);
-        for (auto &entry : *(constValues.rbegin())) {
-            if (entry.second) {
-                previousScope.erase(entry.first);
+        if (constValues.size() > 1) {
+            auto& currScope = constValues.back();
+            auto& prevScope = *(constValues.rbegin() + 1);
+
+            for (const auto& [name, currConstPtr] : currScope) {
+                auto it = prevScope.find(name);
+                if (it != prevScope.end() && it->second != currConstPtr) {
+                    prevScope.erase(it);
+                }
             }
         }
+
         constValues.pop_back();
     }
 }
-
 
 };
 

@@ -25,7 +25,9 @@ ASTIfStmt *DeadCodeOpt::visit(ASTIfStmt *ifStmt) {
 
 ASTStmt *DeadCodeOpt::visit(ASTIfElseStmt *ifElseStmt) {
   if(is_const_node(ifElseStmt->cond, "0")) {
-    return ifElseStmt->accept(this);
+    return ifElseStmt->elseStmt->accept(this);
+  } else if(is_const_node(ifElseStmt->cond, "1")){
+    return ifElseStmt->stmt->accept(this);
   }
   return ifElseStmt;
 }

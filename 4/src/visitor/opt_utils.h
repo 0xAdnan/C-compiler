@@ -9,6 +9,31 @@
 #include "expr.h"
 
 
+
+static ASTConst* increase_by_1(ASTConst* c){
+    if(c->ct == i_const){
+        return new ASTConst(i_const, to_string(stoi(c->value) + 1));
+    }
+    else if(c->ct == f_const){
+        return new ASTConst(f_const, to_string(stof(c->value) + 1));
+    }
+    cout << "Cannot increase a string" << endl;
+    assert(false);
+}
+
+static ASTConst* decrease_by_1(ASTConst* c){
+    if(c->ct == i_const){
+        return new ASTConst(i_const, to_string(stoi(c->value) - 1));
+    }
+    else if(c->ct == f_const){
+        return new ASTConst(f_const, to_string(stof(c->value) - 1));
+    }
+    cout << "Cannot decrease a string" << endl;
+    assert(false);
+}
+
+
+
 static bool is_const_node(ASTNode *node, const string &value)
 {
     auto constNode = dynamic_cast<ASTConst *>(node);
@@ -22,18 +47,20 @@ static ASTConst *check_const(ASTNode *node)
     return dynamic_cast<ASTConst *>(node);
 }
 
-static ASTConst *performOperation(const ASTConst *left, const ASTConst *right, operators op)
+
+static ASTConst *performOperationF(const ASTConst *left, const ASTConst *right, operators op)
 {
     if (!left || !right)
         return nullptr;
 
-    int leftValue = (left->ct == const_type::i_const) ? stoi(left->value) : stof(left->value);
-    int rightValue = (right->ct == const_type::i_const) ? stoi(right->value) : stof(right->value);
-    int result;
+    float leftValue = stof(left->value);
+    float rightValue = stof(right->value);
+    float result;
 
     switch (op)
     {
     case operators::b_add:
+    // case
         result = leftValue + rightValue;
         break;
     case operators::b_minus:
@@ -49,6 +76,70 @@ static ASTConst *performOperation(const ASTConst *left, const ASTConst *right, o
         }
         result = leftValue / rightValue;
         break;
+    case operators::b_less:
+        result = leftValue < rightValue;
+        break;
+    case operators::b_greater:
+        result = leftValue > rightValue;
+        break;
+    case operators::b_less_eq:
+        result = leftValue <= rightValue;
+        break;
+    case operators::b_greater_eq:
+        result = leftValue >= rightValue;
+        break;
+    case operators::b_eq:
+        result = leftValue == rightValue;
+        break;
+    case operators::b_neq:
+        result = leftValue != rightValue;
+        break;
+    case operators::b_and:
+        result = leftValue && rightValue;
+        break;
+    case operators::b_or:
+        result = leftValue || rightValue;
+        break;
+    default:
+        throw invalid_argument("Unsupported operator for const operation");
+    }
+
+    return new ASTConst(f_const, std::to_string(result));
+}
+
+static ASTConst *performOperationI(const ASTConst *left, const ASTConst *right, operators op)
+{
+    if (!left || !right)
+        return nullptr;
+
+    int leftValue = stoi(left->value);
+    int rightValue = stoi(right->value);
+    int result;
+
+    switch (op)
+    {
+    case operators::b_add:
+    // case
+        result = leftValue + rightValue;
+        break;
+    case operators::b_minus:
+        result = leftValue - rightValue;
+        break;
+    case operators::b_mul:
+        result = leftValue * rightValue;
+        break;
+    case operators::b_div:
+        if (rightValue == 0){
+            throw runtime_error("Division by zero");
+        }
+        result = leftValue / rightValue;
+        break;
+    case operators::b_remainder:
+      if (rightValue == 0){
+        throw runtime_error("Division by zero");
+      }
+      result = leftValue % rightValue;
+      break;
     case operators::b_left_shift:
         result = leftValue << rightValue;
         break;
@@ -92,8 +183,17 @@ static ASTConst *performOperation(const ASTConst *left, const ASTConst *right, o
         throw invalid_argument("Unsupported operator for const operation");
     }
 
-    const_type resultType = (left->ct == const_type::f_const || right->ct == const_type::f_const) ? const_type::f_const : const_type::i_const;
-    return new ASTConst(resultType, std::to_string(result));
+    return new ASTConst(i_const, std::to_string(result));
+}
+
+static bool is_compatible(const_type ct, ctype_ t){
+  if(ct == i_const){
+    return t == t_int || t == t_long || t == t_long_long;
+  }
+  if(ct == f_const){
+    return t == t_float || t == t_double;
+  }
+  return false;
 }
 
 #endif // CCOMPILER_OPT_UTILS_H

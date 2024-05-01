@@ -65,28 +65,3 @@ target_link_libraries(cc ${llvm_libs})
 find_package(Boost COMPONENTS program_options REQUIRED)
 target_include_directories( cc PRIVATE ${Boost_INCLUDE_DIR})
 target_link_libraries( cc ${Boost_LIBRARIES} )
-
-
-################### Google Test ###################
-include(FetchContent)
-FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
-FetchContent_MakeAvailable(googletest)
-
-enable_testing()
-
-add_executable(
-        ctest
-        test.cpp
-        ${SOURCES}
-)
-target_link_libraries(
-        ctest
-        GTest::gtest_main
-        ${llvm_libs}
-)
-
-include(GoogleTest)
-gtest_discover_tests(ctest)
